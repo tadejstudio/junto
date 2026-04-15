@@ -230,7 +230,7 @@ body{background:#000;display:flex;justify-content:center;align-items:center;min-
           <svg width="10" height="16" viewBox="0 0 10 18" fill="none" stroke="#007AFF" stroke-width="2.5" stroke-linecap="round"><path d="M9 1L1 9l8 8"/></svg> Nazaj
         </div>
         <div><div class="sh-title" id="d-title"></div><div class="sh-sub" id="d-sub"></div></div>
-        <div style="width:60px;text-align:right;"><span style="color:#007AFF;font-size:13px;font-weight:500;cursor:pointer;" onclick="location.href='screen_activity.html'">Več →</span></div>
+        <div style="width:60px;text-align:right;"><span style="color:#007AFF;font-size:13px;font-weight:500;cursor:pointer;" onclick="location.href='screen_activity.html'">Odpri →</span></div>
       </div>
       <div class="detail-scroll" id="detail-scroll"></div>
       <div class="summary-cta" id="detail-cta"></div>
@@ -288,24 +288,118 @@ document.getElementById('searchInput').addEventListener('input',function(){
 document.addEventListener('click',e=>{if(!e.target.closest('.top-ui')&&!e.target.closest('.search-results'))document.getElementById('searchResults').style.display='none';});
 function flyTo(lat,lon,name){map.flyTo([lat,lon],15,{duration:1});document.getElementById('searchInput').value=name;document.getElementById('searchResults').style.display='none';}
 
-// Detail
+// roster data per activity
+const rosterData = {
+  bball:[{init:'MJ',col:'#4a90d9',name:'Miha Janežič',tag:'Organizator 👑'},{init:'LK',col:'#7b68ee',name:'Luka Kovač',tag:'Član'},{init:'NK',col:'#3cb371',name:'Nina Kovač',tag:'Članica'},{init:'AV',col:'#e0872a',name:'Anja Vidmar',tag:'Članica'},{init:'TM',col:'#9b59b6',name:'Tine Mlakar',tag:'Član'},{init:'BP',col:'#1abc9c',name:'Blaž Potočnik',tag:'Član'},{init:'KZ',col:'#c0a020',name:'Katja Zupan',tag:'Članica'},{init:'RP',col:'#c0608a',name:'Rok Pirnat',tag:'Član'}],
+  futsal:[{init:'GM',col:'#7b68ee',name:'Gašper Mlakar',tag:'Organizator 👑'},{init:'AL',col:'#4a90d9',name:'Andrej Leban',tag:'Član'},{init:'SF',col:'#3cb371',name:'Sara Fatur',tag:'Članica'},{init:'NP',col:'#9b59b6',name:'Nejc Podgoršek',tag:'Član'},{init:'VK',col:'#e0872a',name:'Vid Kos',tag:'Član'},{init:'MH',col:'#c0a020',name:'Maja Horvat',tag:'Članica'},{init:'BK',col:'#1abc9c',name:'Bojan Kranjc',tag:'Član'},{init:'TP',col:'#c0608a',name:'Teja Petric',tag:'Članica'},{init:'RM',col:'#e05050',name:'Rok Mlakar',tag:'Član'}],
+  cycling:[{init:'PV',col:'#3cb371',name:'Petra Vidmar',tag:'Organizatorka 👑'},{init:'MS',col:'#4a90d9',name:'Matej Sitar',tag:'Član'},{init:'JK',col:'#c0a020',name:'Jana Kranjc',tag:'Članica'},{init:'FB',col:'#e0872a',name:'Filip Bizjak',tag:'Član'}],
+  volley:[{init:'EB',col:'#9b59b6',name:'Eva Bajc',tag:'Organizatorka 👑'},{init:'KM',col:'#c0a020',name:'Kaja Murn',tag:'Članica'},{init:'JH',col:'#4a90d9',name:'Jan Hribar',tag:'Član'},{init:'ZB',col:'#e0872a',name:'Žiga Bogataj',tag:'Član'},{init:'MC',col:'#c0608a',name:'Maja Černe',tag:'Članica'},{init:'IL',col:'#3cb371',name:'Ines Lavrič',tag:'Članica'}],
+  run:[{init:'SK',col:'#c0608a',name:'Sara Kos',tag:'Organizatorka 👑'},{init:'LD',col:'#3cb371',name:'Lana Dolenc',tag:'Članica'},{init:'MP',col:'#4a90d9',name:'Matija Pirnat',tag:'Član'}]
+};
+
+let currentDetailId = null;
+let chatMsgs = {};
+
 function openDetail(id){
   const a=acts[id];
+  currentDetailId = id;
+  if (!chatMsgs[id]) chatMsgs[id] = [...a.chat];
+
   document.getElementById('d-title').textContent=a.name;
   document.getElementById('d-sub').textContent=a.sub;
-  const sb=a.status==='live'?'<span style="background:#ffebee;color:#c62828;font-size:12px;font-weight:600;padding:4px 10px;border-radius:10px;">● LIVE</span>':a.status==='soon'?'<span style="background:#fff3e0;color:#e65100;font-size:12px;padding:4px 10px;border-radius:10px;">Kmalu</span>':'<span style="background:#e8f5e9;color:#2e7d32;font-size:12px;padding:4px 10px;border-radius:10px;">Odprto</span>';
-  const ch=a.chat.map(c=>`<div class="chat-msg"><div class="chat-av ${c.col}">${c.init}</div><div><div class="chat-bubble"><div class="chat-name">${c.name}</div><div class="chat-text">${c.msg}</div></div><div style="font-size:10px;color:#bbb;margin-top:3px;">${c.time}</div></div></div>`).join('');
+
+  // "Več" gumb → activity screen
+  document.querySelector('.detail-sheet .sh-nav span') && null;
+
+  const sb=a.status==='live'
+    ?'<span style="background:#ffebee;color:#c62828;font-size:12px;font-weight:600;padding:4px 10px;border-radius:10px;">● LIVE</span>'
+    :a.status==='soon'
+    ?'<span style="background:#fff3e0;color:#e65100;font-size:12px;padding:4px 10px;border-radius:10px;">Kmalu</span>'
+    :'<span style="background:#e8f5e9;color:#2e7d32;font-size:12px;padding:4px 10px;border-radius:10px;">Odprto</span>';
+
+  const roster = rosterData[id]||[];
+  const rosterPreview = roster.slice(0,4).map(p=>`<div style="width:32px;height:32px;border-radius:50%;background:${p.col};display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;margin-right:-8px;border:2px solid #fff;">${p.init}</div>`).join('');
+
+  renderDetailChat(id);
+
   document.getElementById('detail-scroll').innerHTML=`
-    <div class="sport-band"><div class="sport-name-big">${a.sport} ${sb}</div><div class="meta-item"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>${a.sub}</div></div>
-    <div class="iou-row"><div class="iou-cell"><span class="iou-num">${a.attending}</span><div class="iou-label">Pridruženih</div></div><div class="iou-cell"><span class="iou-num iou-free">${a.total-a.attending}</span><div class="iou-label">Prostih mest</div></div></div>
+    <div class="sport-band">
+      <div class="sport-name-big">${a.sport} ${sb}</div>
+      <div class="meta-item"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>${a.sub}</div>
+    </div>
+    <div class="iou-row">
+      <div class="iou-cell" onclick="openRoster('${id}')" style="cursor:pointer;">
+        <div style="display:flex;justify-content:center;margin-bottom:6px;">${rosterPreview}</div>
+        <span class="iou-num">${a.attending}</span>
+        <div class="iou-label">Pridruženih ›</div>
+      </div>
+      <div class="iou-cell">
+        <span class="iou-num iou-free">${a.total-a.attending}</span>
+        <div class="iou-label">Prostih mest</div>
+      </div>
+    </div>
     <div class="desc-block"><div style="font-size:12px;color:#888;margin-bottom:4px;">O aktivnosti</div><div class="desc-text">${a.desc}</div></div>
-    <div style="background:#fff;margin-top:10px;"><div class="chat-sec-hdr">Skupinski chat</div>${ch}<div class="chat-input-wrap"><input class="chat-input" placeholder="Sporoči skupini..."><button class="chat-send"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button></div></div>
+    <div style="background:#fff;margin-top:10px;">
+      <div class="chat-sec-hdr">Skupinski chat</div>
+      <div id="map-chat-msgs"></div>
+      <div class="chat-input-wrap">
+        <input class="chat-input" id="map-chat-input" placeholder="Sporoči skupini..." onkeydown="if(event.key==='Enter')sendMapChat('${id}')">
+        <button class="chat-send" onclick="sendMapChat('${id}')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        </button>
+      </div>
+    </div>
     <div style="height:10px;background:#f2f2f7;"></div>`;
+
+  // render chat after DOM update
+  setTimeout(()=>renderDetailChat(id), 10);
+
   document.getElementById('detail-cta').innerHTML=`<button class="btn-in" onclick="joinAct('${id}')">✓ Pridruži se · ${a.attending}/${a.total}</button><button class="btn-close" onclick="closeDetail()">Zapri</button>`;
   document.getElementById('detail-overlay').classList.add('open');
   map.flyTo([a.lat,a.lon],16,{duration:0.8});
 }
-function closeDetail(){document.getElementById('detail-overlay').classList.remove('open');}
+
+function renderDetailChat(id) {
+  const msgs = chatMsgs[id]||[];
+  const wrap = document.getElementById('map-chat-msgs');
+  if (!wrap) return;
+  wrap.innerHTML = msgs.map(c=>`<div class="chat-msg"><div class="chat-av ${c.col||''}" style="${c.col&&!c.col.startsWith('avc')?'background:'+c.col:''}">${c.init}</div><div><div class="chat-bubble"><div class="chat-name">${c.name}</div><div class="chat-text">${c.msg}</div></div><div style="font-size:10px;color:#bbb;margin-top:3px;">${c.time}</div></div></div>`).join('');
+  wrap.scrollTop = wrap.scrollHeight;
+}
+
+function sendMapChat(id) {
+  const input = document.getElementById('map-chat-input');
+  const text = input.value.trim();
+  if (!text) return;
+  if (!chatMsgs[id]) chatMsgs[id] = [];
+  chatMsgs[id].push({init:'Ti',col:'#FF385C',name:'Ti',msg:text,time:'zdaj'});
+  renderDetailChat(id);
+  input.value = '';
+}
+
+// Roster overlay
+function openRoster(id) {
+  const roster = rosterData[id]||[];
+  const rows = roster.map(p=>`
+    <div onclick="location.href='screen_profil.html'" style="display:flex;align-items:center;padding:12px 16px;border-bottom:0.5px solid #f5f5f5;cursor:pointer;background:#fff;gap:12px;">
+      <div style="width:44px;height:44px;border-radius:50%;background:${p.col};display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:#fff;flex-shrink:0;">${p.init}</div>
+      <div style="flex:1;"><div style="font-size:15px;color:#000;font-weight:500;">${p.name}</div><div style="font-size:12px;color:#8e8e93;margin-top:1px;">${p.tag}</div></div>
+      <svg width="8" height="14" viewBox="0 0 8 14" fill="none" stroke="#c7c7cc" stroke-width="2" stroke-linecap="round"><path d="M1 1l6 6-6 6"/></svg>
+    </div>`).join('');
+
+  document.getElementById('detail-scroll').innerHTML=`
+    <div style="background:#fff;display:flex;align-items:center;padding:14px 16px;border-bottom:0.5px solid #e5e5ea;">
+      <div onclick="openDetail('${id}')" style="color:#007AFF;font-size:15px;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:4px;">
+        <svg width="10" height="16" viewBox="0 0 10 18" fill="none" stroke="#007AFF" stroke-width="2.5" stroke-linecap="round"><path d="M9 1L1 9l8 8"/></svg> Nazaj
+      </div>
+      <div style="flex:1;text-align:center;font-size:16px;font-weight:700;">Udeleženci</div>
+      <div style="width:60px;text-align:right;font-size:13px;color:#8e8e93;">${roster.length} oseb</div>
+    </div>
+    ${rows}
+    <div style="height:10px;background:#f2f2f7;"></div>`;
+}
+
+function closeDetail(){document.getElementById('detail-overlay').classList.remove('open'); currentDetailId=null;}
 function joinAct(id){const a=acts[id];if(a.attending<a.total){a.attending++;document.getElementById('detail-cta').innerHTML=`<button class="btn-in" style="background:#007AFF;">✓ Pridružen! ${a.attending}/${a.total}</button><button class="btn-close" onclick="closeDetail()">Zapri</button>`;}}
 </script>
 </body>

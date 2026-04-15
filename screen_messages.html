@@ -217,22 +217,51 @@ body{background:#f2f2f7;display:flex;justify-content:center;min-height:100vh;fon
   </div>
 </div>
 
+<!-- CALL SCREEN -->
+<div id="callScreen" style="display:none;position:fixed;top:0;left:50%;transform:translateX(-50%);width:390px;height:100vh;background:linear-gradient(180deg,#1a1a2e 0%,#16213e 100%);z-index:900;flex-direction:column;align-items:center;justify-content:space-between;padding:80px 0 60px;">
+  <div style="text-align:center;">
+    <div id="call-av" style="width:100px;height:100px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:36px;font-weight:700;color:#fff;margin:0 auto 16px;"></div>
+    <div id="call-name" style="color:#fff;font-size:24px;font-weight:700;margin-bottom:8px;"></div>
+    <div id="call-status" style="color:rgba(255,255,255,0.5);font-size:16px;">Klicanje...</div>
+  </div>
+  <div style="display:flex;gap:32px;justify-content:center;">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:10px;">
+      <div style="width:64px;height:64px;background:rgba(255,255,255,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><line x1="1" y1="1" x2="23" y2="23"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"/><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+      </div>
+      <span style="color:rgba(255,255,255,0.6);font-size:12px;">Brez zvoka</span>
+    </div>
+    <div onclick="endCall()" style="display:flex;flex-direction:column;align-items:center;gap:10px;">
+      <div style="width:72px;height:72px;background:#FF3B30;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="white"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1-9.4 0-17-7.6-17-17 0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1L6.6 10.8z"/></svg>
+      </div>
+      <span style="color:rgba(255,255,255,0.6);font-size:12px;">Konec</span>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:10px;">
+      <div style="width:64px;height:64px;background:rgba(255,255,255,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+      </div>
+      <span style="color:rgba(255,255,255,0.6);font-size:12px;">Zvočnik</span>
+    </div>
+  </div>
+</div>
+
 <!-- CHAT VIEW (full screen) -->
 <div class="chat-view" id="chatView">
   <div class="chat-nav">
     <div class="chat-back" onclick="closeChat()">
       <svg width="10" height="16" viewBox="0 0 10 18" fill="none" stroke="#007AFF" stroke-width="2.5" stroke-linecap="round"><path d="M9 1L1 9l8 8"/></svg>
     </div>
-    <div class="chat-person">
+    <div class="chat-person" onclick="location.href='screen_profil.html'" style="cursor:pointer;">
       <div class="chat-person-av" id="chat-nav-av"></div>
       <div class="chat-person-name" id="chat-nav-name"></div>
       <div class="chat-person-status" id="chat-nav-status"></div>
     </div>
     <div class="chat-actions">
-      <div class="chat-action-btn">
+      <div class="chat-action-btn" onclick="startCall('audio')" title="Klic">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#007AFF" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 9.91a16 16 0 0 0 6.29 6.29l.91-.91a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
       </div>
-      <div class="chat-action-btn">
+      <div class="chat-action-btn" onclick="startCall('video')" title="Video klic">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#007AFF" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
       </div>
     </div>
@@ -372,7 +401,36 @@ function filterConvs(q) {
   });
 }
 
-function openRequests() {
+function startCall(type) {
+  const conv = convData[activeChatId];
+  if (!conv) return;
+  const cs = document.getElementById('callScreen');
+  const av = document.getElementById('call-av');
+  av.textContent = conv.init;
+  av.style.background = conv.col;
+  document.getElementById('call-name').textContent = conv.name;
+  document.getElementById('call-status').textContent = type === 'video' ? '📹 Video klic...' : '📞 Klicanje...';
+  cs.style.display = 'flex';
+  // Simulate connecting after 2s
+  setTimeout(() => {
+    const s = document.getElementById('call-status');
+    if (s) s.textContent = type === 'video' ? '📹 Video klic v teku' : '📞 Povezano · 0:00';
+    let sec = 0;
+    const timer = setInterval(() => {
+      sec++;
+      const s2 = document.getElementById('call-status');
+      if (!s2 || cs.style.display === 'none') { clearInterval(timer); return; }
+      const m = Math.floor(sec/60), s3 = sec%60;
+      s2.textContent = (type==='video'?'📹 ':'📞 ') + `${m}:${s3<10?'0'+s3:s3}`;
+    }, 1000);
+  }, 2000);
+}
+
+function endCall() {
+  document.getElementById('callScreen').style.display = 'none';
+}
+
+
   alert('Prošnje za pridružitev:\n• Aleš Kovač želi v Pickup Basketball\n• Tina Mlakar želi v Futsal\n• Lana Dolenc želi v Kolesarjenje');
 }
 
