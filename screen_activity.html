@@ -1,610 +1,369 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="sl">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SportMeet – Activity Detail</title>
+<title>Junto — Aktivnost</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body {
-    background: #1a1a2e;
-    display: flex; justify-content: center; align-items: center;
-    min-height: 100vh;
-    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
-  }
-  .phone-frame {
-    width: 390px; height: 844px;
-    background: #f5f5f7; border-radius: 50px;
-    overflow: hidden;
-    box-shadow: 0 40px 80px rgba(0,0,0,0.5), inset 0 0 0 2px #333;
-    position: relative; display: flex; flex-direction: column;
-  }
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:#f2f2f7;display:flex;justify-content:center;min-height:100vh;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;}
+.device{width:390px;background:#f2f2f7;position:relative;display:flex;flex-direction:column;}
+.screen-scroll{flex:1;overflow-y:auto;scrollbar-width:none;padding-bottom:160px;}
+.screen-scroll::-webkit-scrollbar{display:none;}
 
-  .screen-scroll {
-    flex: 1; overflow-y: auto; scrollbar-width: none; padding-bottom: 100px;
-  }
-  .screen-scroll::-webkit-scrollbar { display: none; }
+.cover-wrap{position:relative;width:100%;height:260px;}
+.cover-bg{width:100%;height:100%;background:linear-gradient(135deg,#1a1a2e,#16213e);display:flex;align-items:center;justify-content:center;font-size:80px;}
+.cover-overlay{position:absolute;bottom:0;left:0;right:0;height:160px;background:linear-gradient(to top,rgba(0,0,0,0.75),transparent);}
+.cover-nav{position:absolute;top:52px;left:0;right:0;display:flex;justify-content:space-between;align-items:center;padding:0 16px;}
+.nav-circle{width:36px;height:36px;background:rgba(0,0,0,0.4);backdrop-filter:blur(10px);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;border:0.5px solid rgba(255,255,255,0.2);transition:background .15s;}
+.cover-actions{display:flex;gap:10px;}
+.cover-title{position:absolute;bottom:16px;left:16px;right:16px;}
+.cover-sport-row{display:flex;align-items:center;gap:10px;margin-bottom:4px;}
+.cover-sport-icon{width:36px;height:36px;background:rgba(255,255,255,0.2);backdrop-filter:blur(6px);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;}
+.cover-sport-name{font-size:24px;font-weight:800;color:#fff;letter-spacing:-0.5px;}
+.live-badge{background:#FF3B30;color:#fff;font-size:11px;font-weight:700;padding:3px 8px;border-radius:7px;display:flex;align-items:center;gap:4px;}
+.live-dot{width:6px;height:6px;background:#fff;border-radius:50%;animation:pulse 1.2s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+.cover-location{font-size:13px;color:rgba(255,255,255,0.8);}
 
-  /* ── Cover ── */
-  .cover-wrap { position: relative; width: 100%; height: 240px; }
-  .cover-img { width: 100%; height: 100%; object-fit: cover; object-position: center 30%; display: block; }
-  .cover-placeholder {
-    width: 100%; height: 100%;
-    background: linear-gradient(135deg,#FFF0E6,#FFD4A8);
-    display: flex; align-items: center; justify-content: center; font-size: 64px;
-  }
-  .cover-overlay {
-    position: absolute; bottom: 0; left: 0; right: 0; height: 140px;
-    background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
-  }
-  .cover-nav {
-    position: absolute; top: 52px; left: 0; right: 0;
-    display: flex; justify-content: space-between; padding: 0 16px;
-  }
-  .nav-btn {
-    width: 36px; height: 36px;
-    background: rgba(0,0,0,0.35); backdrop-filter: blur(8px);
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 16px; color: #fff; cursor: pointer;
-  }
-  .cover-title { position: absolute; bottom: 16px; left: 16px; right: 16px; }
-  .cover-sport-row { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
-  .cover-sport-icon {
-    width: 34px; height: 34px; background: rgba(255,255,255,0.2);
-    backdrop-filter: blur(6px); border-radius: 10px;
-    display: flex; align-items: center; justify-content: center; font-size: 18px;
-  }
-  .cover-sport-name { font-size: 22px; font-weight: 800; color: #fff; }
-  .live-badge-cover {
-    background: #FF3B30; color: #fff;
-    font-size: 11px; font-weight: 700;
-    padding: 3px 8px; border-radius: 7px;
-    display: flex; align-items: center; gap: 4px;
-  }
-  .live-dot { width: 6px; height: 6px; background: #fff; border-radius: 50%; animation: pulse 1.2s infinite; }
-  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(0.7)} }
-  .cover-location { font-size: 13px; color: rgba(255,255,255,0.8); }
+.section{background:#fff;padding:16px;margin-bottom:8px;}
+.section-title{font-size:12px;font-weight:700;color:#8e8e93;text-transform:uppercase;letter-spacing:0.6px;margin-bottom:12px;}
 
-  /* ── ACTION BAR ── */
-  .action-bar {
-    background: #fff;
-    padding: 14px 16px;
-    display: flex; align-items: center; gap: 8px;
-    border-bottom: 1px solid #f0f0f0;
-  }
-  .action-btn-join {
-    flex: 1;
-    background: #111; color: #fff;
-    border: none; border-radius: 14px;
-    padding: 12px 0;
-    font-size: 15px; font-weight: 800;
-    cursor: pointer;
-  }
-  .action-btn {
-    width: 46px; height: 46px;
-    background: #f5f5f7; border-radius: 14px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 20px; cursor: pointer; flex-shrink: 0;
-    border: none;
-  }
-  .action-btn.notify { font-size: 18px; }
+.meta-pills{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
+.meta-pill{display:flex;align-items:center;gap:6px;background:#f2f2f7;padding:7px 12px;border-radius:12px;font-size:13px;font-weight:500;color:#333;}
 
-  /* ── Sections ── */
-  .section { background: #fff; padding: 16px; margin-bottom: 8px; }
-  .section-title {
-    font-size: 12px; font-weight: 700; color: #888;
-    text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 12px;
-  }
+.organizer-row{display:flex;align-items:center;justify-content:space-between;padding-top:14px;border-top:0.5px solid #f0f0f0;cursor:pointer;}
+.organizer-left{display:flex;align-items:center;gap:10px;}
+.org-av{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#FF6B35,#FF3B30);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#fff;}
+.org-name{font-size:14px;font-weight:700;color:#111;}
+.org-label{font-size:12px;color:#8e8e93;margin-top:1px;}
+.org-badge{background:#FFF0E6;color:#FF6B35;font-size:11px;font-weight:700;padding:4px 10px;border-radius:8px;}
 
-  /* ── Meta pills ── */
-  .meta-pills { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
-  .meta-pill {
-    display: flex; align-items: center; gap: 5px;
-    background: #f5f5f7; padding: 7px 12px;
-    border-radius: 12px; font-size: 13px; font-weight: 600; color: #333;
-  }
+.participants-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.avatars-stack{display:flex;}
+.p-av{width:40px;height:40px;border-radius:50%;border:2.5px solid #fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;margin-left:-10px;cursor:pointer;flex-shrink:0;}
+.p-av:first-child{margin-left:0;}
+.spots-info{font-size:14px;color:#555;font-weight:500;}
+.spots-info strong{color:#111;font-size:16px;}
+.spots-bar-bg{height:5px;background:#f0f0f0;border-radius:3px;overflow:hidden;margin-bottom:16px;}
+.spots-bar-fill{height:100%;border-radius:3px;background:#111;}
 
-  /* ── Organizer ── */
-  .organizer-row {
-    display: flex; align-items: center; justify-content: space-between;
-    padding-top: 14px; border-top: 1px solid #f0f0f0;
-  }
-  .organizer-left { display: flex; align-items: center; gap: 10px; }
-  .organizer-avatar {
-    width: 38px; height: 38px; border-radius: 50%;
-    background: linear-gradient(135deg,#FF6B35,#FF3B30);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 16px; font-weight: 700; color: #fff;
-  }
-  .organizer-name { font-size: 14px; font-weight: 700; color: #111; }
-  .organizer-label { font-size: 12px; color: #888; }
-  .organizer-badge { font-size: 11px; font-weight: 700; background: #FFF0E6; color: #FF6B35; padding: 4px 10px; border-radius: 8px; }
+.photos-row{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px;}
+.photos-row::-webkit-scrollbar{display:none;}
+.photo-thumb{position:relative;flex-shrink:0;width:120px;height:120px;border-radius:14px;overflow:hidden;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:40px;}
+.photo-share{position:absolute;top:7px;right:7px;width:28px;height:28px;background:rgba(0,0,0,0.5);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;}
+.photo-poster{position:absolute;bottom:0;left:0;right:0;padding:6px 8px;background:linear-gradient(to top,rgba(0,0,0,0.6),transparent);font-size:11px;font-weight:600;color:#fff;}
 
-  /* ── Spots ── */
-  .spots-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
-  .spots-avatars { display: flex; align-items: center; }
-  .s-avatar {
-    width: 40px; height: 40px; border-radius: 50%;
-    border: 2.5px solid #fff; margin-left: -10px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 15px; font-weight: 700; color: #fff;
-  }
-  .s-avatar:first-child { margin-left: 0; }
-  .s-avatar.a1{background:#FF6B35} .s-avatar.a2{background:#4CAF50} .s-avatar.a3{background:#2196F3}
-  .s-avatar.empty { background: #f0f0f0; color: #bbb; font-size: 20px; }
-  .spots-text { font-size: 14px; color: #555; font-weight: 500; }
-  .spots-text strong { color: #111; font-size: 16px; }
-  .spots-bar-bg { height: 6px; background: #f0f0f0; border-radius: 3px; overflow: hidden; margin-bottom: 16px; }
-  .spots-bar-fill { height: 100%; border-radius: 3px; background: #111; }
+#activity-map{width:100%;height:140px;border-radius:14px;overflow:hidden;}
+.leaflet-control-zoom,.leaflet-control-attribution{display:none!important;}
 
-  /* ── PHOTO GALLERY ── */
-  .photos-scroll { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding-bottom: 4px; }
-  .photos-scroll::-webkit-scrollbar { display: none; }
-  .photo-card {
-    position: relative; flex-shrink: 0;
-    width: 120px; height: 120px;
-    border-radius: 14px; overflow: hidden; cursor: pointer;
-  }
-  .photo-card img { width: 100%; height: 100%; object-fit: cover; }
-  .photo-card-placeholder {
-    width: 100%; height: 100%;
-    display: flex; align-items: center; justify-content: center; font-size: 36px;
-  }
-  /* Share button on each photo */
-  .photo-share-btn {
-    position: absolute; top: 7px; right: 7px;
-    width: 28px; height: 28px;
-    background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 13px; cursor: pointer;
-    color: #fff;
-  }
-  .photo-poster {
-    position: absolute; bottom: 0; left: 0; right: 0;
-    padding: 6px 8px;
-    background: linear-gradient(to top, rgba(0,0,0,0.6), transparent);
-    font-size: 11px; font-weight: 600; color: #fff;
-  }
+.chat-msgs{display:flex;flex-direction:column;gap:12px;margin-bottom:14px;max-height:260px;overflow-y:auto;}
+.chat-msg{display:flex;gap:10px;align-items:flex-start;}
+.msg-av{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0;cursor:pointer;}
+.msg-name-row{display:flex;align-items:baseline;gap:6px;margin-bottom:3px;}
+.msg-name{font-size:13px;font-weight:700;color:#111;cursor:pointer;}
+.msg-time{font-size:11px;color:#bbb;}
+.msg-badge{font-size:10px;font-weight:700;background:#FFF0E6;color:#FF6B35;padding:2px 6px;border-radius:5px;}
+.msg-text{font-size:14px;color:#333;line-height:1.4;}
+.chat-input-row{display:flex;align-items:center;gap:10px;padding-top:14px;border-top:0.5px solid #f0f0f0;}
+.my-av{width:32px;height:32px;border-radius:50%;background:#FF385C;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0;}
+.chat-input{flex:1;background:#f2f2f7;border:none;border-radius:20px;padding:10px 14px;font-size:14px;color:#000;outline:none;font-family:-apple-system,sans-serif;}
+.chat-input::placeholder{color:#8e8e93;}
+.chat-send{width:34px;height:34px;background:#FF385C;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;border:none;flex-shrink:0;}
 
-  /* ── Map ── */
-  .map-placeholder {
-    width: 100%; height: 110px;
-    background: linear-gradient(135deg,#e8f5e9,#c8e6c9);
-    border-radius: 14px;
-    display: flex; align-items: center; justify-content: center;
-    position: relative; overflow: hidden;
-  }
-  .map-grid {
-    position: absolute; inset: 0; opacity: 0.3;
-    background-image: linear-gradient(#4CAF50 1px,transparent 1px), linear-gradient(90deg,#4CAF50 1px,transparent 1px);
-    background-size: 24px 24px;
-  }
-  .map-pin {
-    width: 36px; height: 36px; background: #FF3B30;
-    border-radius: 50% 50% 50% 0; transform: rotate(-45deg);
-    display: flex; align-items: center; justify-content: center;
-    box-shadow: 0 4px 12px rgba(255,59,48,0.4); z-index: 1;
-  }
-  .map-pin span { transform: rotate(45deg); font-size: 16px; }
-  .map-label {
-    position: absolute; bottom: 10px; left: 12px;
-    font-size: 12px; font-weight: 700; color: #2E7D32;
-    background: rgba(255,255,255,0.9); padding: 4px 8px; border-radius: 8px;
-  }
+.bottom-cta{position:fixed;bottom:82px;left:50%;transform:translateX(-50%);width:390px;padding:10px 16px;background:#fff;border-top:0.5px solid #e5e5ea;z-index:100;}
+.bottom-join-btn{width:100%;background:#FF385C;color:#fff;border:none;border-radius:16px;padding:15px;font-size:16px;font-weight:800;cursor:pointer;transition:background .2s;}
+.bottom-join-btn.joined{background:#34c759;}
 
-  /* ── Chat ── */
-  .chat-messages { display: flex; flex-direction: column; gap: 14px; }
-  .chat-msg { display: flex; gap: 10px; align-items: flex-start; }
-  .msg-avatar {
-    width: 32px; height: 32px; border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 13px; font-weight: 700; color: #fff; flex-shrink: 0;
-  }
-  .msg-avatar.a1{background:#FF6B35} .msg-avatar.a2{background:#4CAF50} .msg-avatar.a3{background:#2196F3}
-  .msg-name-row { display: flex; align-items: baseline; gap: 6px; margin-bottom: 3px; }
-  .msg-name { font-size: 13px; font-weight: 700; color: #111; }
-  .msg-time { font-size: 11px; color: #bbb; }
-  .msg-badge { font-size: 10px; font-weight: 700; background: #FFF0E6; color: #FF6B35; padding: 2px 6px; border-radius: 5px; }
-  .msg-text { font-size: 14px; color: #333; line-height: 1.4; }
-  .chat-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
-  .chat-count { font-size: 12px; color: #aaa; }
-  .chat-input-row {
-    display: flex; align-items: center; gap: 10px;
-    margin-top: 16px; padding-top: 14px; border-top: 1px solid #f0f0f0;
-  }
-  .my-avatar {
-    width: 32px; height: 32px; border-radius: 50%; background: #111;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 11px; font-weight: 700; color: #fff; flex-shrink: 0;
-  }
-  .chat-input-box { flex: 1; background: #f5f5f7; border-radius: 20px; padding: 10px 14px; font-size: 14px; color: #aaa; }
-  .send-btn { width: 34px; height: 34px; background: #111; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; cursor: pointer; color: #fff; }
+/* OVERLAYS */
+.full-overlay{position:fixed;top:0;left:50%;transform:translateX(-50%);width:390px;height:100vh;z-index:600;display:none;flex-direction:column;}
+.full-overlay.open{display:flex;}
 
-  /* ── Bottom CTA ── */
-  .bottom-cta {
-    position: absolute; bottom: 0; left: 0; right: 0;
-    padding: 12px 16px 28px; background: #fff; border-top: 1px solid #f0f0f0;
-  }
-  .bottom-join-btn {
-    width: 100%; background: #FF3B30; color: #fff;
-    border: none; border-radius: 16px; padding: 15px;
-    font-size: 16px; font-weight: 800; cursor: pointer;
-    display: flex; align-items: center; justify-content: center; gap: 8px;
-  }
+.roster-bg{background:#f2f2f7;}
+.roster-nav{background:#fff;padding:52px 16px 12px;display:flex;align-items:center;border-bottom:0.5px solid #e5e5ea;flex-shrink:0;}
+.roster-back{display:flex;align-items:center;gap:4px;color:#007AFF;font-size:15px;font-weight:500;cursor:pointer;}
+.roster-title{flex:1;text-align:center;font-size:17px;font-weight:700;}
+.roster-scroll{flex:1;overflow-y:auto;}
+.roster-row{display:flex;align-items:center;padding:12px 16px;border-bottom:0.5px solid #f5f5f5;cursor:pointer;background:#fff;gap:12px;}
+.roster-av{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#fff;}
+.roster-info{flex:1;}
+.roster-name{font-size:15px;font-weight:500;color:#000;}
+.roster-tag{font-size:12px;color:#8e8e93;margin-top:1px;}
 
-  /* ══════════════════════════════
-     SHARE SHEET — Instagram style
-  ══════════════════════════════ */
-  .share-overlay {
-    position: absolute; inset: 0;
-    background: rgba(0,0,0,0.55);
-    z-index: 999; display: none; align-items: flex-end;
-  }
-  .share-overlay.visible { display: flex; }
+.photo-bg{background:#000;}
+.photo-fs-nav{position:absolute;top:52px;left:0;right:0;display:flex;justify-content:space-between;align-items:center;padding:0 16px;z-index:10;}
+.photo-fs-img{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:80px;}
+.photo-fs-actions{position:absolute;bottom:40px;left:0;right:0;display:flex;justify-content:space-around;padding:0 32px;}
+.fs-action{display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;}
+.fs-action span{font-size:12px;color:rgba(255,255,255,0.7);}
 
-  .share-sheet {
-    width: 100%; background: #1c1c1e;
-    border-radius: 28px 28px 0 0;
-    padding: 12px 0 36px;
-  }
-  .share-handle { width: 40px; height: 4px; background: #444; border-radius: 2px; margin: 0 auto 16px; }
+.share-overlay{position:fixed;top:0;left:50%;transform:translateX(-50%);width:390px;height:100vh;background:rgba(0,0,0,0.55);z-index:700;display:none;align-items:flex-end;}
+.share-overlay.open{display:flex;}
+.share-sheet{width:100%;background:#1c1c1e;border-radius:28px 28px 0 0;padding:12px 0 36px;}
+.share-handle{width:40px;height:4px;background:#444;border-radius:2px;margin:0 auto 16px;}
+.share-friends{display:flex;gap:18px;overflow-x:auto;scrollbar-width:none;padding:0 16px 16px;}
+.share-friends::-webkit-scrollbar{display:none;}
+.share-friend{display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0;cursor:pointer;}
+.friend-av{width:58px;height:58px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;color:#fff;position:relative;}
+.friend-check{position:absolute;bottom:0;right:0;width:20px;height:20px;border-radius:50%;background:#0095f6;border:2px solid #1c1c1e;display:none;align-items:center;justify-content:center;font-size:11px;color:#fff;}
+.share-friend.sel .friend-check{display:flex;}
+.friend-name{font-size:11px;color:#fff;text-align:center;}
+.share-divider{height:0.5px;background:#333;margin:0 0 16px;}
+.share-platforms{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding:0 16px 16px;}
+.share-platforms::-webkit-scrollbar{display:none;}
+.share-ext{display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0;cursor:pointer;}
+.ext-icon{width:52px;height:52px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:24px;}
+.ext-name{font-size:11px;color:#aaa;}
+.share-send-btn{margin:4px 16px 0;width:calc(100% - 32px);background:#0095f6;border:none;border-radius:14px;padding:14px;font-size:15px;font-weight:700;color:#fff;cursor:pointer;}
 
-  /* Search bar */
-  .share-search {
-    margin: 0 16px 16px;
-    background: #2c2c2e;
-    border-radius: 14px;
-    padding: 10px 14px;
-    display: flex; align-items: center; gap: 8px;
-  }
-  .share-search-icon { font-size: 15px; color: #888; }
-  .share-search-text { font-size: 15px; color: #888; }
+.toast{position:fixed;bottom:170px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.85);color:#fff;padding:12px 20px;border-radius:14px;font-size:14px;font-weight:500;z-index:999;display:none;white-space:nowrap;backdrop-filter:blur(10px);text-align:center;}
+.toast.show{display:block;}
 
-  /* Friends grid */
-  .share-friends {
-    display: flex; gap: 18px;
-    overflow-x: auto; scrollbar-width: none;
-    padding: 0 16px 16px;
-  }
-  .share-friends::-webkit-scrollbar { display: none; }
-  .share-friend {
-    display: flex; flex-direction: column;
-    align-items: center; gap: 6px;
-    flex-shrink: 0; cursor: pointer;
-  }
-  .friend-avatar {
-    width: 58px; height: 58px; border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 22px; font-weight: 700; color: #fff;
-    position: relative;
-  }
-  .friend-avatar img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
-  .friend-check {
-    position: absolute; bottom: 0; right: 0;
-    width: 20px; height: 20px; border-radius: 50%;
-    background: #0095f6; border: 2px solid #1c1c1e;
-    display: none; align-items: center; justify-content: center;
-    font-size: 11px; color: #fff;
-  }
-  .share-friend.selected .friend-check { display: flex; }
-  .share-friend.selected .friend-avatar { opacity: 0.85; }
-  .friend-name { font-size: 11px; font-weight: 600; color: #fff; max-width: 58px; text-align: center; }
-
-  /* Divider */
-  .share-divider { height: 1px; background: #333; margin: 0 0 16px; }
-
-  /* External platforms row — horizontal scroll */
-  .share-platforms-row {
-    display: flex; gap: 6px;
-    overflow-x: auto; scrollbar-width: none;
-    padding: 0 16px 16px;
-  }
-  .share-platforms-row::-webkit-scrollbar { display: none; }
-  .share-ext {
-    display: flex; flex-direction: column;
-    align-items: center; gap: 6px;
-    flex-shrink: 0; cursor: pointer;
-  }
-  .ext-icon {
-    width: 52px; height: 52px; border-radius: 16px;
-    display: flex; align-items: center; justify-content: center; font-size: 24px;
-  }
-  .ext-icon.wa      { background: #25D366; }
-  .ext-icon.copy    { background: #2c2c2e; }
-  .ext-icon.story   { background: linear-gradient(135deg,#f09433,#dc2743,#bc1888); }
-  .ext-icon.strava  { background: #FC4C02; }
-  .ext-icon.x       { background: #000; border: 1px solid #333; }
-  .ext-icon.tg      { background: #2AABEE; }
-  .ext-icon.tt      { background: #111; }
-  .ext-icon.snap    { background: #FFFC00; }
-  .ext-icon.more    { background: #2c2c2e; }
-  .ext-name { font-size: 11px; font-weight: 500; color: #ccc; }
-
-  /* Send button */
-  .share-send-btn {
-    margin: 4px 16px 0;
-    width: calc(100% - 32px);
-    background: #0095f6; border: none;
-    border-radius: 14px; padding: 14px;
-    font-size: 15px; font-weight: 700; color: #fff;
-    cursor: pointer;
-  }
+.nav-bar{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:390px;height:82px;background:#fff;border-top:0.5px solid #e5e5ea;display:flex;align-items:flex-start;justify-content:space-around;padding-top:12px;z-index:200;}
+.nav-it{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:0 12px;}
+.n-lbl{font-size:10px;font-weight:500;color:#8e8e93;}
+.add-btn-nav{width:48px;height:32px;background:#111;border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:2px;}
 </style>
 </head>
 <body>
-<div class="phone-frame">
-
+<div class="device">
   <div class="screen-scroll">
 
-    <!-- Cover -->
+    <!-- COVER -->
     <div class="cover-wrap">
-      <img class="cover-img" src="basketball.jpg" alt=""
-           onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
-      <div class="cover-placeholder" style="display:none">🏀</div>
+      <div class="cover-bg">🏀</div>
       <div class="cover-overlay"></div>
       <div class="cover-nav">
-        <div class="nav-btn">←</div>
+        <div class="nav-circle" onclick="history.back()">
+          <svg width="10" height="16" viewBox="0 0 10 18" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><path d="M9 1L1 9l8 8"/></svg>
+        </div>
+        <div class="cover-actions">
+          <div class="nav-circle" id="watch-btn" onclick="toggleWatch()" title="Gledam — live obvestila o dogajanju">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </div>
+          <div class="nav-circle" id="bell-btn" onclick="toggleBell()" title="Obvesti me ko se sprosti mesto">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          </div>
+          <div class="nav-circle" onclick="openShare()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+          </div>
+        </div>
       </div>
       <div class="cover-title">
         <div class="cover-sport-row">
           <div class="cover-sport-icon">🏀</div>
           <div class="cover-sport-name">Košarka</div>
-          <div class="live-badge-cover"><div class="live-dot"></div>LIVE</div>
+          <div class="live-badge"><div class="live-dot"></div>LIVE</div>
         </div>
         <div class="cover-location">📍 BTC igrišče · 0.4 km</div>
       </div>
     </div>
 
-    <!-- ── ACTION BAR ── -->
-    <div class="action-bar">
-      <button class="action-btn-join">JOIN</button>
-      <button class="action-btn" title="Zanima me">👀</button>
-      <button class="action-btn" onclick="openShare('activity')" title="Deli">📤</button>
-      <button class="action-btn notify" title="Obvesti me">🔔</button>
-    </div>
-
-    <!-- Info -->
+    <!-- INFO -->
     <div class="section">
       <div class="meta-pills">
-        <div class="meta-pill">🕕 17:00 – danes</div>
-        <div class="meta-pill">📊 Srednji</div>
-        <div class="meta-pill">🌍 Javno</div>
-        <div class="meta-pill">⏱ Started 17:04</div>
+        <div class="meta-pill"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>17:00 — danes</div>
+        <div class="meta-pill"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Srednji nivo</div>
+        <div class="meta-pill"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>Javno</div>
       </div>
-      <div class="organizer-row">
+      <div class="organizer-row" onclick="location.href='screen_profil.html'">
         <div class="organizer-left">
-          <div class="organizer-avatar">M</div>
-          <div>
-            <div class="organizer-name">Miha Kovač</div>
-            <div class="organizer-label">Organizator · 124 followers</div>
-          </div>
+          <div class="org-av">M</div>
+          <div><div class="org-name">Miha Kovač</div><div class="org-label">Organizator · 124 sledilcev</div></div>
         </div>
-        <div class="organizer-badge">🏀 BALLER</div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div class="org-badge">🏀 BALLER</div>
+          <svg width="8" height="14" viewBox="0 0 8 14" fill="none" stroke="#c7c7cc" stroke-width="2" stroke-linecap="round"><path d="M1 1l6 6-6 6"/></svg>
+        </div>
       </div>
     </div>
 
-    <!-- Spots -->
+    <!-- PARTICIPANTS -->
     <div class="section">
       <div class="section-title">Udeleženci</div>
-      <div class="spots-row">
-        <div class="spots-avatars">
-          <div class="s-avatar a1">M</div>
-          <div class="s-avatar a2">J</div>
-          <div class="s-avatar a3">T</div>
-          <div class="s-avatar empty">+</div>
-          <div class="s-avatar empty">+</div>
+      <div class="participants-row">
+        <div class="avatars-stack">
+          <div class="p-av" style="background:#FF6B35;" onclick="openRoster()">M</div>
+          <div class="p-av" style="background:#4CAF50;" onclick="openRoster()">J</div>
+          <div class="p-av" style="background:#2196F3;" onclick="openRoster()">T</div>
+          <div class="p-av" style="background:#9C27B0;" onclick="openRoster()">A</div>
+          <div class="p-av" style="background:#f0f0f0;color:#bbb;font-size:18px;" onclick="openRoster()">+</div>
         </div>
-        <div class="spots-text"><strong>2 mesti</strong> prosti od 5</div>
+        <div class="spots-info"><strong>2 mesti</strong> prosti od 5</div>
       </div>
-      <div class="spots-bar-bg">
-        <div class="spots-bar-fill" style="width:60%"></div>
-      </div>
+      <div class="spots-bar-bg"><div class="spots-bar-fill" style="width:60%;"></div></div>
     </div>
 
-    <!-- ── PHOTO GALLERY ── -->
+    <!-- PHOTOS -->
     <div class="section">
-      <div class="section-title">📸 Fotke (3)</div>
-      <div class="photos-scroll">
-
-        <div class="photo-card">
-          <img src="basketball.jpg" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
-          <div class="photo-card-placeholder" style="background:#FFF0E6;display:none">🏀</div>
-          <div class="photo-share-btn" onclick="openShare('photo')">↑</div>
-          <div class="photo-poster">Miha · 17:06</div>
-        </div>
-
-        <div class="photo-card">
-          <img src="cycling.jpg" alt="" style="filter:hue-rotate(200deg)" onerror="this.style.display='none'">
-          <div class="photo-card-placeholder" style="background:#E3F2FD">🏀</div>
-          <div class="photo-share-btn" onclick="openShare('photo')">↑</div>
-          <div class="photo-poster">Jan · 17:12</div>
-        </div>
-
-        <div class="photo-card">
-          <img src="gym.jpg" alt="" style="filter:hue-rotate(30deg) saturate(0.8)" onerror="this.style.display='none'">
-          <div class="photo-card-placeholder" style="background:#E8F5E9">🏀</div>
-          <div class="photo-share-btn" onclick="openShare('photo')">↑</div>
-          <div class="photo-poster">Tomaž · 17:18</div>
-        </div>
-
+      <div class="section-title">Fotke</div>
+      <div class="photos-row">
+        <div class="photo-thumb" style="background:linear-gradient(135deg,#FFF0E6,#FFD4A8);" onclick="openPhoto(0)">🏀<div class="photo-share" onclick="event.stopPropagation();openShare()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></div><div class="photo-poster">Miha · 17:06</div></div>
+        <div class="photo-thumb" style="background:linear-gradient(135deg,#E3F2FD,#BBDEFB);" onclick="openPhoto(1)">🏃<div class="photo-share" onclick="event.stopPropagation();openShare()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></div><div class="photo-poster">Jan · 17:12</div></div>
+        <div class="photo-thumb" style="background:linear-gradient(135deg,#E8F5E9,#C8E6C9);" onclick="openPhoto(2)">🙌<div class="photo-share" onclick="event.stopPropagation();openShare()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></div><div class="photo-poster">Tomaž · 17:18</div></div>
       </div>
     </div>
 
-    <!-- Map -->
+    <!-- MAP -->
     <div class="section">
       <div class="section-title">Lokacija</div>
-      <div class="map-placeholder">
-        <div class="map-grid"></div>
-        <div class="map-pin"><span>🏀</span></div>
-        <div class="map-label">📍 BTC igrišče</div>
+      <div id="activity-map"></div>
+      <div style="display:flex;align-items:center;gap:6px;margin-top:10px;font-size:13px;color:#555;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#FF385C" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        BTC igrišče, Ljubljana · 0.4 km stran
       </div>
     </div>
 
-    <!-- Chat -->
+    <!-- CHAT -->
     <div class="section">
-      <div class="chat-header">
-        <div class="section-title" style="margin:0">Skupina</div>
-        <div class="chat-count">8 sporočil</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+        <div class="section-title" style="margin:0;">Skupinski chat</div>
+        <div style="font-size:12px;color:#8e8e93;" id="chat-count">4 sporočila</div>
       </div>
-      <div class="chat-messages">
-        <div class="chat-msg">
-          <div class="msg-avatar a1">M</div>
-          <div>
-            <div class="msg-name-row"><span class="msg-name">Miha</span><span class="msg-badge">🏀 BALLER</span><span class="msg-time">17:04</span></div>
-            <div class="msg-text">Smo na igrišču, kdo pride? 🏀🔥</div>
-          </div>
-        </div>
-        <div class="chat-msg">
-          <div class="msg-avatar a2">J</div>
-          <div>
-            <div class="msg-name-row"><span class="msg-name">Jan</span><span class="msg-time">17:11</span></div>
-            <div class="msg-text">Pridem v 10 min 🙏</div>
-          </div>
-        </div>
-        <div class="chat-msg">
-          <div class="msg-avatar a3">T</div>
-          <div>
-            <div class="msg-name-row"><span class="msg-name">Tomaž</span><span class="msg-time">17:14</span></div>
-            <div class="msg-text">Sem noter, igramo 3v3?</div>
-          </div>
-        </div>
-        <div class="chat-msg">
-          <div class="msg-avatar a1">M</div>
-          <div>
-            <div class="msg-name-row"><span class="msg-name">Miha</span><span class="msg-time">17:15</span></div>
-            <div class="msg-text">Ja, rabmo samo še enega 👀</div>
-          </div>
-        </div>
+      <div class="chat-msgs" id="chat-msgs">
+        <div class="chat-msg"><div class="msg-av" style="background:#FF6B35;" onclick="location.href='screen_profil.html'">M</div><div><div class="msg-name-row"><span class="msg-name" onclick="location.href='screen_profil.html'">Miha</span><span class="msg-badge">🏀 BALLER</span><span class="msg-time">17:04</span></div><div class="msg-text">Smo na igrišču, kdo pride? 🏀🔥</div></div></div>
+        <div class="chat-msg"><div class="msg-av" style="background:#4CAF50;" onclick="location.href='screen_profil.html'">J</div><div><div class="msg-name-row"><span class="msg-name" onclick="location.href='screen_profil.html'">Jan</span><span class="msg-time">17:11</span></div><div class="msg-text">Pridem v 10 min 🙏</div></div></div>
+        <div class="chat-msg"><div class="msg-av" style="background:#2196F3;" onclick="location.href='screen_profil.html'">T</div><div><div class="msg-name-row"><span class="msg-name" onclick="location.href='screen_profil.html'">Tomaž</span><span class="msg-time">17:14</span></div><div class="msg-text">Sem noter, igramo 3v3? 💪</div></div></div>
+        <div class="chat-msg"><div class="msg-av" style="background:#FF6B35;" onclick="location.href='screen_profil.html'">M</div><div><div class="msg-name-row"><span class="msg-name" onclick="location.href='screen_profil.html'">Miha</span><span class="msg-time">17:15</span></div><div class="msg-text">Ja, rabmo še enega 👀</div></div></div>
       </div>
       <div class="chat-input-row">
-        <div class="my-avatar">Ti</div>
-        <div class="chat-input-box">Napiši sporočilo...</div>
-        <div class="send-btn">➤</div>
+        <div class="my-av">Ti</div>
+        <input class="chat-input" id="chat-input" placeholder="Napiši sporočilo..." onkeydown="if(event.key==='Enter')sendChat()"/>
+        <button class="chat-send" onclick="sendChat()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button>
       </div>
     </div>
+  </div>
 
-  </div><!-- /scroll -->
-
-  <!-- Fixed JOIN -->
+  <!-- BOTTOM JOIN -->
   <div class="bottom-cta">
-    <button class="bottom-join-btn">Pridruži se zdaj →</button>
+    <button class="bottom-join-btn" id="bottom-join" onclick="handleJoin()">Pridruži se zdaj →</button>
   </div>
 
-  <!-- ══ SHARE SHEET OVERLAY ══ -->
-  <div class="share-overlay" id="shareOverlay" onclick="closeShare(event)">
-    <div class="share-sheet" id="shareSheet">
-      <div class="share-handle"></div>
-
-      <!-- Search -->
-      <div class="share-search">
-        <span class="share-search-icon">🔍</span>
-        <span class="share-search-text">Iskanje...</span>
-      </div>
-
-      <!-- Friends / followers -->
-      <div class="share-friends">
-        <div class="share-friend" onclick="toggleFriend(this)">
-          <div class="friend-avatar" style="background:#FF6B35">T<div class="friend-check">✓</div></div>
-          <div class="friend-name">Teja</div>
-        </div>
-        <div class="share-friend" onclick="toggleFriend(this)">
-          <div class="friend-avatar" style="background:#4CAF50">L<div class="friend-check">✓</div></div>
-          <div class="friend-name">Luka</div>
-        </div>
-        <div class="share-friend" onclick="toggleFriend(this)">
-          <div class="friend-avatar" style="background:#2196F3">P<div class="friend-check">✓</div></div>
-          <div class="friend-name">Peter</div>
-        </div>
-        <div class="share-friend" onclick="toggleFriend(this)">
-          <div class="friend-avatar" style="background:#9C27B0">A<div class="friend-check">✓</div></div>
-          <div class="friend-name">Andraž</div>
-        </div>
-        <div class="share-friend" onclick="toggleFriend(this)">
-          <div class="friend-avatar" style="background:#E91E63">M<div class="friend-check">✓</div></div>
-          <div class="friend-name">Maja</div>
-        </div>
-        <div class="share-friend" onclick="toggleFriend(this)">
-          <div class="friend-avatar" style="background:#FF9500">K<div class="friend-check">✓</div></div>
-          <div class="friend-name">Klemen</div>
-        </div>
-      </div>
-
-      <div class="share-divider"></div>
-
-      <!-- External platforms — horizontal scroll -->
-      <div class="share-platforms-row">
-        <div class="share-ext">
-          <div class="ext-icon wa">💬</div>
-          <div class="ext-name">WhatsApp</div>
-        </div>
-        <div class="share-ext">
-          <div class="ext-icon copy">🔗</div>
-          <div class="ext-name">Kopiraj</div>
-        </div>
-        <div class="share-ext">
-          <div class="ext-icon story">＋</div>
-          <div class="ext-name">Story</div>
-        </div>
-        <div class="share-ext">
-          <div class="ext-icon strava">🟠</div>
-          <div class="ext-name">Strava</div>
-        </div>
-        <div class="share-ext">
-          <div class="ext-icon tg">✈️</div>
-          <div class="ext-name">Telegram</div>
-        </div>
-        <div class="share-ext">
-          <div class="ext-icon x">𝕏</div>
-          <div class="ext-name">X</div>
-        </div>
-        <div class="share-ext">
-          <div class="ext-icon tt">🎵</div>
-          <div class="ext-name">TikTok</div>
-        </div>
-        <div class="share-ext">
-          <div class="ext-icon snap">👻</div>
-          <div class="ext-name">Snapchat</div>
-        </div>
-        <div class="share-ext">
-          <div class="ext-icon more">•••</div>
-          <div class="ext-name">Več</div>
-        </div>
-      </div>
-
-      <button class="share-send-btn">Pošlji</button>
+  <!-- ROSTER OVERLAY -->
+  <div class="full-overlay roster-bg" id="rosterOverlay">
+    <div class="roster-nav">
+      <div class="roster-back" onclick="closeRoster()"><svg width="10" height="16" viewBox="0 0 10 18" fill="none" stroke="#007AFF" stroke-width="2.5" stroke-linecap="round"><path d="M9 1L1 9l8 8"/></svg> Nazaj</div>
+      <div class="roster-title">Udeleženci</div>
+      <div style="width:60px;text-align:right;font-size:13px;color:#8e8e93;">5 oseb</div>
+    </div>
+    <div class="roster-scroll">
+      <div style="background:#f2f2f7;padding:8px 16px 6px;font-size:12px;font-weight:600;color:#8e8e93;text-transform:uppercase;letter-spacing:0.6px;">Prijavljeni · 5</div>
+      <div class="roster-row" onclick="location.href='screen_profil.html'"><div class="roster-av" style="background:#FF6B35;">M</div><div class="roster-info"><div class="roster-name">Miha Kovač</div><div class="roster-tag">Organizator 👑</div></div><svg width="8" height="14" viewBox="0 0 8 14" fill="none" stroke="#c7c7cc" stroke-width="2" stroke-linecap="round"><path d="M1 1l6 6-6 6"/></svg></div>
+      <div class="roster-row" onclick="location.href='screen_profil.html'"><div class="roster-av" style="background:#4CAF50;">J</div><div class="roster-info"><div class="roster-name">Jan Novak</div><div class="roster-tag">Član</div></div><svg width="8" height="14" viewBox="0 0 8 14" fill="none" stroke="#c7c7cc" stroke-width="2" stroke-linecap="round"><path d="M1 1l6 6-6 6"/></svg></div>
+      <div class="roster-row" onclick="location.href='screen_profil.html'"><div class="roster-av" style="background:#2196F3;">T</div><div class="roster-info"><div class="roster-name">Tomaž Kranjc</div><div class="roster-tag">Član</div></div><svg width="8" height="14" viewBox="0 0 8 14" fill="none" stroke="#c7c7cc" stroke-width="2" stroke-linecap="round"><path d="M1 1l6 6-6 6"/></svg></div>
+      <div class="roster-row" onclick="location.href='screen_profil.html'"><div class="roster-av" style="background:#9C27B0;">A</div><div class="roster-info"><div class="roster-name">Anja Vidmar</div><div class="roster-tag">Članica</div></div><svg width="8" height="14" viewBox="0 0 8 14" fill="none" stroke="#c7c7cc" stroke-width="2" stroke-linecap="round"><path d="M1 1l6 6-6 6"/></svg></div>
+      <div class="roster-row" onclick="location.href='screen_profil.html'"><div class="roster-av" style="background:#FF9500;">L</div><div class="roster-info"><div class="roster-name">Luka Petric</div><div class="roster-tag">Član</div></div><svg width="8" height="14" viewBox="0 0 8 14" fill="none" stroke="#c7c7cc" stroke-width="2" stroke-linecap="round"><path d="M1 1l6 6-6 6"/></svg></div>
     </div>
   </div>
 
+  <!-- PHOTO FULLSCREEN -->
+  <div class="full-overlay photo-bg" id="photoFS">
+    <div class="photo-fs-nav">
+      <div class="nav-circle" onclick="closePhoto()"><svg width="10" height="16" viewBox="0 0 10 18" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><path d="M9 1L1 9l8 8"/></svg></div>
+      <div id="photo-cap" style="color:#fff;font-size:14px;font-weight:600;"></div>
+      <div class="nav-circle" onclick="openShare()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></div>
+    </div>
+    <div id="photo-fs-img" class="photo-fs-img"></div>
+    <div class="photo-fs-actions">
+      <div class="fs-action" onclick="toggleLike(this)"><svg id="like-icon" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg><span>Všeč mi je</span></div>
+      <div class="fs-action" onclick="openShare()"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg><span>Deli</span></div>
+      <div class="fs-action" onclick="location.href='screen_messages.html'"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>Pošlji</span></div>
+    </div>
+  </div>
+
+  <!-- SHARE -->
+  <div class="share-overlay" id="shareOverlay" onclick="if(event.target===this)closeShare()">
+    <div class="share-sheet">
+      <div class="share-handle"></div>
+      <div class="share-friends">
+        <div class="share-friend" onclick="this.classList.toggle('sel')"><div class="friend-av" style="background:#FF6B35;">T<div class="friend-check">✓</div></div><div class="friend-name">Teja</div></div>
+        <div class="share-friend" onclick="this.classList.toggle('sel')"><div class="friend-av" style="background:#4CAF50;">L<div class="friend-check">✓</div></div><div class="friend-name">Luka</div></div>
+        <div class="share-friend" onclick="this.classList.toggle('sel')"><div class="friend-av" style="background:#2196F3;">P<div class="friend-check">✓</div></div><div class="friend-name">Peter</div></div>
+        <div class="share-friend" onclick="this.classList.toggle('sel')"><div class="friend-av" style="background:#9C27B0;">A<div class="friend-check">✓</div></div><div class="friend-name">Andraž</div></div>
+        <div class="share-friend" onclick="this.classList.toggle('sel')"><div class="friend-av" style="background:#E91E63;">M<div class="friend-check">✓</div></div><div class="friend-name">Maja</div></div>
+        <div class="share-friend" onclick="this.classList.toggle('sel')"><div class="friend-av" style="background:#FF9500;">K<div class="friend-check">✓</div></div><div class="friend-name">Klemen</div></div>
+      </div>
+      <div class="share-divider"></div>
+      <div class="share-platforms">
+        <div class="share-ext" onclick="shareStory()"><div class="ext-icon" style="background:linear-gradient(135deg,#f09433,#dc2743,#bc1888);">+</div><div class="ext-name">Story</div></div>
+        <div class="share-ext"><div class="ext-icon" style="background:#25D366;">💬</div><div class="ext-name">WhatsApp</div></div>
+        <div class="share-ext" onclick="copyLink()"><div class="ext-icon" style="background:#2c2c2e;">🔗</div><div class="ext-name">Kopiraj</div></div>
+        <div class="share-ext"><div class="ext-icon" style="background:#FC4C02;">🟠</div><div class="ext-name">Strava</div></div>
+        <div class="share-ext"><div class="ext-icon" style="background:#2AABEE;">✈️</div><div class="ext-name">Telegram</div></div>
+        <div class="share-ext"><div class="ext-icon" style="background:#000;border:1px solid #333;">𝕏</div><div class="ext-name">X</div></div>
+      </div>
+      <button class="share-send-btn" onclick="sendShare()">Pošlji</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <!-- NAV BAR -->
+  <div class="nav-bar">
+    <div class="nav-it" onclick="location.href='screen_home.html'"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8e8e93" stroke-width="1.8"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg><span class="n-lbl">Domov</span></div>
+    <div class="nav-it" onclick="location.href='screen_map.html'"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8e8e93" stroke-width="1.8"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg><span class="n-lbl">Mapa</span></div>
+    <div class="nav-it" onclick="location.href='screen_create.html'"><div class="add-btn-nav"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div></div>
+    <div class="nav-it" onclick="location.href='screen_messages.html'"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8e8e93" stroke-width="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span class="n-lbl">Sporočila</span></div>
+    <div class="nav-it" onclick="location.href='screen_profil.html'"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8e8e93" stroke-width="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span class="n-lbl">Profil</span></div>
+  </div>
 </div>
 
 <script>
-  function openShare(type) {
-    document.getElementById('shareOverlay').classList.add('visible');
-  }
-  function closeShare(e) {
-    if (e.target === document.getElementById('shareOverlay')) {
-      document.getElementById('shareOverlay').classList.remove('visible');
-    }
-  }
-  function closeShareBtn() {
-    document.getElementById('shareOverlay').classList.remove('visible');
-  }
-  function toggleFriend(el) {
-    el.classList.toggle('selected');
-  }
-</script>
-<script src="junto.js"></script>
-<script>
-JUNTO.injectNav("home","light");
-// Back gumb
-document.querySelectorAll(".nav-btn").forEach(b=>b.addEventListener("click",()=>JUNTO.goBack()));
+// MAP
+const amap=L.map('activity-map',{center:[46.0540,14.5120],zoom:16,zoomControl:false,attributionControl:false});
+L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{maxZoom:19}).addTo(amap);
+L.circleMarker([46.0540,14.5120],{radius:10,fillColor:'#FF385C',color:'#fff',weight:3,fillOpacity:1}).addTo(amap);
+
+// JOIN
+let joined=false;
+function handleJoin(){
+  joined=!joined;
+  const bjb=document.getElementById('bottom-join');
+  if(joined){bjb.textContent='✓ Pridružen — tapni za odjavo';bjb.classList.add('joined');showToast('🏀 Pridružen! Skupina te čaka.');setTimeout(()=>addChatMsg('Ti','#FF385C','Pridem! 🙌','zdaj'),800);}
+  else{bjb.textContent='Pridruži se zdaj →';bjb.classList.remove('joined');}
+}
+
+// WATCH / BELL
+let watching=false,belled=false;
+function toggleWatch(){watching=!watching;document.getElementById('watch-btn').style.background=watching?'rgba(0,122,255,0.7)':'rgba(0,0,0,0.4)';showToast(watching?'👁 Spremljaš — dobiš live obvestila':'👁 Ne spremljaš več');}
+function toggleBell(){belled=!belled;document.getElementById('bell-btn').style.background=belled?'rgba(255,149,0,0.7)':'rgba(0,0,0,0.4)';showToast(belled?'🔔 Obvestili te bomo ko se sprosti mesto':'🔕 Obvestila izklopljena');}
+
+// CHAT
+let msgCount=4;
+function sendChat(){
+  const inp=document.getElementById('chat-input');const text=inp.value.trim();if(!text)return;
+  addChatMsg('Ti','#FF385C',text,'zdaj');inp.value='';msgCount++;
+  document.getElementById('chat-count').textContent=msgCount+' sporočil';
+  setTimeout(()=>{const r=['Super! 🙌','Ja! 👍','💪','🔥','Odlično!'];const p=[{n:'Miha',c:'#FF6B35'},{n:'Jan',c:'#4CAF50'},{n:'Tomaž',c:'#2196F3'}][Math.floor(Math.random()*3)];addChatMsg(p.n,p.c,r[Math.floor(Math.random()*r.length)],'zdaj');msgCount++;document.getElementById('chat-count').textContent=msgCount+' sporočil';},1500);
+}
+function addChatMsg(name,color,text,time){
+  const w=document.getElementById('chat-msgs');
+  const d=document.createElement('div');d.className='chat-msg';
+  d.innerHTML=`<div class="msg-av" style="background:${color};">${name[0]}</div><div><div class="msg-name-row"><span class="msg-name">${name}</span><span class="msg-time">${time}</span></div><div class="msg-text">${text}</div></div>`;
+  w.appendChild(d);w.scrollTop=w.scrollHeight;
+}
+
+// ROSTER
+function openRoster(){document.getElementById('rosterOverlay').classList.add('open');}
+function closeRoster(){document.getElementById('rosterOverlay').classList.remove('open');}
+
+// PHOTOS
+const photos=[{emoji:'🏀',bg:'linear-gradient(135deg,#FFF0E6,#FFD4A8)',cap:'Miha · 17:06'},{emoji:'🏃',bg:'linear-gradient(135deg,#E3F2FD,#BBDEFB)',cap:'Jan · 17:12'},{emoji:'🙌',bg:'linear-gradient(135deg,#E8F5E9,#C8E6C9)',cap:'Tomaž · 17:18'}];
+function openPhoto(i){const p=photos[i];const img=document.getElementById('photo-fs-img');img.style.background=p.bg;img.textContent=p.emoji;document.getElementById('photo-cap').textContent=p.cap;document.getElementById('photoFS').classList.add('open');}
+function closePhoto(){document.getElementById('photoFS').classList.remove('open');}
+function toggleLike(el){const ic=document.getElementById('like-icon');const liked=ic.getAttribute('fill')==='red';ic.setAttribute('fill',liked?'none':'red');ic.setAttribute('stroke',liked?'white':'red');el.querySelector('span').textContent=liked?'Všeč mi je':'Všeč mi je ❤️';}
+
+// SHARE
+function openShare(){document.getElementById('shareOverlay').classList.add('open');}
+function closeShare(){document.getElementById('shareOverlay').classList.remove('open');}
+function shareStory(){closeShare();location.href='screen_story.html';}
+function copyLink(){showToast('🔗 Link skopiran!');closeShare();}
+function sendShare(){const sel=document.querySelectorAll('.share-friend.sel');closeShare();showToast(sel.length>0?`✓ Poslano ${sel.length} oseb${sel.length===1?'i':'am'}!`:'✓ Poslano!');}
+
+// TOAST
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
 </script>
 </body>
 </html>
-<script>
-document.querySelectorAll('.nav-btn, [class*="back"]').forEach(b => {
-  b.addEventListener('click', (e) => { e.stopPropagation(); JUNTO.goBack(); });
-});
-</script>
