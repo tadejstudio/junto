@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="sl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Junto — Sportska App</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background: #0a0e1a;
+    display: flex; justify-content: center; align-items: center;
+    min-height: 100vh;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+  }
+  .splash {
+    text-align: center; color: #fff;
+  }
+  .logo {
+    font-size: 48px; font-weight: 900;
+    letter-spacing: -2px; margin-bottom: 8px;
+    background: linear-gradient(135deg, #FF385C, #ff6b35);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .tagline { font-size: 16px; color: rgba(255,255,255,0.4); margin-bottom: 40px; }
+  .nav-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 12px; width: 300px;
+  }
+  .nav-btn {
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 16px; padding: 18px 12px;
+    color: #fff; cursor: pointer;
+    text-decoration: none;
+    display: flex; flex-direction: column;
+    align-items: center; gap: 8px;
+    transition: background 0.15s;
+    font-size: 14px; font-weight: 600;
+  }
+  .nav-btn:hover { background: rgba(255,255,255,0.13); }
+  .nav-btn .icon { font-size: 28px; }
+  .nav-btn.primary {
+    background: #FF385C; border-color: #FF385C;
+    grid-column: span 2;
+  }
+  .nav-btn.primary:hover { background: #e6304f; }
+</style>
+</head>
+<body>
+<div class="splash">
+  <div class="logo">junto</div>
+  <div class="tagline">Najdi ekipo, igraj sport</div>
+  <div class="nav-grid">
+    <a class="nav-btn primary" href="screen_home.html">
+      <span class="icon">🏠</span> Začni (Home)
+    </a>
+    <a class="nav-btn" href="screen_map.html">
+      <span class="icon">🗺️</span> Mapa
+    </a>
+    <a class="nav-btn" href="screen_create.html">
+      <span class="icon">➕</span> Nova aktivnost
+    </a>
+    <a class="nav-btn" href="screen_activity.html">
+      <span class="icon">🏀</span> Aktivnost
+    </a>
+    <a class="nav-btn" href="screen_story.html">
+      <span class="icon">📹</span> Story
+    </a>
+    <a class="nav-btn" href="screen_profil.html">
+      <span class="icon">👤</span> Profil
+    </a>
+  </div>
+</div>
+</body>
+</html>

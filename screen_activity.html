@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SportMeet – Activity Detail</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #1a1a2e;
+    display: flex; justify-content: center; align-items: center;
+    min-height: 100vh;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+  }
+  .phone-frame {
+    width: 390px; height: 844px;
+    background: #f5f5f7; border-radius: 50px;
+    overflow: hidden;
+    box-shadow: 0 40px 80px rgba(0,0,0,0.5), inset 0 0 0 2px #333;
+    position: relative; display: flex; flex-direction: column;
+  }
+
+  .screen-scroll {
+    flex: 1; overflow-y: auto; scrollbar-width: none; padding-bottom: 100px;
+  }
+  .screen-scroll::-webkit-scrollbar { display: none; }
+
+  /* ── Cover ── */
+  .cover-wrap { position: relative; width: 100%; height: 240px; }
+  .cover-img { width: 100%; height: 100%; object-fit: cover; object-position: center 30%; display: block; }
+  .cover-placeholder {
+    width: 100%; height: 100%;
+    background: linear-gradient(135deg,#FFF0E6,#FFD4A8);
+    display: flex; align-items: center; justify-content: center; font-size: 64px;
+  }
+  .cover-overlay {
+    position: absolute; bottom: 0; left: 0; right: 0; height: 140px;
+    background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
+  }
+  .cover-nav {
+    position: absolute; top: 52px; left: 0; right: 0;
+    display: flex; justify-content: space-between; padding: 0 16px;
+  }
+  .nav-btn {
+    width: 36px; height: 36px;
+    background: rgba(0,0,0,0.35); backdrop-filter: blur(8px);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; color: #fff; cursor: pointer;
+  }
+  .cover-title { position: absolute; bottom: 16px; left: 16px; right: 16px; }
+  .cover-sport-row { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+  .cover-sport-icon {
+    width: 34px; height: 34px; background: rgba(255,255,255,0.2);
+    backdrop-filter: blur(6px); border-radius: 10px;
+    display: flex; align-items: center; justify-content: center; font-size: 18px;
+  }
+  .cover-sport-name { font-size: 22px; font-weight: 800; color: #fff; }
+  .live-badge-cover {
+    background: #FF3B30; color: #fff;
+    font-size: 11px; font-weight: 700;
+    padding: 3px 8px; border-radius: 7px;
+    display: flex; align-items: center; gap: 4px;
+  }
+  .live-dot { width: 6px; height: 6px; background: #fff; border-radius: 50%; animation: pulse 1.2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(0.7)} }
+  .cover-location { font-size: 13px; color: rgba(255,255,255,0.8); }
+
+  /* ── ACTION BAR ── */
+  .action-bar {
+    background: #fff;
+    padding: 14px 16px;
+    display: flex; align-items: center; gap: 8px;
+    border-bottom: 1px solid #f0f0f0;
+  }
+  .action-btn-join {
+    flex: 1;
+    background: #111; color: #fff;
+    border: none; border-radius: 14px;
+    padding: 12px 0;
+    font-size: 15px; font-weight: 800;
+    cursor: pointer;
+  }
+  .action-btn {
+    width: 46px; height: 46px;
+    background: #f5f5f7; border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; cursor: pointer; flex-shrink: 0;
+    border: none;
+  }
+  .action-btn.notify { font-size: 18px; }
+
+  /* ── Sections ── */
+  .section { background: #fff; padding: 16px; margin-bottom: 8px; }
+  .section-title {
+    font-size: 12px; font-weight: 700; color: #888;
+    text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 12px;
+  }
+
+  /* ── Meta pills ── */
+  .meta-pills { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+  .meta-pill {
+    display: flex; align-items: center; gap: 5px;
+    background: #f5f5f7; padding: 7px 12px;
+    border-radius: 12px; font-size: 13px; font-weight: 600; color: #333;
+  }
+
+  /* ── Organizer ── */
+  .organizer-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding-top: 14px; border-top: 1px solid #f0f0f0;
+  }
+  .organizer-left { display: flex; align-items: center; gap: 10px; }
+  .organizer-avatar {
+    width: 38px; height: 38px; border-radius: 50%;
+    background: linear-gradient(135deg,#FF6B35,#FF3B30);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; font-weight: 700; color: #fff;
+  }
+  .organizer-name { font-size: 14px; font-weight: 700; color: #111; }
+  .organizer-label { font-size: 12px; color: #888; }
+  .organizer-badge { font-size: 11px; font-weight: 700; background: #FFF0E6; color: #FF6B35; padding: 4px 10px; border-radius: 8px; }
+
+  /* ── Spots ── */
+  .spots-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .spots-avatars { display: flex; align-items: center; }
+  .s-avatar {
+    width: 40px; height: 40px; border-radius: 50%;
+    border: 2.5px solid #fff; margin-left: -10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; font-weight: 700; color: #fff;
+  }
+  .s-avatar:first-child { margin-left: 0; }
+  .s-avatar.a1{background:#FF6B35} .s-avatar.a2{background:#4CAF50} .s-avatar.a3{background:#2196F3}
+  .s-avatar.empty { background: #f0f0f0; color: #bbb; font-size: 20px; }
+  .spots-text { font-size: 14px; color: #555; font-weight: 500; }
+  .spots-text strong { color: #111; font-size: 16px; }
+  .spots-bar-bg { height: 6px; background: #f0f0f0; border-radius: 3px; overflow: hidden; margin-bottom: 16px; }
+  .spots-bar-fill { height: 100%; border-radius: 3px; background: #111; }
+
+  /* ── PHOTO GALLERY ── */
+  .photos-scroll { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding-bottom: 4px; }
+  .photos-scroll::-webkit-scrollbar { display: none; }
+  .photo-card {
+    position: relative; flex-shrink: 0;
+    width: 120px; height: 120px;
+    border-radius: 14px; overflow: hidden; cursor: pointer;
+  }
+  .photo-card img { width: 100%; height: 100%; object-fit: cover; }
+  .photo-card-placeholder {
+    width: 100%; height: 100%;
+    display: flex; align-items: center; justify-content: center; font-size: 36px;
+  }
+  /* Share button on each photo */
+  .photo-share-btn {
+    position: absolute; top: 7px; right: 7px;
+    width: 28px; height: 28px;
+    background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; cursor: pointer;
+    color: #fff;
+  }
+  .photo-poster {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    padding: 6px 8px;
+    background: linear-gradient(to top, rgba(0,0,0,0.6), transparent);
+    font-size: 11px; font-weight: 600; color: #fff;
+  }
+
+  /* ── Map ── */
+  .map-placeholder {
+    width: 100%; height: 110px;
+    background: linear-gradient(135deg,#e8f5e9,#c8e6c9);
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    position: relative; overflow: hidden;
+  }
+  .map-grid {
+    position: absolute; inset: 0; opacity: 0.3;
+    background-image: linear-gradient(#4CAF50 1px,transparent 1px), linear-gradient(90deg,#4CAF50 1px,transparent 1px);
+    background-size: 24px 24px;
+  }
+  .map-pin {
+    width: 36px; height: 36px; background: #FF3B30;
+    border-radius: 50% 50% 50% 0; transform: rotate(-45deg);
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 12px rgba(255,59,48,0.4); z-index: 1;
+  }
+  .map-pin span { transform: rotate(45deg); font-size: 16px; }
+  .map-label {
+    position: absolute; bottom: 10px; left: 12px;
+    font-size: 12px; font-weight: 700; color: #2E7D32;
+    background: rgba(255,255,255,0.9); padding: 4px 8px; border-radius: 8px;
+  }
+
+  /* ── Chat ── */
+  .chat-messages { display: flex; flex-direction: column; gap: 14px; }
+  .chat-msg { display: flex; gap: 10px; align-items: flex-start; }
+  .msg-avatar {
+    width: 32px; height: 32px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 700; color: #fff; flex-shrink: 0;
+  }
+  .msg-avatar.a1{background:#FF6B35} .msg-avatar.a2{background:#4CAF50} .msg-avatar.a3{background:#2196F3}
+  .msg-name-row { display: flex; align-items: baseline; gap: 6px; margin-bottom: 3px; }
+  .msg-name { font-size: 13px; font-weight: 700; color: #111; }
+  .msg-time { font-size: 11px; color: #bbb; }
+  .msg-badge { font-size: 10px; font-weight: 700; background: #FFF0E6; color: #FF6B35; padding: 2px 6px; border-radius: 5px; }
+  .msg-text { font-size: 14px; color: #333; line-height: 1.4; }
+  .chat-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .chat-count { font-size: 12px; color: #aaa; }
+  .chat-input-row {
+    display: flex; align-items: center; gap: 10px;
+    margin-top: 16px; padding-top: 14px; border-top: 1px solid #f0f0f0;
+  }
+  .my-avatar {
+    width: 32px; height: 32px; border-radius: 50%; background: #111;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700; color: #fff; flex-shrink: 0;
+  }
+  .chat-input-box { flex: 1; background: #f5f5f7; border-radius: 20px; padding: 10px 14px; font-size: 14px; color: #aaa; }
+  .send-btn { width: 34px; height: 34px; background: #111; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; cursor: pointer; color: #fff; }
+
+  /* ── Bottom CTA ── */
+  .bottom-cta {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    padding: 12px 16px 28px; background: #fff; border-top: 1px solid #f0f0f0;
+  }
+  .bottom-join-btn {
+    width: 100%; background: #FF3B30; color: #fff;
+    border: none; border-radius: 16px; padding: 15px;
+    font-size: 16px; font-weight: 800; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+
+  /* ══════════════════════════════
+     SHARE SHEET — Instagram style
+  ══════════════════════════════ */
+  .share-overlay {
+    position: absolute; inset: 0;
+    background: rgba(0,0,0,0.55);
+    z-index: 999; display: none; align-items: flex-end;
+  }
+  .share-overlay.visible { display: flex; }
+
+  .share-sheet {
+    width: 100%; background: #1c1c1e;
+    border-radius: 28px 28px 0 0;
+    padding: 12px 0 36px;
+  }
+  .share-handle { width: 40px; height: 4px; background: #444; border-radius: 2px; margin: 0 auto 16px; }
+
+  /* Search bar */
+  .share-search {
+    margin: 0 16px 16px;
+    background: #2c2c2e;
+    border-radius: 14px;
+    padding: 10px 14px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .share-search-icon { font-size: 15px; color: #888; }
+  .share-search-text { font-size: 15px; color: #888; }
+
+  /* Friends grid */
+  .share-friends {
+    display: flex; gap: 18px;
+    overflow-x: auto; scrollbar-width: none;
+    padding: 0 16px 16px;
+  }
+  .share-friends::-webkit-scrollbar { display: none; }
+  .share-friend {
+    display: flex; flex-direction: column;
+    align-items: center; gap: 6px;
+    flex-shrink: 0; cursor: pointer;
+  }
+  .friend-avatar {
+    width: 58px; height: 58px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; font-weight: 700; color: #fff;
+    position: relative;
+  }
+  .friend-avatar img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+  .friend-check {
+    position: absolute; bottom: 0; right: 0;
+    width: 20px; height: 20px; border-radius: 50%;
+    background: #0095f6; border: 2px solid #1c1c1e;
+    display: none; align-items: center; justify-content: center;
+    font-size: 11px; color: #fff;
+  }
+  .share-friend.selected .friend-check { display: flex; }
+  .share-friend.selected .friend-avatar { opacity: 0.85; }
+  .friend-name { font-size: 11px; font-weight: 600; color: #fff; max-width: 58px; text-align: center; }
+
+  /* Divider */
+  .share-divider { height: 1px; background: #333; margin: 0 0 16px; }
+
+  /* External platforms row — horizontal scroll */
+  .share-platforms-row {
+    display: flex; gap: 6px;
+    overflow-x: auto; scrollbar-width: none;
+    padding: 0 16px 16px;
+  }
+  .share-platforms-row::-webkit-scrollbar { display: none; }
+  .share-ext {
+    display: flex; flex-direction: column;
+    align-items: center; gap: 6px;
+    flex-shrink: 0; cursor: pointer;
+  }
+  .ext-icon {
+    width: 52px; height: 52px; border-radius: 16px;
+    display: flex; align-items: center; justify-content: center; font-size: 24px;
+  }
+  .ext-icon.wa      { background: #25D366; }
+  .ext-icon.copy    { background: #2c2c2e; }
+  .ext-icon.story   { background: linear-gradient(135deg,#f09433,#dc2743,#bc1888); }
+  .ext-icon.strava  { background: #FC4C02; }
+  .ext-icon.x       { background: #000; border: 1px solid #333; }
+  .ext-icon.tg      { background: #2AABEE; }
+  .ext-icon.tt      { background: #111; }
+  .ext-icon.snap    { background: #FFFC00; }
+  .ext-icon.more    { background: #2c2c2e; }
+  .ext-name { font-size: 11px; font-weight: 500; color: #ccc; }
+
+  /* Send button */
+  .share-send-btn {
+    margin: 4px 16px 0;
+    width: calc(100% - 32px);
+    background: #0095f6; border: none;
+    border-radius: 14px; padding: 14px;
+    font-size: 15px; font-weight: 700; color: #fff;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+<div class="phone-frame">
+
+  <div class="screen-scroll">
+
+    <!-- Cover -->
+    <div class="cover-wrap">
+      <img class="cover-img" src="basketball.jpg" alt=""
+           onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+      <div class="cover-placeholder" style="display:none">🏀</div>
+      <div class="cover-overlay"></div>
+      <div class="cover-nav">
+        <div class="nav-btn">←</div>
+      </div>
+      <div class="cover-title">
+        <div class="cover-sport-row">
+          <div class="cover-sport-icon">🏀</div>
+          <div class="cover-sport-name">Košarka</div>
+          <div class="live-badge-cover"><div class="live-dot"></div>LIVE</div>
+        </div>
+        <div class="cover-location">📍 BTC igrišče · 0.4 km</div>
+      </div>
+    </div>
+
+    <!-- ── ACTION BAR ── -->
+    <div class="action-bar">
+      <button class="action-btn-join">JOIN</button>
+      <button class="action-btn" title="Zanima me">👀</button>
+      <button class="action-btn" onclick="openShare('activity')" title="Deli">📤</button>
+      <button class="action-btn notify" title="Obvesti me">🔔</button>
+    </div>
+
+    <!-- Info -->
+    <div class="section">
+      <div class="meta-pills">
+        <div class="meta-pill">🕕 17:00 – danes</div>
+        <div class="meta-pill">📊 Srednji</div>
+        <div class="meta-pill">🌍 Javno</div>
+        <div class="meta-pill">⏱ Started 17:04</div>
+      </div>
+      <div class="organizer-row">
+        <div class="organizer-left">
+          <div class="organizer-avatar">M</div>
+          <div>
+            <div class="organizer-name">Miha Kovač</div>
+            <div class="organizer-label">Organizator · 124 followers</div>
+          </div>
+        </div>
+        <div class="organizer-badge">🏀 BALLER</div>
+      </div>
+    </div>
+
+    <!-- Spots -->
+    <div class="section">
+      <div class="section-title">Udeleženci</div>
+      <div class="spots-row">
+        <div class="spots-avatars">
+          <div class="s-avatar a1">M</div>
+          <div class="s-avatar a2">J</div>
+          <div class="s-avatar a3">T</div>
+          <div class="s-avatar empty">+</div>
+          <div class="s-avatar empty">+</div>
+        </div>
+        <div class="spots-text"><strong>2 mesti</strong> prosti od 5</div>
+      </div>
+      <div class="spots-bar-bg">
+        <div class="spots-bar-fill" style="width:60%"></div>
+      </div>
+    </div>
+
+    <!-- ── PHOTO GALLERY ── -->
+    <div class="section">
+      <div class="section-title">📸 Fotke (3)</div>
+      <div class="photos-scroll">
+
+        <div class="photo-card">
+          <img src="basketball.jpg" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+          <div class="photo-card-placeholder" style="background:#FFF0E6;display:none">🏀</div>
+          <div class="photo-share-btn" onclick="openShare('photo')">↑</div>
+          <div class="photo-poster">Miha · 17:06</div>
+        </div>
+
+        <div class="photo-card">
+          <img src="cycling.jpg" alt="" style="filter:hue-rotate(200deg)" onerror="this.style.display='none'">
+          <div class="photo-card-placeholder" style="background:#E3F2FD">🏀</div>
+          <div class="photo-share-btn" onclick="openShare('photo')">↑</div>
+          <div class="photo-poster">Jan · 17:12</div>
+        </div>
+
+        <div class="photo-card">
+          <img src="gym.jpg" alt="" style="filter:hue-rotate(30deg) saturate(0.8)" onerror="this.style.display='none'">
+          <div class="photo-card-placeholder" style="background:#E8F5E9">🏀</div>
+          <div class="photo-share-btn" onclick="openShare('photo')">↑</div>
+          <div class="photo-poster">Tomaž · 17:18</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Map -->
+    <div class="section">
+      <div class="section-title">Lokacija</div>
+      <div class="map-placeholder">
+        <div class="map-grid"></div>
+        <div class="map-pin"><span>🏀</span></div>
+        <div class="map-label">📍 BTC igrišče</div>
+      </div>
+    </div>
+
+    <!-- Chat -->
+    <div class="section">
+      <div class="chat-header">
+        <div class="section-title" style="margin:0">Skupina</div>
+        <div class="chat-count">8 sporočil</div>
+      </div>
+      <div class="chat-messages">
+        <div class="chat-msg">
+          <div class="msg-avatar a1">M</div>
+          <div>
+            <div class="msg-name-row"><span class="msg-name">Miha</span><span class="msg-badge">🏀 BALLER</span><span class="msg-time">17:04</span></div>
+            <div class="msg-text">Smo na igrišču, kdo pride? 🏀🔥</div>
+          </div>
+        </div>
+        <div class="chat-msg">
+          <div class="msg-avatar a2">J</div>
+          <div>
+            <div class="msg-name-row"><span class="msg-name">Jan</span><span class="msg-time">17:11</span></div>
+            <div class="msg-text">Pridem v 10 min 🙏</div>
+          </div>
+        </div>
+        <div class="chat-msg">
+          <div class="msg-avatar a3">T</div>
+          <div>
+            <div class="msg-name-row"><span class="msg-name">Tomaž</span><span class="msg-time">17:14</span></div>
+            <div class="msg-text">Sem noter, igramo 3v3?</div>
+          </div>
+        </div>
+        <div class="chat-msg">
+          <div class="msg-avatar a1">M</div>
+          <div>
+            <div class="msg-name-row"><span class="msg-name">Miha</span><span class="msg-time">17:15</span></div>
+            <div class="msg-text">Ja, rabmo samo še enega 👀</div>
+          </div>
+        </div>
+      </div>
+      <div class="chat-input-row">
+        <div class="my-avatar">Ti</div>
+        <div class="chat-input-box">Napiši sporočilo...</div>
+        <div class="send-btn">➤</div>
+      </div>
+    </div>
+
+  </div><!-- /scroll -->
+
+  <!-- Fixed JOIN -->
+  <div class="bottom-cta">
+    <button class="bottom-join-btn">Pridruži se zdaj →</button>
+  </div>
+
+  <!-- ══ SHARE SHEET OVERLAY ══ -->
+  <div class="share-overlay" id="shareOverlay" onclick="closeShare(event)">
+    <div class="share-sheet" id="shareSheet">
+      <div class="share-handle"></div>
+
+      <!-- Search -->
+      <div class="share-search">
+        <span class="share-search-icon">🔍</span>
+        <span class="share-search-text">Iskanje...</span>
+      </div>
+
+      <!-- Friends / followers -->
+      <div class="share-friends">
+        <div class="share-friend" onclick="toggleFriend(this)">
+          <div class="friend-avatar" style="background:#FF6B35">T<div class="friend-check">✓</div></div>
+          <div class="friend-name">Teja</div>
+        </div>
+        <div class="share-friend" onclick="toggleFriend(this)">
+          <div class="friend-avatar" style="background:#4CAF50">L<div class="friend-check">✓</div></div>
+          <div class="friend-name">Luka</div>
+        </div>
+        <div class="share-friend" onclick="toggleFriend(this)">
+          <div class="friend-avatar" style="background:#2196F3">P<div class="friend-check">✓</div></div>
+          <div class="friend-name">Peter</div>
+        </div>
+        <div class="share-friend" onclick="toggleFriend(this)">
+          <div class="friend-avatar" style="background:#9C27B0">A<div class="friend-check">✓</div></div>
+          <div class="friend-name">Andraž</div>
+        </div>
+        <div class="share-friend" onclick="toggleFriend(this)">
+          <div class="friend-avatar" style="background:#E91E63">M<div class="friend-check">✓</div></div>
+          <div class="friend-name">Maja</div>
+        </div>
+        <div class="share-friend" onclick="toggleFriend(this)">
+          <div class="friend-avatar" style="background:#FF9500">K<div class="friend-check">✓</div></div>
+          <div class="friend-name">Klemen</div>
+        </div>
+      </div>
+
+      <div class="share-divider"></div>
+
+      <!-- External platforms — horizontal scroll -->
+      <div class="share-platforms-row">
+        <div class="share-ext">
+          <div class="ext-icon wa">💬</div>
+          <div class="ext-name">WhatsApp</div>
+        </div>
+        <div class="share-ext">
+          <div class="ext-icon copy">🔗</div>
+          <div class="ext-name">Kopiraj</div>
+        </div>
+        <div class="share-ext">
+          <div class="ext-icon story">＋</div>
+          <div class="ext-name">Story</div>
+        </div>
+        <div class="share-ext">
+          <div class="ext-icon strava">🟠</div>
+          <div class="ext-name">Strava</div>
+        </div>
+        <div class="share-ext">
+          <div class="ext-icon tg">✈️</div>
+          <div class="ext-name">Telegram</div>
+        </div>
+        <div class="share-ext">
+          <div class="ext-icon x">𝕏</div>
+          <div class="ext-name">X</div>
+        </div>
+        <div class="share-ext">
+          <div class="ext-icon tt">🎵</div>
+          <div class="ext-name">TikTok</div>
+        </div>
+        <div class="share-ext">
+          <div class="ext-icon snap">👻</div>
+          <div class="ext-name">Snapchat</div>
+        </div>
+        <div class="share-ext">
+          <div class="ext-icon more">•••</div>
+          <div class="ext-name">Več</div>
+        </div>
+      </div>
+
+      <button class="share-send-btn">Pošlji</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  function openShare(type) {
+    document.getElementById('shareOverlay').classList.add('visible');
+  }
+  function closeShare(e) {
+    if (e.target === document.getElementById('shareOverlay')) {
+      document.getElementById('shareOverlay').classList.remove('visible');
+    }
+  }
+  function closeShareBtn() {
+    document.getElementById('shareOverlay').classList.remove('visible');
+  }
+  function toggleFriend(el) {
+    el.classList.toggle('selected');
+  }
+</script>
+<script src="junto.js"></script>
+<script>
+JUNTO.injectNav("home","light");
+// Back gumb
+document.querySelectorAll(".nav-btn").forEach(b=>b.addEventListener("click",()=>JUNTO.goBack()));
+</script>
+</body>
+</html>
+<script>
+document.querySelectorAll('.nav-btn, [class*="back"]').forEach(b => {
+  b.addEventListener('click', (e) => { e.stopPropagation(); JUNTO.goBack(); });
+});
+</script>

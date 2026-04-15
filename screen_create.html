@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="sl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Junto — Nova aktivnost</title>
+<style>
+  :root {
+    --red: #E53935;
+    --red-dark: #C62828;
+    --red-dim: rgba(229,57,53,0.12);
+    --bg: #0A0A0A;
+    --bg2: #141414;
+    --bg3: #1C1C1C;
+    --bg4: #242424;
+    --border: #2A2A2A;
+    --text: #FFFFFF;
+    --text2: #AAAAAA;
+    --text3: #666666;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    background: var(--bg);
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+    color: var(--text);
+    min-height: 100vh;
+    max-width: 430px;
+    margin: 0 auto;
+    overscroll-behavior: none;
+  }
+
+  .status-bar { display: flex; justify-content: space-between; align-items: center; padding: 14px 24px 0; height: 50px; }
+  .status-time { font-size: 15px; font-weight: 700; }
+  .status-icons { display: flex; gap: 5px; align-items: center; }
+
+  .nav-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 20px 12px;
+    position: sticky; top: 0;
+    background: rgba(10,10,10,0.95); backdrop-filter: blur(20px);
+    z-index: 100; border-bottom: 1px solid var(--border);
+  }
+  .nav-back { width: 36px; height: 36px; background: var(--bg3); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; border: none; }
+  .nav-back:active { background: var(--bg4); transform: scale(0.94); }
+  .nav-title { font-size: 17px; font-weight: 700; letter-spacing: -0.3px; }
+  .nav-save { background: none; border: none; color: var(--red); font-size: 15px; font-weight: 600; cursor: pointer; padding: 6px 4px; }
+  .nav-save:active { opacity: 0.6; }
+
+  .content { padding-bottom: 140px; }
+
+  /* PHOTO */
+  .photo-section { padding: 16px 20px 0; }
+  .photo-upload-box {
+    border: 2px dashed #333; border-radius: 18px; height: 170px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 10px; cursor: pointer; background: var(--bg2); position: relative; overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .photo-upload-box:active { border-color: var(--red); }
+  .photo-upload-box.has-photo { border-style: solid; border-color: #333; }
+  .photo-placeholder-icon { font-size: 34px; opacity: 0.4; }
+  .photo-placeholder-text { font-size: 15px; color: var(--text3); font-weight: 700; }
+  .photo-placeholder-sub { font-size: 12px; color: var(--text3); opacity: 0.6; }
+  .photo-preview-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: none; }
+  .photo-preview-img.show { display: block; }
+  .photo-overlay-btns { position: absolute; bottom: 10px; right: 10px; display: none; gap: 8px; }
+  .photo-overlay-btns.show { display: flex; }
+  .photo-action-btn { background: rgba(0,0,0,0.7); border: none; border-radius: 20px; color: #fff; font-size: 12px; font-weight: 700; padding: 6px 12px; cursor: pointer; backdrop-filter: blur(8px); }
+  .photo-action-btn:active { opacity: 0.7; }
+  #photoInput { display: none; }
+  .optional-tag { position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.55); border-radius: 8px; padding: 3px 9px; font-size: 10px; font-weight: 700; color: var(--text3); letter-spacing: 0.5px; }
+
+  .section { padding: 20px 20px 0; }
+  .section-label { font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--text3); margin-bottom: 12px; }
+  .divider { height: 1px; background: var(--border); margin: 20px 20px 0; }
+
+  /* SPORT */
+  .sport-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; }
+  .sport-pill { background: var(--bg3); border-radius: 14px; padding: 14px 6px 10px; display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; border: 2px solid transparent; transition: all 0.15s; user-select: none; }
+  .sport-pill:active { transform: scale(0.93); }
+  .sport-pill.active { background: var(--red-dim); border-color: var(--red); }
+  .sport-pill .s-icon { font-size: 24px; line-height: 1; }
+  .sport-pill .s-name { font-size: 10px; font-weight: 600; color: var(--text3); text-align: center; }
+  .sport-pill.active .s-name { color: var(--red); }
+
+  /* STRAVA */
+  .strava-banner { margin: 14px 20px 0; background: linear-gradient(135deg,#1a1000,#241500); border: 1px solid #FC4C02; border-radius: 14px; padding: 12px 14px; display: flex; align-items: center; gap: 12px; cursor: pointer; }
+  .strava-banner:active { opacity: 0.75; }
+  .strava-text-main { font-size: 13px; font-weight: 700; color: #FC4C02; }
+  .strava-text-sub { font-size: 11px; color: #888; margin-top: 2px; }
+
+  /* INPUT ROW */
+  .input-row { background: var(--bg3); border-radius: 14px; padding: 15px 16px; display: flex; align-items: center; gap: 12px; cursor: pointer; border: 1.5px solid transparent; margin-bottom: 10px; transition: background 0.12s; }
+  .input-row:last-child { margin-bottom: 0; }
+  .input-row:active { background: var(--bg4); }
+  .ir-icon { font-size: 18px; flex-shrink: 0; }
+  .ir-content { flex: 1; min-width: 0; }
+  .ir-label { font-size: 11px; color: var(--text3); font-weight: 600; margin-bottom: 2px; }
+  .ir-val { font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ir-val.ph { color: var(--text3); }
+  .ir-arrow { color: var(--text3); font-size: 18px; }
+  .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  /* MAP */
+  .map-preview { border-radius: 16px; height: 130px; overflow: hidden; position: relative; cursor: pointer; margin-bottom: 10px; background: #141B22; }
+  .map-canvas { width: 100%; height: 100%; display: block; }
+  .map-overlay-bar { position: absolute; bottom: 0; left: 0; right: 0; padding: 8px 14px 10px; background: linear-gradient(transparent,rgba(0,0,0,0.85)); }
+  .map-loc-name { font-size: 13px; font-weight: 700; }
+  .map-loc-sub { font-size: 11px; color: #aaa; margin-top: 2px; }
+  .map-change-btn { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.6); border: none; border-radius: 20px; color: #fff; font-size: 12px; font-weight: 600; padding: 5px 11px; cursor: pointer; backdrop-filter: blur(8px); }
+  .map-change-btn:active { opacity: 0.7; }
+
+  /* TOGGLE */
+  .toggle-row { background: var(--bg3); border-radius: 14px; padding: 15px 16px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .toggle-row:last-child { margin-bottom: 0; }
+  .toggle-left { display: flex; align-items: center; gap: 12px; }
+  .toggle-icon { font-size: 20px; }
+  .toggle-text { font-size: 15px; font-weight: 600; }
+  .toggle-sub { font-size: 12px; color: var(--text3); margin-top: 2px; }
+  .toggle { width: 48px; height: 28px; background: #3A3A3A; border-radius: 14px; position: relative; cursor: pointer; transition: background 0.2s; flex-shrink: 0; border: none; }
+  .toggle.on { background: var(--red); }
+  .toggle::after { content: ''; width: 22px; height: 22px; background: #fff; border-radius: 50%; position: absolute; top: 3px; left: 3px; transition: left 0.2s; box-shadow: 0 1px 4px rgba(0,0,0,0.3); }
+  .toggle.on::after { left: 23px; }
+
+  .recur-options { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; margin-top: 10px; overflow: hidden; max-height: 0; transition: max-height 0.25s ease; }
+  .recur-options.open { max-height: 60px; }
+  .recur-pill { background: var(--bg3); border-radius: 10px; padding: 9px 4px; text-align: center; font-size: 11px; font-weight: 700; color: var(--text3); cursor: pointer; border: 1.5px solid transparent; transition: all 0.15s; user-select: none; }
+  .recur-pill:active { transform: scale(0.93); }
+  .recur-pill.active { border-color: var(--red); color: var(--red); background: var(--red-dim); }
+
+  /* STEPPER */
+  .stepper-row { background: var(--bg3); border-radius: 14px; padding: 14px 16px; display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+  .stepper-icon { font-size: 20px; }
+  .stepper-label { flex: 1; font-size: 15px; font-weight: 600; }
+  .stepper-sub { font-size: 12px; color: var(--text3); margin-top: 2px; }
+  .stepper-controls { display: flex; align-items: center; gap: 14px; }
+  .step-btn { width: 32px; height: 32px; background: var(--bg4); border-radius: 50%; border: none; color: var(--text); font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.12s; }
+  .step-btn:active { transform: scale(0.9); }
+  .step-btn:disabled { opacity: 0.3; }
+  .step-val { font-size: 18px; font-weight: 800; min-width: 30px; text-align: center; }
+
+  /* SKILL */
+  .skill-tags { display: flex; gap: 8px; flex-wrap: wrap; }
+  .skill-tag { background: var(--bg3); border-radius: 20px; padding: 8px 16px; font-size: 13px; font-weight: 700; color: var(--text3); cursor: pointer; border: 1.5px solid transparent; transition: all 0.15s; user-select: none; }
+  .skill-tag:active { transform: scale(0.94); }
+  .skill-tag.active { border-color: var(--red); color: var(--red); background: var(--red-dim); }
+
+  /* TEXTAREA */
+  .desc-area { background: var(--bg3); border-radius: 14px; padding: 14px 16px; width: 100%; min-height: 90px; border: 1.5px solid transparent; color: var(--text); font-size: 15px; font-family: inherit; resize: none; outline: none; transition: border-color 0.15s; line-height: 1.5; }
+  .desc-area::placeholder { color: var(--text3); }
+  .desc-area:focus { border-color: var(--red); }
+  .char-count { text-align: right; font-size: 11px; color: var(--text3); margin-top: 6px; }
+
+  /* PREVIEW + BOTTOM */
+  .preview-strip { background: var(--bg2); border-top: 1px solid var(--border); padding: 10px 20px; position: fixed; bottom: 76px; left: 50%; transform: translateX(-50%); width: 100%; max-width: 430px; z-index: 99; }
+  .preview-label { font-size: 10px; color: var(--text3); font-weight: 700; letter-spacing: 0.8px; margin-bottom: 6px; text-transform: uppercase; }
+  .preview-chip { display: inline-flex; align-items: center; gap: 8px; background: var(--red-dim); border: 1px solid var(--red); border-radius: 20px; padding: 7px 14px; font-size: 13px; font-weight: 700; color: var(--red); max-width: 100%; overflow: hidden; }
+  .preview-dot { width: 7px; height: 7px; background: var(--red); border-radius: 50%; flex-shrink: 0; }
+  .preview-chip-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  .bottom-bar { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 430px; padding: 12px 20px 28px; background: rgba(10,10,10,0.97); backdrop-filter: blur(20px); border-top: 1px solid var(--border); z-index: 100; }
+  .publish-btn { width: 100%; background: var(--red); border: none; border-radius: 16px; height: 52px; color: #fff; font-size: 17px; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.15s; }
+  .publish-btn:active { transform: scale(0.97); background: var(--red-dark); }
+
+  /* MODALS */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 200; display: flex; align-items: flex-end; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.25s; }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+  .modal-sheet { background: var(--bg2); border-radius: 24px 24px 0 0; width: 100%; max-width: 430px; max-height: 88vh; overflow-y: auto; transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.32,0.72,0,1); border-top: 1px solid var(--border); }
+  .modal-overlay.open .modal-sheet { transform: translateY(0); }
+  .modal-handle { width: 36px; height: 4px; background: #444; border-radius: 2px; margin: 12px auto 0; }
+  .modal-title { font-size: 17px; font-weight: 800; padding: 16px 20px 12px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .modal-done { font-size: 15px; font-weight: 700; color: var(--red); background: none; border: none; cursor: pointer; }
+  .modal-done:active { opacity: 0.6; }
+
+  /* LOCATION MODAL */
+  .loc-search-wrap { padding: 14px 20px 10px; }
+  .loc-search { background: var(--bg3); border-radius: 12px; border: 1.5px solid transparent; padding: 12px 16px; font-size: 15px; color: var(--text); font-family: inherit; outline: none; width: 100%; transition: border-color 0.15s; }
+  .loc-search:focus { border-color: var(--red); }
+  .loc-search::placeholder { color: var(--text3); }
+
+  .loc-free-row { margin: 0 20px 12px; background: var(--red-dim); border: 1px solid var(--red); border-radius: 12px; padding: 12px 14px; display: flex; align-items: center; gap: 10px; cursor: pointer; transition: opacity 0.15s; }
+  .loc-free-row:active { opacity: 0.7; }
+  .loc-free-icon { font-size: 18px; }
+  .loc-free-name { font-size: 14px; font-weight: 700; color: var(--red); }
+  .loc-free-sub { font-size: 12px; color: var(--text3); margin-top: 2px; }
+
+  .free-addr-wrap { padding: 0 20px 16px; display: none; }
+  .free-addr-wrap.show { display: block; }
+  .free-addr-input { background: var(--bg3); border-radius: 12px; border: 1.5px solid var(--red); padding: 13px 16px; font-size: 15px; color: var(--text); font-family: inherit; outline: none; width: 100%; margin-bottom: 10px; }
+  .free-addr-input::placeholder { color: var(--text3); }
+  .free-addr-confirm { width: 100%; background: var(--red); border: none; border-radius: 12px; height: 46px; color: #fff; font-size: 15px; font-weight: 700; cursor: pointer; }
+  .free-addr-confirm:active { opacity: 0.8; }
+
+  .loc-section-title { padding: 8px 20px 6px; font-size: 11px; font-weight: 700; color: var(--text3); letter-spacing: 0.8px; text-transform: uppercase; }
+  .loc-list { padding: 0 20px 24px; }
+  .loc-item { display: flex; align-items: center; gap: 14px; padding: 13px 0; border-bottom: 1px solid var(--border); cursor: pointer; transition: opacity 0.12s; }
+  .loc-item:last-child { border-bottom: none; }
+  .loc-item:active { opacity: 0.6; }
+  .loc-pin-icon { width: 38px; height: 38px; background: var(--bg3); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+  .loc-name { font-size: 15px; font-weight: 600; }
+  .loc-sub { font-size: 12px; color: var(--text3); margin-top: 2px; }
+
+  /* DATE MODAL */
+  .cal-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px 8px; }
+  .cal-month { font-size: 16px; font-weight: 700; }
+  .cal-nav { width: 32px; height: 32px; background: var(--bg3); border-radius: 50%; border: none; color: var(--text); font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  .cal-nav:active { background: var(--bg4); }
+  .date-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 4px; padding: 4px 20px; }
+  .cal-day-label { text-align: center; font-size: 11px; font-weight: 700; color: var(--text3); padding: 4px 0; }
+  .cal-day { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border-radius: 50%; font-size: 14px; font-weight: 600; cursor: pointer; color: var(--text); border: none; background: none; transition: all 0.12s; }
+  .cal-day:active { background: var(--bg4); }
+  .cal-day.today { color: var(--red); font-weight: 800; }
+  .cal-day.selected { background: var(--red); color: #fff; }
+  .cal-day.past { color: var(--text3); pointer-events: none; opacity: 0.35; }
+  .cal-day.empty { pointer-events: none; }
+
+  /* TIME MODAL */
+  .time-picker-wrap { display: flex; align-items: center; justify-content: center; padding: 24px 20px; }
+  .time-col { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .time-col button { background: none; border: none; color: var(--text2); font-size: 24px; cursor: pointer; padding: 6px 24px; }
+  .time-col button:active { color: var(--red); }
+  .time-display { font-size: 54px; font-weight: 800; letter-spacing: -2px; min-width: 80px; text-align: center; }
+  .time-sep { font-size: 50px; font-weight: 800; color: var(--text3); margin: 0 -4px; padding-bottom: 16px; }
+
+  /* DURATION MODAL */
+  .duration-opts { padding: 12px 20px 28px; }
+  .dur-option { display: flex; align-items: center; justify-content: space-between; padding: 15px 0; border-bottom: 1px solid var(--border); cursor: pointer; }
+  .dur-option:last-child { border-bottom: none; }
+  .dur-option:active { opacity: 0.6; }
+  .dur-text { font-size: 16px; font-weight: 600; }
+  .dur-check { width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; }
+  .dur-check.checked { background: var(--red); border-color: var(--red); }
+
+  /* DISCARD */
+  .discard-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 300; display: flex; align-items: center; justify-content: center; padding: 30px; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+  .discard-modal.open { opacity: 1; pointer-events: all; }
+  .discard-box { background: var(--bg2); border-radius: 20px; padding: 28px 24px 20px; width: 100%; max-width: 320px; text-align: center; transform: scale(0.9); transition: transform 0.2s; border: 1px solid var(--border); }
+  .discard-modal.open .discard-box { transform: scale(1); }
+  .discard-title { font-size: 18px; font-weight: 800; margin-bottom: 10px; }
+  .discard-sub { font-size: 14px; color: var(--text3); line-height: 1.5; margin-bottom: 24px; }
+  .discard-btns { display: flex; flex-direction: column; gap: 10px; }
+  .discard-btn { border: none; border-radius: 12px; padding: 14px; font-size: 16px; font-weight: 700; cursor: pointer; }
+  .discard-btn:active { opacity: 0.7; }
+  .discard-btn.red { background: var(--red); color: #fff; }
+  .discard-btn.gray { background: var(--bg3); color: var(--text2); }
+
+  /* SUCCESS */
+  .success-screen { position: fixed; inset: 0; background: var(--bg); z-index: 400; display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s; padding: 0 20px; }
+  .success-screen.open { opacity: 1; pointer-events: all; }
+  .success-icon { font-size: 64px; margin-bottom: 20px; }
+  .success-title { font-size: 26px; font-weight: 900; letter-spacing: -0.5px; margin-bottom: 10px; }
+  .success-sub { font-size: 15px; color: var(--text3); text-align: center; max-width: 280px; line-height: 1.6; margin-bottom: 24px; }
+  .success-card { background: var(--bg2); border-radius: 20px; border: 1px solid var(--border); padding: 18px 20px; width: 100%; max-width: 350px; margin-bottom: 20px; }
+  .success-sport-badge { display: inline-block; background: var(--red-dim); border: 1px solid var(--red); border-radius: 10px; padding: 6px 14px; font-size: 15px; font-weight: 800; color: var(--red); margin-bottom: 14px; }
+  .success-info-row { display: flex; align-items: center; gap: 10px; padding: 6px 0; font-size: 14px; color: var(--text2); }
+  .success-info-row span:first-child { font-size: 16px; width: 22px; }
+  .success-btns { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 350px; }
+  .success-btn { border: none; border-radius: 16px; height: 52px; font-size: 16px; font-weight: 800; cursor: pointer; width: 100%; }
+  .success-btn:active { opacity: 0.8; }
+  .success-btn.primary { background: var(--red); color: #fff; }
+  .success-btn.secondary { background: var(--bg3); color: var(--text2); }
+
+  /* TOAST */
+  .toast { position: fixed; bottom: 120px; left: 50%; transform: translateX(-50%) translateY(20px); background: #222; border: 1px solid var(--border); border-radius: 12px; padding: 12px 20px; font-size: 14px; font-weight: 600; color: var(--text); z-index: 500; opacity: 0; transition: all 0.25s; white-space: nowrap; pointer-events: none; }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<div class="status-bar">
+  <span class="status-time" id="statusTime">9:41</span>
+  <div class="status-icons">
+    <svg width="17" height="12" viewBox="0 0 17 12" fill="white"><rect x="0" y="3" width="3" height="9" rx="1"/><rect x="4.5" y="2" width="3" height="10" rx="1"/><rect x="9" y="0" width="3" height="12" rx="1"/><rect x="13.5" y="0" width="3" height="12" rx="1" opacity="0.3"/></svg>
+    <svg width="16" height="12" viewBox="0 0 16 12" fill="white"><path d="M8 2.4C5.6 2.4 3.4 3.4 1.8 5L0 3.2C2.1 1.2 4.9 0 8 0s5.9 1.2 8 3.2L14.2 5C12.6 3.4 10.4 2.4 8 2.4z" opacity="0.4"/><path d="M8 5.8c-1.5 0-2.9.6-3.9 1.6L2.4 5.8C3.7 4.5 5.8 3.6 8 3.6s4.3.9 5.6 2.2L11.9 7.4C10.9 6.4 9.5 5.8 8 5.8z"/><circle cx="8" cy="10" r="2"/></svg>
+    <svg width="25" height="12" viewBox="0 0 25 12" fill="white"><rect x="0" y="1" width="21" height="10" rx="3" stroke="white" stroke-width="1.2" fill="none"/><rect x="1.5" y="2.5" width="13" height="7" rx="1.5"/><rect x="22" y="3.5" width="3" height="5" rx="1" opacity="0.5"/></svg>
+  </div>
+</div>
+
+<div class="nav-bar">
+  <button class="nav-back" onclick="handleBack()">
+    <svg width="10" height="16" viewBox="0 0 10 16" fill="none"><path d="M8 2L2 8L8 14" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </button>
+  <span class="nav-title">Nova aktivnost</span>
+  <button class="nav-save" onclick="saveDraft()">Osnutek</button>
+</div>
+
+<div class="content">
+
+  <!-- PHOTO -->
+  <div class="photo-section">
+    <div class="photo-upload-box" id="photoBox" onclick="triggerPhoto()">
+      <div class="optional-tag">OPCIJSKO</div>
+      <img class="photo-preview-img" id="photoPreview" src="" alt="">
+      <div id="photoPlaceholder" style="display:flex;flex-direction:column;align-items:center;gap:8px;">
+        <span class="photo-placeholder-icon">📷</span>
+        <span class="photo-placeholder-text">Dodaj naslovno sliko</span>
+        <span class="photo-placeholder-sub">Tap za izbiro iz galerije</span>
+      </div>
+      <div class="photo-overlay-btns" id="photoOverlayBtns">
+        <button class="photo-action-btn" onclick="triggerPhoto(event)">Zamenjaj</button>
+        <button class="photo-action-btn" onclick="removePhoto(event)">Odstrani</button>
+      </div>
+    </div>
+    <input type="file" id="photoInput" accept="image/*" onchange="handlePhoto(this)">
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- SPORT -->
+  <div class="section">
+    <div class="section-label">Izberite šport</div>
+    <div class="sport-grid">
+      <div class="sport-pill active" data-sport="Košarka" data-strava="0" onclick="selectSport(this)"><span class="s-icon">🏀</span><span class="s-name">Košarka</span></div>
+      <div class="sport-pill" data-sport="Futsal" data-strava="0" onclick="selectSport(this)"><span class="s-icon">⚽</span><span class="s-name">Futsal</span></div>
+      <div class="sport-pill" data-sport="Odbojka" data-strava="0" onclick="selectSport(this)"><span class="s-icon">🏐</span><span class="s-name">Odbojka</span></div>
+      <div class="sport-pill" data-sport="Tenis" data-strava="1" onclick="selectSport(this)"><span class="s-icon">🎾</span><span class="s-name">Tenis</span></div>
+      <div class="sport-pill" data-sport="Kolesarjenje" data-strava="1" onclick="selectSport(this)"><span class="s-icon">🚴</span><span class="s-name">Kolesarstvo</span></div>
+      <div class="sport-pill" data-sport="Tek" data-strava="1" onclick="selectSport(this)"><span class="s-icon">🏃</span><span class="s-name">Tek</span></div>
+      <div class="sport-pill" data-sport="Pohodništvo" data-strava="1" onclick="selectSport(this)"><span class="s-icon">🥾</span><span class="s-name">Pohod</span></div>
+      <div class="sport-pill" data-sport="Smučanje" data-strava="1" onclick="selectSport(this)"><span class="s-icon">⛷️</span><span class="s-name">Smučanje</span></div>
+    </div>
+  </div>
+
+  <div class="strava-banner" id="stravaBanner" style="display:none" onclick="showToast('🟠 Strava OAuth bi se odprl v pravi app!')">
+    <span style="font-size:20px;">🟠</span>
+    <div style="flex:1"><div class="strava-text-main">Poveži Strava za avtoverifikacijo</div><div class="strava-text-sub">Aktivnost se bo samodejno potrdila po treningu</div></div>
+    <span style="color:#FC4C02;font-size:20px;">›</span>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- LOCATION -->
+  <div class="section">
+    <div class="section-label">Lokacija</div>
+    <div class="map-preview" onclick="openModal('locationModal')">
+      <canvas class="map-canvas" id="mapCanvas"></canvas>
+      <button class="map-change-btn">Spremeni</button>
+      <div class="map-overlay-bar">
+        <div class="map-loc-name" id="mapLocName">Tivoli igrišče</div>
+        <div class="map-loc-sub" id="mapLocSub">Park Tivoli, Ljubljana</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- DATE & TIME -->
+  <div class="section">
+    <div class="section-label">Datum in čas</div>
+    <div class="row-2">
+      <div class="input-row" onclick="openModal('dateModal')">
+        <span class="ir-icon">📅</span>
+        <div class="ir-content"><div class="ir-label">Datum</div><div class="ir-val" id="dateDisplay">Danes, 15. apr</div></div>
+        <span class="ir-arrow">›</span>
+      </div>
+      <div class="input-row" onclick="openModal('timeModal')">
+        <span class="ir-icon">🕐</span>
+        <div class="ir-content"><div class="ir-label">Ura začetka</div><div class="ir-val" id="timeDisplay">18:00</div></div>
+        <span class="ir-arrow">›</span>
+      </div>
+    </div>
+    <div class="input-row" onclick="openModal('durationModal')" style="margin-top:10px;">
+      <span class="ir-icon">⏱️</span>
+      <div class="ir-content"><div class="ir-label">Trajanje</div><div class="ir-val" id="durationDisplay">1 ura</div></div>
+      <span class="ir-arrow">›</span>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- PLAYERS -->
+  <div class="section">
+    <div class="section-label">Ekipa</div>
+    <div class="stepper-row">
+      <span class="stepper-icon">👥</span>
+      <div style="flex:1"><div class="stepper-label">Maks. število igralcev</div><div class="stepper-sub" id="playersSub">10 mest skupaj</div></div>
+      <div class="stepper-controls">
+        <button class="step-btn" id="minusBtn" onclick="changeCount(-1)">−</button>
+        <span class="step-val" id="playerCount">10</span>
+        <button class="step-btn" id="plusBtn" onclick="changeCount(1)">+</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- SETTINGS -->
+  <div class="section">
+    <div class="section-label">Nastavitve</div>
+    <div class="toggle-row">
+      <div class="toggle-left">
+        <span class="toggle-icon">🔒</span>
+        <div><div class="toggle-text">Zasebna aktivnost</div><div class="toggle-sub" id="privateSub">Vsi jo vidijo na mapi</div></div>
+      </div>
+      <div class="toggle" id="privateToggle" onclick="togglePrivate()"></div>
+    </div>
+    <div class="toggle-row" style="margin-bottom:0;">
+      <div class="toggle-left">
+        <span class="toggle-icon">🔁</span>
+        <div><div class="toggle-text">Ponavljajoča aktivnost</div><div class="toggle-sub" id="recurSub">Enkratna aktivnost</div></div>
+      </div>
+      <div class="toggle" id="recurToggle" onclick="toggleRecur()"></div>
+    </div>
+    <div class="recur-options" id="recurOptions">
+      <div class="recur-pill active" onclick="selectRecur(this)">Vsak teden</div>
+      <div class="recur-pill" onclick="selectRecur(this)">Vsak dan</div>
+      <div class="recur-pill" onclick="selectRecur(this)">Vsaka 2 tedna</div>
+      <div class="recur-pill" onclick="selectRecur(this)">Vsak mesec</div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- SKILL -->
+  <div class="section">
+    <div class="section-label">Raven igre</div>
+    <div class="skill-tags">
+      <div class="skill-tag active" onclick="selectSkill(this)">🌱 Začetnik</div>
+      <div class="skill-tag" onclick="selectSkill(this)">🎯 Rekreativno</div>
+      <div class="skill-tag" onclick="selectSkill(this)">🔥 Kompetitivno</div>
+      <div class="skill-tag" onclick="selectSkill(this)">⭐ Vsi nivoji</div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- DESC -->
+  <div class="section">
+    <div class="section-label">Opis <span style="color:var(--text3);font-weight:500;text-transform:none;letter-spacing:0;font-size:11px;">neobvezno</span></div>
+    <textarea class="desc-area" id="descArea" placeholder="Opiši aktivnost — kaj pričakuješ, kje točno se srečate, kakšno opremo prinesi..." maxlength="300" oninput="updateChar()"></textarea>
+    <div class="char-count"><span id="charCount">0</span>/300</div>
+  </div>
+
+  <div style="height:160px;"></div>
+</div>
+
+<!-- PREVIEW -->
+<div class="preview-strip">
+  <div class="preview-label">Predogled</div>
+  <div class="preview-chip">
+    <div class="preview-dot"></div>
+    <span class="preview-chip-text" id="previewText">🏀 Košarka · Tivoli · Danes 18:00 · 10 mest</span>
+  </div>
+</div>
+
+<!-- BOTTOM BAR -->
+<div class="bottom-bar">
+  <button class="publish-btn" onclick="handlePublish()">
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="8" stroke="white" stroke-width="1.5"/><path d="M9 5.5V12.5M5.5 9H12.5" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>
+    Objavi aktivnost
+  </button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- ══════════ MODALS ══════════ -->
+
+<!-- LOCATION -->
+<div class="modal-overlay" id="locationModal" onclick="closeModalBg(event,'locationModal')">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title"><span>Izberi lokacijo</span><button class="modal-done" onclick="closeModal('locationModal')">Končaj</button></div>
+    <div class="loc-search-wrap">
+      <input class="loc-search" placeholder="🔍  Išči igrišče, ulico, kraj..." id="locSearch" oninput="filterLocs()" autocomplete="off">
+    </div>
+    <div class="loc-free-row" id="freeAddrRow" onclick="showFreeAddr()">
+      <span class="loc-free-icon">📍</span>
+      <div><div class="loc-free-name" id="freeAddrLabel">Vpiši poljuben naslov</div><div class="loc-free-sub" id="freeAddrSub">Ulica, kraj, katerakoli lokacija</div></div>
+      <span style="color:var(--red);font-size:20px;">›</span>
+    </div>
+    <div class="free-addr-wrap" id="freeAddrWrap">
+      <input class="free-addr-input" id="freeAddrInput" placeholder="npr. Dunajska 5, Ljubljana ali Moja garaža, Dol pri Ljubljani" autocomplete="off">
+      <button class="free-addr-confirm" onclick="confirmFreeAddr()">Potrdi to lokacijo →</button>
+    </div>
+    <div class="loc-section-title" id="locSectionTitle">Predlagana igrišča</div>
+    <div class="loc-list" id="locList"></div>
+  </div>
+</div>
+
+<!-- DATE -->
+<div class="modal-overlay" id="dateModal" onclick="closeModalBg(event,'dateModal')">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title"><span>Izberite datum</span><button class="modal-done" onclick="closeModal('dateModal')">Potrdi</button></div>
+    <div class="cal-header">
+      <button class="cal-nav" onclick="prevMonth()">‹</button>
+      <span class="cal-month" id="calMonthLabel"></span>
+      <button class="cal-nav" onclick="nextMonth()">›</button>
+    </div>
+    <div class="date-grid" id="dayLabels"></div>
+    <div class="date-grid" id="calGrid"></div>
+    <div style="height:20px;"></div>
+  </div>
+</div>
+
+<!-- TIME -->
+<div class="modal-overlay" id="timeModal" onclick="closeModalBg(event,'timeModal')">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title"><span>Ura začetka</span><button class="modal-done" onclick="closeModal('timeModal')">Potrdi</button></div>
+    <div class="time-picker-wrap">
+      <div class="time-col">
+        <button onclick="changeHour(1)">▲</button>
+        <span class="time-display" id="hourDisplay">18</span>
+        <button onclick="changeHour(-1)">▼</button>
+      </div>
+      <span class="time-sep">:</span>
+      <div class="time-col">
+        <button onclick="changeMin(1)">▲</button>
+        <span class="time-display" id="minDisplay">00</span>
+        <button onclick="changeMin(-1)">▼</button>
+      </div>
+    </div>
+    <div style="height:24px;"></div>
+  </div>
+</div>
+
+<!-- DURATION -->
+<div class="modal-overlay" id="durationModal" onclick="closeModalBg(event,'durationModal')">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title"><span>Trajanje aktivnosti</span><button class="modal-done" onclick="closeModal('durationModal')">Potrdi</button></div>
+    <div class="duration-opts" id="durationOpts"></div>
+  </div>
+</div>
+
+<!-- DISCARD -->
+<div class="discard-modal" id="discardModal">
+  <div class="discard-box">
+    <div class="discard-title">Zavrzi osnutek?</div>
+    <div class="discard-sub">Vsa vnesena vsebina bo izgubljena.</div>
+    <div class="discard-btns">
+      <button class="discard-btn red" onclick="confirmDiscard()">Zavrži in pojdi nazaj</button>
+      <button class="discard-btn gray" onclick="closeDiscard()">Nadaljuj urejanje</button>
+    </div>
+  </div>
+</div>
+
+<!-- SUCCESS -->
+<div class="success-screen" id="successScreen">
+  <div class="success-icon" id="successIcon">🏀</div>
+  <div class="success-title">Aktivnost objavljena! 🎉</div>
+  <div class="success-sub">Zdaj je vidna na mapi. Čakaš na soigralce!</div>
+  <div class="success-card">
+    <div class="success-sport-badge" id="s-sport">🏀 Košarka</div>
+    <div class="success-info-row"><span>📍</span><span id="s-loc">Tivoli igrišče</span></div>
+    <div class="success-info-row"><span>📅</span><span id="s-date">Danes</span></div>
+    <div class="success-info-row"><span>🕐</span><span id="s-time">18:00 · 1 ura</span></div>
+    <div class="success-info-row"><span>👥</span><span id="s-players">Maks. 10 igralcev</span></div>
+    <div class="success-info-row"><span>🔒</span><span id="s-privacy">Javna aktivnost</span></div>
+  </div>
+  <div class="success-btns">
+    <button class="success-btn primary" onclick="goToMap()">🗺️ Poglej na mapi</button>
+    <button class="success-btn secondary" onclick="goToFeed()">📱 Poglej v feedu</button>
+  </div>
+</div>
+
+<script>
+const MAP_URL  = 'file:///Users/tadejprijatelj/Downloads/junto_map.html';
+const HOME_URL = 'file:///Users/tadejprijatelj/Documents/Claude/Projects/Sport%20meet%20up/screen_home.html';
+
+const state = {
+  sport:'Košarka', sportIcon:'🏀',
+  location:'Tivoli igrišče', locationSub:'Park Tivoli, Ljubljana',
+  date:'', time:'18:00', duration:'1 ura',
+  players:10, isPrivate:false, isRecurring:false, recurType:'Vsak teden',
+};
+let calYear, calMonth, selDate, timeH=18, timeM=0, selDuration='1 ura';
+
+const monthNames=['Januar','Februar','Marec','April','Maj','Junij','Julij','Avgust','September','Oktober','November','December'];
+const dayNames=['Ned','Pon','Tor','Sre','Čet','Pet','Sob'];
+const durations=['30 minut','45 minut','1 ura','1,5 ure','2 uri','2,5 ure','3 ure','Odprto (brez konca)'];
+
+const allLocations=[
+  {icon:'🏀',sport:['Košarka'],name:'Tivoli igrišče',sub:'Park Tivoli, Ljubljana'},
+  {icon:'🏀',sport:['Košarka'],name:'Igrišče Fužine',sub:'Fužine, Ljubljana'},
+  {icon:'🏀',sport:['Košarka'],name:'Igrišče Šiška',sub:'Šiška, Ljubljana'},
+  {icon:'🏀',sport:['Košarka'],name:'OŠ Vodmat — igrišče',sub:'Vodmat, Ljubljana'},
+  {icon:'🏀',sport:['Košarka'],name:'OŠ Polje — igrišče',sub:'Polje, Ljubljana'},
+  {icon:'🏀',sport:['Košarka'],name:'BTC košarkarsko igrišče',sub:'BTC City, Ljubljana'},
+  {icon:'⚽',sport:['Futsal'],name:'Futsal Šmarna Gora',sub:'Šmarna Gora, Ljubljana'},
+  {icon:'⚽',sport:['Futsal'],name:'Stadion Stožice',sub:'Stožice, Ljubljana'},
+  {icon:'⚽',sport:['Futsal'],name:'ŠRC Ilirija',sub:'Kolezijska ul., Ljubljana'},
+  {icon:'⚽',sport:['Futsal'],name:'Futsal arena BTC',sub:'BTC City, Ljubljana'},
+  {icon:'🏐',sport:['Odbojka'],name:'Dvorana Kodeljevo',sub:'Kodeljevo, Ljubljana'},
+  {icon:'🏐',sport:['Odbojka'],name:'Plaža Tivoli (peščišče)',sub:'Park Tivoli, Ljubljana'},
+  {icon:'🏐',sport:['Odbojka'],name:'Športna dvorana Šiška',sub:'Šiška, Ljubljana'},
+  {icon:'🎾',sport:['Tenis'],name:'Teniški klub Ilirija',sub:'Kolezijska ul., Ljubljana'},
+  {icon:'🎾',sport:['Tenis'],name:'Teniški klub Ljubljana',sub:'Štepanjsko naselje'},
+  {icon:'🎾',sport:['Tenis'],name:'TC BTC',sub:'BTC City, Ljubljana'},
+  {icon:'🎾',sport:['Tenis'],name:'TC Tivoli',sub:'Park Tivoli, Ljubljana'},
+  {icon:'🏋️',sport:['Kolesarjenje','Tek','Pohodništvo','Smučanje'],name:'Fitness center BTC',sub:'BTC City, Ljubljana'},
+  {icon:'🏃',sport:['Tek'],name:'Atletski stadion Šiška',sub:'Šiška, Ljubljana'},
+  {icon:'🏃',sport:['Tek'],name:'Pot ob Ljubljanici',sub:'Ob reki, Ljubljana'},
+  {icon:'🏃',sport:['Tek'],name:'Rožnik — tekaška pot',sub:'Rožnik, Ljubljana'},
+  {icon:'🥾',sport:['Pohodništvo'],name:'Šmarna Gora — vrh',sub:'Šmarna Gora, 669m'},
+  {icon:'🥾',sport:['Pohodništvo'],name:'Rožnik — vrh',sub:'Rožnik, Ljubljana'},
+  {icon:'🥾',sport:['Pohodništvo'],name:'Golovec — gozdna pot',sub:'Golovec, Ljubljana'},
+  {icon:'🚴',sport:['Kolesarjenje'],name:'Pot spominov in tovarištva',sub:'Obroč Ljubljane'},
+  {icon:'🚴',sport:['Kolesarjenje'],name:'Pot ob Ljubljanici',sub:'Ob reki, Ljubljana'},
+  {icon:'🚴',sport:['Kolesarjenje'],name:'Rakovnik — kolesarska pot',sub:'Rakovnik, Ljubljana'},
+  {icon:'⛷️',sport:['Smučanje'],name:'Krvavec',sub:'Cerklje na Gorenjskem'},
+  {icon:'⛷️',sport:['Smučanje'],name:'Kranjska Gora',sub:'Kranjska Gora'},
+  {icon:'⛷️',sport:['Smučanje'],name:'Mariborsko Pohorje',sub:'Maribor'},
+];
+
+let filteredLocs=[];
+
+window.onload=()=>{
+  const now=new Date();
+  selDate={y:now.getFullYear(),m:now.getMonth(),d:now.getDate()};
+  state.date=formatDate(now.getFullYear(),now.getMonth(),now.getDate());
+  document.getElementById('dateDisplay').textContent=state.date;
+  updateStatusTime();
+  setInterval(updateStatusTime,10000);
+  drawMap();
+  initCal();
+  initDuration();
+  updatePreview();
+};
+
+function updateStatusTime(){
+  const n=new Date();
+  document.getElementById('statusTime').textContent=String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');
+}
+
+// PHOTO
+function triggerPhoto(e){if(e)e.stopPropagation();document.getElementById('photoInput').click();}
+function handlePhoto(input){
+  if(!input.files||!input.files[0])return;
+  const r=new FileReader();
+  r.onload=(e)=>{
+    const img=document.getElementById('photoPreview');
+    img.src=e.target.result; img.classList.add('show');
+    document.getElementById('photoPlaceholder').style.display='none';
+    document.getElementById('photoOverlayBtns').classList.add('show');
+    document.getElementById('photoBox').classList.add('has-photo');
+  };
+  r.readAsDataURL(input.files[0]);
+}
+function removePhoto(e){
+  e.stopPropagation();
+  document.getElementById('photoPreview').classList.remove('show');
+  document.getElementById('photoPreview').src='';
+  document.getElementById('photoPlaceholder').style.display='';
+  document.getElementById('photoOverlayBtns').classList.remove('show');
+  document.getElementById('photoBox').classList.remove('has-photo');
+  document.getElementById('photoInput').value='';
+}
+
+// SPORT
+function selectSport(el){
+  document.querySelectorAll('.sport-pill').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  state.sport=el.dataset.sport; state.sportIcon=el.querySelector('.s-icon').textContent;
+  document.getElementById('stravaBanner').style.display=el.dataset.strava==='1'?'flex':'none';
+  updatePreview();
+}
+
+// MAP
+function drawMap(){
+  const canvas=document.getElementById('mapCanvas');
+  const rect=canvas.getBoundingClientRect();
+  if(rect.width===0){setTimeout(drawMap,100);return;}
+  canvas.width=rect.width*2; canvas.height=rect.height*2;
+  const ctx=canvas.getContext('2d'); ctx.scale(2,2);
+  const w=rect.width,h=rect.height;
+  ctx.fillStyle='#141B22'; ctx.fillRect(0,0,w,h);
+  ctx.strokeStyle='#1E2533'; ctx.lineWidth=7;
+  [[0,h*.45,w,h*.45],[w*.35,0,w*.35,h],[w*.65,0,w*.65,h]].forEach(([x1,y1,x2,y2])=>{ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();});
+  ctx.strokeStyle='#1C2435'; ctx.lineWidth=3;
+  [[0,h*.25,w,h*.65],[w*.15,0,w*.7,h]].forEach(([x1,y1,x2,y2])=>{ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();});
+  ctx.fillStyle='rgba(30,60,30,0.35)'; ctx.beginPath(); ctx.ellipse(w*.38,h*.35,w*.16,h*.18,0,0,Math.PI*2); ctx.fill();
+  ctx.font=`${h*.32}px serif`; ctx.textAlign='center'; ctx.fillText('📍',w*.38,h*.44);
+}
+
+// LOCATIONS
+function renderLocs(){
+  const q=(document.getElementById('locSearch').value||'').toLowerCase().trim();
+  const sport=state.sport;
+  if(q.length>0){
+    filteredLocs=allLocations.filter(l=>l.name.toLowerCase().includes(q)||l.sub.toLowerCase().includes(q));
+    document.getElementById('locSectionTitle').textContent='Rezultati iskanja';
+  } else {
+    filteredLocs=allLocations.filter(l=>l.sport.includes(sport));
+    document.getElementById('locSectionTitle').textContent='Predlagana igrišča za '+sport;
+  }
+  document.getElementById('locList').innerHTML=filteredLocs.length
+    ?filteredLocs.map((l,i)=>`<div class="loc-item" onclick="selectLoc(${i})"><div class="loc-pin-icon">${l.icon}</div><div><div class="loc-name">${l.name}</div><div class="loc-sub">${l.sub}</div></div></div>`).join('')
+    :`<div style="padding:20px 0;color:var(--text3);font-size:14px;text-align:center;">Ni zadetkov — vpiši naslov zgoraj ↑</div>`;
+}
+
+function filterLocs(){
+  const q=document.getElementById('locSearch').value;
+  document.getElementById('freeAddrWrap').classList.remove('show');
+  document.getElementById('freeAddrLabel').textContent=q.length>2?'"'+q+'"':'Vpiši poljuben naslov';
+  document.getElementById('freeAddrSub').textContent=q.length>2?'Uporabi ta naslov kot lokacijo':'Ulica, kraj, katerakoli lokacija';
+  renderLocs();
+}
+
+function showFreeAddr(){
+  const q=document.getElementById('locSearch').value;
+  document.getElementById('freeAddrWrap').classList.add('show');
+  const inp=document.getElementById('freeAddrInput');
+  if(q.length>2) inp.value=q;
+  inp.focus();
+}
+
+function confirmFreeAddr(){
+  const val=document.getElementById('freeAddrInput').value.trim();
+  if(!val){showToast('⚠️ Vpiši naslov!');return;}
+  state.location=val; state.locationSub='Prosta lokacija';
+  document.getElementById('mapLocName').textContent=val;
+  document.getElementById('mapLocSub').textContent='Prosta lokacija';
+  closeModal('locationModal'); updatePreview(); drawMap();
+}
+
+function selectLoc(i){
+  const l=filteredLocs[i];
+  state.location=l.name; state.locationSub=l.sub;
+  document.getElementById('mapLocName').textContent=l.name;
+  document.getElementById('mapLocSub').textContent=l.sub;
+  closeModal('locationModal'); updatePreview(); drawMap();
+}
+
+// CALENDAR
+function initCal(){const n=new Date();calYear=n.getFullYear();calMonth=n.getMonth();renderCal();}
+function formatDate(y,m,d){
+  const t=new Date(); const mName=monthNames[m].substring(0,3).toLowerCase();
+  const isToday=y===t.getFullYear()&&m===t.getMonth()&&d===t.getDate();
+  const tom=new Date(t); tom.setDate(t.getDate()+1);
+  const isTom=y===tom.getFullYear()&&m===tom.getMonth()&&d===tom.getDate();
+  if(isToday) return'Danes, '+d+'. '+mName;
+  if(isTom) return'Jutri, '+d+'. '+mName;
+  return d+'. '+mName+(y!==t.getFullYear()?' '+y:'');
+}
+function renderCal(){
+  document.getElementById('calMonthLabel').textContent=monthNames[calMonth]+' '+calYear;
+  document.getElementById('dayLabels').innerHTML=dayNames.map(d=>`<div class="cal-day-label">${d}</div>`).join('');
+  const first=new Date(calYear,calMonth,1).getDay();
+  const days=new Date(calYear,calMonth+1,0).getDate();
+  const today=new Date(); let html='';
+  for(let i=0;i<first;i++) html+=`<div class="cal-day empty"></div>`;
+  for(let d=1;d<=days;d++){
+    const isPast=new Date(calYear,calMonth,d)<new Date(today.getFullYear(),today.getMonth(),today.getDate());
+    const isToday=calYear===today.getFullYear()&&calMonth===today.getMonth()&&d===today.getDate();
+    const isSel=selDate&&calYear===selDate.y&&calMonth===selDate.m&&d===selDate.d;
+    const cls=[isPast?'past':'',isToday&&!isSel?'today':'',isSel?'selected':''].filter(Boolean).join(' ');
+    html+=`<button class="cal-day ${cls}" onclick="selectDay(${d})">${d}</button>`;
+  }
+  document.getElementById('calGrid').innerHTML=html;
+}
+function prevMonth(){calMonth--;if(calMonth<0){calMonth=11;calYear--;}renderCal();}
+function nextMonth(){calMonth++;if(calMonth>11){calMonth=0;calYear++;}renderCal();}
+function selectDay(d){
+  selDate={y:calYear,m:calMonth,d};
+  state.date=formatDate(calYear,calMonth,d);
+  document.getElementById('dateDisplay').textContent=state.date;
+  renderCal(); updatePreview(); setTimeout(()=>closeModal('dateModal'),280);
+}
+
+// TIME
+function changeHour(dir){timeH=(timeH+dir+24)%24;document.getElementById('hourDisplay').textContent=String(timeH).padStart(2,'0');state.time=String(timeH).padStart(2,'0')+':'+String(timeM).padStart(2,'0');document.getElementById('timeDisplay').textContent=state.time;updatePreview();}
+function changeMin(dir){timeM=(timeM+dir*15+60)%60;document.getElementById('minDisplay').textContent=String(timeM).padStart(2,'0');state.time=String(timeH).padStart(2,'0')+':'+String(timeM).padStart(2,'0');document.getElementById('timeDisplay').textContent=state.time;updatePreview();}
+
+// DURATION
+function initDuration(){selDuration='1 ura';renderDuration();}
+function renderDuration(){
+  document.getElementById('durationOpts').innerHTML=durations.map(d=>`<div class="dur-option" onclick="selectDuration('${d}')"><span class="dur-text">${d}</span><div class="dur-check ${selDuration===d?'checked':''}">${selDuration===d?'<svg width="12" height="10" viewBox="0 0 12 10" fill="none"><path d="M1 5L4.5 8.5L11 1.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>':''}</div></div>`).join('');
+}
+function selectDuration(d){selDuration=d;state.duration=d;document.getElementById('durationDisplay').textContent=d;renderDuration();updatePreview();setTimeout(()=>closeModal('durationModal'),240);}
+
+// PLAYERS
+function changeCount(dir){
+  const n=state.players+dir; if(n<2||n>30)return;
+  state.players=n; document.getElementById('playerCount').textContent=n;
+  document.getElementById('playersSub').textContent=n+' mest skupaj';
+  document.getElementById('minusBtn').disabled=n<=2;
+  document.getElementById('plusBtn').disabled=n>=30;
+  updatePreview();
+}
+
+// TOGGLES
+function togglePrivate(){state.isPrivate=!state.isPrivate;document.getElementById('privateToggle').classList.toggle('on',state.isPrivate);document.getElementById('privateSub').textContent=state.isPrivate?'Samo povabljeni vidijo':'Vsi jo vidijo na mapi';updatePreview();}
+function toggleRecur(){state.isRecurring=!state.isRecurring;document.getElementById('recurToggle').classList.toggle('on',state.isRecurring);document.getElementById('recurOptions').classList.toggle('open',state.isRecurring);document.getElementById('recurSub').textContent=state.isRecurring?'Ponovi se '+state.recurType.toLowerCase():'Enkratna aktivnost';}
+function selectRecur(el){document.querySelectorAll('.recur-pill').forEach(p=>p.classList.remove('active'));el.classList.add('active');state.recurType=el.textContent;document.getElementById('recurSub').textContent='Ponovi se '+state.recurType.toLowerCase();}
+
+// SKILL
+function selectSkill(el){document.querySelectorAll('.skill-tag').forEach(t=>t.classList.remove('active'));el.classList.add('active');}
+
+// DESC
+function updateChar(){document.getElementById('charCount').textContent=document.getElementById('descArea').value.length;}
+
+// PREVIEW
+function updatePreview(){
+  const loc=state.location.length>16?state.location.substring(0,14)+'…':state.location;
+  const dateShort=state.date?state.date.split(',')[0]:'Danes';
+  document.getElementById('previewText').textContent=state.sportIcon+' '+state.sport+' · '+loc+' · '+dateShort+' '+state.time+' · '+state.players+' mest';
+}
+
+// MODALS
+function openModal(id){
+  if(id==='locationModal'){
+    filteredLocs=allLocations.filter(l=>l.sport.includes(state.sport));
+    document.getElementById('locSearch').value='';
+    document.getElementById('freeAddrWrap').classList.remove('show');
+    document.getElementById('freeAddrLabel').textContent='Vpiši poljuben naslov';
+    document.getElementById('freeAddrSub').textContent='Ulica, kraj, katerakoli lokacija';
+    renderLocs();
+  }
+  document.getElementById(id).classList.add('open');
+  document.body.style.overflow='hidden';
+}
+function closeModal(id){document.getElementById(id).classList.remove('open');document.body.style.overflow='';}
+function closeModalBg(e,id){if(e.target===document.getElementById(id))closeModal(id);}
+
+// BACK / DISCARD
+function handleBack(){document.getElementById('discardModal').classList.add('open');}
+function closeDiscard(){document.getElementById('discardModal').classList.remove('open');}
+function confirmDiscard(){document.getElementById('discardModal').classList.remove('open');window.location.href=HOME_URL;}
+
+// SAVE DRAFT
+function saveDraft(){showToast('💾 Osnutek shranjen!');}
+
+// PUBLISH
+function handlePublish(){
+  document.getElementById('s-sport').textContent=state.sportIcon+' '+state.sport;
+  document.getElementById('s-loc').textContent=state.location;
+  document.getElementById('s-date').textContent=state.date;
+  document.getElementById('s-time').textContent=state.time+' · '+state.duration;
+  document.getElementById('s-players').textContent='Maks. '+state.players+' igralcev';
+  document.getElementById('s-privacy').textContent=state.isPrivate?'Zasebna aktivnost 🔒':'Javna aktivnost 🌍';
+  document.getElementById('successIcon').textContent=state.sportIcon;
+  document.getElementById('successScreen').classList.add('open');
+}
+function goToMap(){window.location.href=MAP_URL;}
+function goToFeed(){window.location.href=HOME_URL;}
+
+// TOAST
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2800);}
+</script>
+<script src="junto.js"></script>
+<script>
+JUNTO.injectNav("create","dark");
+</script>
+</body>
+</html>
+<script>
+// ── Nominatim live search override ────────────────────────────
+let nominatimTimer = null;
+
+const origFilterLocs = window.filterLocs;
+window.filterLocs = function() {
+  const q = document.getElementById('locSearch').value.trim();
+  
+  // Posodobi "free addr" label
+  document.getElementById('freeAddrLabel').textContent = q.length > 2 ? `"${q}"` : 'Vpiši poljuben naslov';
+  document.getElementById('freeAddrSub').textContent = q.length > 2 ? 'Uporabi ta naslov kot lokacijo' : 'Ulica, kraj, katerakoli lokacija';
+
+  if (q.length < 3) {
+    // Prikaži predlagana igrišča
+    if (origFilterLocs) origFilterLocs();
+    return;
+  }
+
+  // Debounce 400ms
+  clearTimeout(nominatimTimer);
+  document.getElementById('locList').innerHTML = '<div style="padding:20px 0;color:var(--text3);font-size:14px;text-align:center;">🔍 Iščem...</div>';
+
+  nominatimTimer = setTimeout(async () => {
+    try {
+      const results = await JUNTO.searchLocation(q + ' Ljubljana');
+      if (!results.length) {
+        document.getElementById('locList').innerHTML = '<div style="padding:20px 0;color:var(--text3);font-size:14px;text-align:center;">Ni zadetkov — vpiši naslov zgoraj ↑</div>';
+        return;
+      }
+      document.getElementById('locSectionTitle').textContent = 'Rezultati iskanja';
+      document.getElementById('locList').innerHTML = results.slice(0, 6).map((r, i) => {
+        const name = r.display_name.split(',')[0];
+        const sub = r.display_name.split(',').slice(1, 3).join(',').trim();
+        return `<div class="loc-item" onclick="selectNominatimLoc('${name.replace(/'/g,"\\'")}','${sub.replace(/'/g,"\\'")}',${r.lat},${r.lon})">
+          <div class="loc-pin-icon">📍</div>
+          <div><div class="loc-name">${name}</div><div class="loc-sub">${sub}</div></div>
+        </div>`;
+      }).join('');
+    } catch(e) {
+      if (origFilterLocs) origFilterLocs();
+    }
+  }, 400);
+};
+
+window.selectNominatimLoc = function(name, sub, lat, lon) {
+  state.location = name;
+  state.locationSub = sub;
+  state.lat = lat;
+  state.lon = lon;
+  document.getElementById('mapLocName').textContent = name;
+  document.getElementById('mapLocSub').textContent = sub;
+  closeModal('locationModal');
+  updatePreview();
+  drawMap();
+};
+
+// Back gumb
+document.querySelectorAll('.nav-back').forEach(b => b.addEventListener('click', () => JUNTO.goBack()));
+</script>

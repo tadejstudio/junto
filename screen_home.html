@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SportMeet – Home Screen</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #1a1a2e;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+  }
+
+  .phone-frame {
+    width: 390px;
+    height: 844px;
+    background: #f5f5f7;
+    border-radius: 50px;
+    overflow: hidden;
+    box-shadow: 0 40px 80px rgba(0,0,0,0.5), inset 0 0 0 2px #333;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── Status bar ── */
+  .status-bar {
+    background: #fff;
+    padding: 14px 28px 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .status-bar .time { font-size: 15px; font-weight: 700; color: #111; }
+  .status-icons { display: flex; gap: 6px; align-items: center; font-size: 13px; font-weight: 600; color: #111; }
+
+  /* ── Header ── */
+  .header {
+    background: #fff;
+    padding: 10px 20px 0px;
+    border-bottom: 1px solid #f0f0f0;
+  }
+  .header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+  }
+  .location-pill {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #f5f5f7;
+    padding: 8px 14px;
+    border-radius: 20px;
+    font-size: 15px;
+    font-weight: 600;
+    color: #111;
+    cursor: pointer;
+  }
+  .location-pill .arrow { font-size: 11px; color: #888; margin-left: 2px; }
+  .header-actions { display: flex; gap: 10px; }
+  .icon-btn {
+    width: 38px; height: 38px;
+    background: #f5f5f7;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; cursor: pointer;
+  }
+
+  /* ── PRIMARY TIME FILTER ── */
+  .time-filter {
+    display: flex;
+    gap: 8px;
+    padding: 0 0 14px 0;
+  }
+  .time-chip {
+    flex: 1;
+    padding: 8px 6px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 700;
+    text-align: center;
+    cursor: pointer;
+    border: 2px solid #e0e0e0;
+    color: #888;
+    background: transparent;
+    white-space: nowrap;
+    transition: all 0.15s;
+  }
+  .time-chip.live-chip {
+    border-color: #FF3B30;
+    color: #FF3B30;
+  }
+  .time-chip.live-chip.active {
+    background: #FF3B30;
+    color: #fff;
+    border-color: #FF3B30;
+  }
+  .time-chip.active {
+    background: #111;
+    color: #fff;
+    border-color: #111;
+  }
+  .live-dot-inline {
+    display: inline-block;
+    width: 7px; height: 7px;
+    background: currentColor;
+    border-radius: 50%;
+    margin-right: 4px;
+    vertical-align: middle;
+    animation: pulse 1.2s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%       { opacity: 0.4; transform: scale(0.7); }
+  }
+
+  /* ── SECONDARY SPORT FILTER ── */
+  .sport-filter-wrap {
+    background: #fff;
+    padding: 10px 20px 12px;
+    border-bottom: 1px solid #f0f0f0;
+  }
+  .sport-filters {
+    display: flex; gap: 8px;
+    overflow-x: auto; scrollbar-width: none;
+  }
+  .sport-filters::-webkit-scrollbar { display: none; }
+  .chip {
+    flex-shrink: 0;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 13px; font-weight: 500;
+    background: #f0f0f0; color: #555;
+    cursor: pointer; white-space: nowrap;
+  }
+  .chip.active { background: #111; color: #fff; }
+
+  /* ── Feed ── */
+  .feed {
+    flex: 1;
+    overflow-y: auto;
+    padding: 14px 16px 90px;
+    scrollbar-width: none;
+  }
+  .feed::-webkit-scrollbar { display: none; }
+
+  .section-label {
+    font-size: 12px; font-weight: 700;
+    color: #888; text-transform: uppercase;
+    letter-spacing: 0.8px; margin: 4px 0 10px;
+  }
+
+  /* ── LIVE MOMENTS mini strip ── */
+  .live-moments {
+    margin-bottom: 14px;
+  }
+  .live-moments-label {
+    font-size: 11px; font-weight: 700;
+    color: #FF3B30; text-transform: uppercase;
+    letter-spacing: 0.6px; margin-bottom: 8px;
+    display: flex; align-items: center; gap: 5px;
+  }
+  .live-moments-row {
+    display: flex; gap: 10px;
+    overflow-x: auto; scrollbar-width: none;
+  }
+  .live-moments-row::-webkit-scrollbar { display: none; }
+  .moment-bubble {
+    display: flex; flex-direction: column;
+    align-items: center; gap: 4px;
+    flex-shrink: 0; cursor: pointer;
+  }
+  .moment-ring {
+    width: 46px; height: 46px;
+    border-radius: 50%;
+    border: 2.5px solid #FF3B30;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    background: #fff1f0;
+    animation: ring-pulse 2s ease-in-out infinite;
+  }
+  @keyframes ring-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(255,59,48,0.3); }
+    50%       { box-shadow: 0 0 0 4px rgba(255,59,48,0); }
+  }
+  .moment-name {
+    font-size: 10px; font-weight: 600;
+    color: #444; text-align: center;
+    max-width: 48px; white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis;
+  }
+
+  /* ── Card base ── */
+  .card {
+    background: #fff;
+    border-radius: 20px;
+    margin-bottom: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.07);
+    cursor: pointer;
+    overflow: hidden;
+    transition: transform 0.1s;
+  }
+  .card:active { transform: scale(0.98); }
+
+  /* LIVE card — bigger, urgent, dark */
+  .card.live-card {
+    background: linear-gradient(135deg, #111 0%, #1a1a2e 100%);
+    border: 1.5px solid rgba(255,59,48,0.35);
+    box-shadow: 0 4px 20px rgba(255,59,48,0.15);
+  }
+
+  .card-cover {
+    width: 100%; height: 140px;
+    object-fit: cover; object-position: center 30%;
+    display: block;
+  }
+  /* LIVE card cover taller */
+  .live-card .card-cover { height: 160px; object-position: center 20%; }
+
+  .card-cover-placeholder {
+    width: 100%; height: 140px;
+    display: flex; align-items: center;
+    justify-content: center; font-size: 48px;
+  }
+  .cover-girls   { background: linear-gradient(135deg,#FFE8F0,#FFC1D9); }
+  .cover-basket  { background: linear-gradient(135deg,#FFF0E6,#FFD4A8); }
+  .cover-cycling { background: linear-gradient(135deg,#E8F5E9,#A5D6A7); }
+  .cover-gym     { background: linear-gradient(135deg,#F3E5F5,#CE93D8); }
+
+  .card-body { padding: 14px 16px 16px; }
+
+  .card-top {
+    display: flex; justify-content: space-between;
+    align-items: flex-start; margin-bottom: 8px;
+  }
+  .card-sport { display: flex; align-items: center; gap: 10px; }
+  .sport-icon {
+    width: 40px; height: 40px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; flex-shrink: 0;
+  }
+  .basketball { background: #FFF0E6; }
+  .cycling    { background: #E8F5E9; }
+  .hiking     { background: #E3F2FD; }
+  .gym-icon   { background: #F3E5F5; }
+  .football   { background: #E8F5E9; }
+
+  .sport-info h3 {
+    font-size: 16px; font-weight: 700;
+    color: #111; margin-bottom: 1px;
+  }
+  .sport-info .location { font-size: 13px; color: #888; }
+
+  /* Dark card text overrides */
+  .live-card .sport-info h3    { color: #fff; }
+  .live-card .sport-info .location { color: rgba(255,255,255,0.55); }
+  .live-card .meta-item        { color: rgba(255,255,255,0.65) !important; }
+  .live-card .spots-fraction   { color: #fff !important; }
+  .live-card .spots-fraction .total { color: rgba(255,255,255,0.3) !important; }
+  .live-card .spots-label      { color: rgba(255,255,255,0.45) !important; }
+  .live-card .spots-bar-bg     { background: rgba(255,255,255,0.12) !important; }
+  .live-card .sport-icon       { background: rgba(255,255,255,0.12) !important; }
+
+  /* Badges */
+  .badge {
+    padding: 4px 10px; border-radius: 10px;
+    font-size: 12px; font-weight: 600;
+    display: flex; align-items: center; gap: 4px; flex-shrink: 0;
+  }
+  .badge.live-badge {
+    background: #FF3B30; color: #fff;
+    font-size: 13px; padding: 5px 12px;
+  }
+  .badge.public  { background: #E8F5E9; color: #2E7D32; }
+  .badge.private { background: #f0f0f0; color: #555; }
+  .badge.girls   { background: #FFE8F0; color: #E91E7A; }
+
+  .live-dot {
+    width: 7px; height: 7px; background: #fff;
+    border-radius: 50%; animation: pulse 1.2s ease-in-out infinite;
+  }
+
+  /* Meta row */
+  .card-meta {
+    display: flex; align-items: center; gap: 12px; margin-bottom: 12px;
+  }
+  .meta-item {
+    display: flex; align-items: center; gap: 4px;
+    font-size: 13px; color: #666; font-weight: 500;
+  }
+
+  /* Action row */
+  .card-action { display: flex; align-items: center; justify-content: space-between; }
+  .spots-counter { display: flex; flex-direction: column; gap: 1px; }
+  .spots-fraction { font-size: 20px; font-weight: 800; color: #111; line-height: 1; }
+  .spots-fraction .total { color: #ccc; font-weight: 600; }
+  .spots-label { font-size: 11px; color: #aaa; font-weight: 500; text-transform: uppercase; letter-spacing: 0.4px; }
+  .spots-bar-wrap { flex: 1; margin: 0 14px; }
+  .spots-bar-bg { height: 5px; background: #f0f0f0; border-radius: 3px; overflow: hidden; }
+  .spots-bar-fill { height: 100%; border-radius: 3px; background: #111; }
+  .spots-bar-fill.full   { background: #FF3B30; }
+  .spots-bar-fill.almost { background: #FF9500; }
+  .spots-bar-fill.live-fill { background: #FF3B30; }
+
+  .cta-btn {
+    padding: 10px 20px; border-radius: 14px;
+    font-size: 14px; font-weight: 700;
+    border: none; cursor: pointer; white-space: nowrap;
+  }
+  .cta-join    { background: #111; color: #fff; }
+  .cta-live    { background: #FF3B30; color: #fff; font-size: 15px; padding: 11px 22px; }
+  .cta-request { background: #f0f0f0; color: #111; }
+  .cta-full    { background: #f0f0f0; color: #bbb; cursor: default; }
+
+  /* ── Bottom nav ── */
+  .bottom-nav {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    height: 82px; background: #fff;
+    border-top: 1px solid #f0f0f0;
+    display: flex; align-items: center;
+    justify-content: space-around;
+    padding: 0 10px 18px;
+  }
+  .nav-item {
+    display: flex; flex-direction: column;
+    align-items: center; gap: 3px;
+    cursor: pointer; opacity: 0.35;
+  }
+  .nav-item.active { opacity: 1; }
+  .nav-icon  { font-size: 22px; }
+  .nav-label { font-size: 10px; font-weight: 600; color: #111; }
+  .nav-add {
+    width: 54px; height: 54px; background: #111;
+    border-radius: 18px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px; color: #fff; cursor: pointer;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.22);
+    margin-bottom: 10px; flex-shrink: 0;
+  }
+</style>
+</head>
+<body>
+<div class="phone-frame">
+
+  <!-- Status bar -->
+  <div class="status-bar">
+    <span class="time">9:41</span>
+    <div class="status-icons"><span>●●●●</span><span>WiFi</span><span>🔋</span></div>
+  </div>
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-top">
+      <div class="location-pill">📍 Ljubljana <span class="arrow">▼</span></div>
+      <div class="header-actions">
+        <div class="icon-btn">🗺️</div>
+        <div class="icon-btn">⚡</div>
+      </div>
+    </div>
+
+    <!-- PRIMARY: Time filter -->
+    <div class="time-filter">
+      <div class="time-chip live-chip active">
+        <span class="live-dot-inline"></span>LIVE
+      </div>
+      <div class="time-chip">Danes</div>
+      <div class="time-chip">Jutri</div>
+      <div class="time-chip">Ta teden</div>
+    </div>
+  </div>
+
+  <!-- SECONDARY: Sport filter -->
+  <div class="sport-filter-wrap">
+    <div class="sport-filters">
+      <div class="chip active">🏃 Vse</div>
+      <div class="chip">🏀 Košarka</div>
+      <div class="chip">🚴 Kolesarstvo</div>
+      <div class="chip">🥾 Pohod</div>
+      <div class="chip">💪 Gym</div>
+      <div class="chip">⚽ Futsal</div>
+    </div>
+  </div>
+
+  <!-- Feed -->
+  <div class="feed">
+
+    <!-- LIVE MOMENTS mini strip — bonus, pod filtri -->
+    <div class="live-moments">
+      <div class="live-moments-label">
+        <span style="width:6px;height:6px;background:#FF3B30;border-radius:50%;display:inline-block;animation:pulse 1.2s infinite"></span>
+        Live moments
+      </div>
+      <div class="live-moments-row">
+        <div class="moment-bubble">
+          <div class="moment-ring">🏀</div>
+          <div class="moment-name">BTC</div>
+        </div>
+        <div class="moment-bubble">
+          <div class="moment-ring">🚴</div>
+          <div class="moment-name">Šmarna</div>
+        </div>
+        <div class="moment-bubble">
+          <div class="moment-ring">💪</div>
+          <div class="moment-name">Fitinn</div>
+        </div>
+        <div class="moment-bubble">
+          <div class="moment-ring">⚽</div>
+          <div class="moment-name">Kodeljevo</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LIVE card — bigger, urgent -->
+    <div class="card live-card">
+      <img class="card-cover" src="basketball.jpg" alt="Basketball"
+           onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+      <div class="card-cover-placeholder cover-basket" style="display:none">🏀</div>
+      <div class="card-body">
+        <div class="card-top">
+          <div class="card-sport">
+            <div class="sport-icon basketball">🏀</div>
+            <div class="sport-info">
+              <h3>Košarka</h3>
+              <div class="location">📍 BTC igrišče</div>
+            </div>
+          </div>
+          <div class="badge live-badge"><div class="live-dot"></div> LIVE</div>
+        </div>
+        <div class="card-meta">
+          <div class="meta-item">⏱ Začetek 17:04</div>
+          <div class="meta-item">📍 0.4 km</div>
+          <div class="meta-item">🌍 Javno</div>
+        </div>
+        <div class="card-action">
+          <div class="spots-counter">
+            <div class="spots-fraction">3<span class="total">/5</span></div>
+            <div class="spots-label">igrajo</div>
+          </div>
+          <div class="spots-bar-wrap">
+            <div class="spots-bar-bg">
+              <div class="spots-bar-fill live-fill" style="width:60%"></div>
+            </div>
+          </div>
+          <button class="cta-btn cta-live">Pridruži se →</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-label" style="margin-top:4px">Danes</div>
+
+    <!-- Girls hiking -->
+    <div class="card">
+      <img class="card-cover" src="hiking.jpg" alt="Hiking"
+           onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+      <div class="card-cover-placeholder cover-girls" style="display:none">🥾</div>
+      <div class="card-body">
+        <div class="card-top">
+          <div class="card-sport">
+            <div class="sport-icon hiking">🥾</div>
+            <div class="sport-info">
+              <h3>Pohod – Rožnik</h3>
+              <div class="location">📍 Rožnik, Ljubljana</div>
+            </div>
+          </div>
+          <div class="badge girls">👩 Only girls</div>
+        </div>
+        <div class="card-meta">
+          <div class="meta-item">🕖 19:00</div>
+          <div class="meta-item">🔒 Zasebno</div>
+          <div class="meta-item">📍 2.8 km</div>
+        </div>
+        <div class="card-action">
+          <div class="spots-counter">
+            <div class="spots-fraction" style="color:#E91E7A">?<span class="total" style="color:#f8a8c8">/4</span></div>
+            <div class="spots-label">anonimno</div>
+          </div>
+          <div class="spots-bar-wrap">
+            <div class="spots-bar-bg">
+              <div class="spots-bar-fill" style="width:0%;background:#E91E7A"></div>
+            </div>
+          </div>
+          <button class="cta-btn cta-request">REQUEST →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cycling -->
+    <div class="card">
+      <img class="card-cover" src="cycling.jpg" alt="Cycling"
+           onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+      <div class="card-cover-placeholder cover-cycling" style="display:none">🚴</div>
+      <div class="card-body">
+        <div class="card-top">
+          <div class="card-sport">
+            <div class="sport-icon cycling">🚴</div>
+            <div class="sport-info">
+              <h3>Kolesarjenje</h3>
+              <div class="location">📍 Šmarna gora loop</div>
+            </div>
+          </div>
+          <div class="badge public">🌍 Javno</div>
+        </div>
+        <div class="card-meta">
+          <div class="meta-item">🕕 18:30</div>
+          <div class="meta-item">📊 Začetnik</div>
+          <div class="meta-item">📍 1.2 km</div>
+        </div>
+        <div class="card-action">
+          <div class="spots-counter">
+            <div class="spots-fraction">2<span class="total">/4</span></div>
+            <div class="spots-label">mest</div>
+          </div>
+          <div class="spots-bar-wrap">
+            <div class="spots-bar-bg">
+              <div class="spots-bar-fill" style="width:50%"></div>
+            </div>
+          </div>
+          <button class="cta-btn cta-join">JOIN</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Gym FULL -->
+    <div class="card">
+      <img class="card-cover" src="gym.jpg" alt="Gym"
+           onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+      <div class="card-cover-placeholder cover-gym" style="display:none">💪</div>
+      <div class="card-body">
+        <div class="card-top">
+          <div class="card-sport">
+            <div class="sport-icon gym-icon">💪</div>
+            <div class="sport-info">
+              <h3>Gym</h3>
+              <div class="location">📍 Fitinn Center</div>
+            </div>
+          </div>
+          <div class="badge public">🌍 Javno</div>
+        </div>
+        <div class="card-meta">
+          <div class="meta-item">🕖 19:30</div>
+          <div class="meta-item">📍 0.8 km</div>
+        </div>
+        <div class="card-action">
+          <div class="spots-counter">
+            <div class="spots-fraction" style="color:#FF3B30">2<span class="total" style="color:#ffaaaa">/2</span></div>
+            <div class="spots-label">zasedeno</div>
+          </div>
+          <div class="spots-bar-wrap">
+            <div class="spots-bar-bg">
+              <div class="spots-bar-fill full" style="width:100%"></div>
+            </div>
+          </div>
+          <button class="cta-btn cta-full">FULL</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /feed -->
+
+  <!-- Bottom nav -->
+  <div class="bottom-nav">
+    <div class="nav-item active">
+      <div class="nav-icon">🏠</div>
+      <div class="nav-label">Domov</div>
+    </div>
+    <div class="nav-item">
+      <div class="nav-icon">🗺️</div>
+      <div class="nav-label">Mapa</div>
+    </div>
+    <div class="nav-add">＋</div>
+    <div class="nav-item">
+      <div class="nav-icon">💬</div>
+      <div class="nav-label">Sporočila</div>
+    </div>
+    <div class="nav-item">
+      <div class="nav-icon">👤</div>
+      <div class="nav-label">Profil</div>
+    </div>
+  </div>
+
+</div>
+<script src="junto.js"></script>
+<script>
+JUNTO.injectNav("home","light");
+// Map gumb
+document.querySelector(".icon-btn")?.addEventListener("click",()=>JUNTO.goMap());
+// Bottom nav kliki (original nav skrij, junto nav prevzame)
+</script>
+</body>
+</html>
+<script>
+// Cards → activity screen
+document.querySelectorAll('.card').forEach(card => {
+  card.addEventListener('click', () => JUNTO.goActivity());
+});
+// Story bubbles → story screen
+document.querySelectorAll('.moment-bubble').forEach(b => {
+  b.addEventListener('click', () => JUNTO.goStory());
+});
+// Map icon gumb (drugi icon-btn)
+const iconBtns = document.querySelectorAll('.icon-btn');
+if (iconBtns[0]) iconBtns[0].addEventListener('click', () => JUNTO.goMap());
+</script>

@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="sl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Junto — Mapa v3</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:#0a0e1a;display:flex;justify-content:center;align-items:center;min-height:100vh;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;}
+.device{width:390px;height:844px;background:#0f1420;border-radius:48px;overflow:hidden;position:relative;border:8px solid #1e2435;box-shadow:0 0 0 1px rgba(255,255,255,0.07),0 40px 80px rgba(0,0,0,0.8);}
+.map-layer{position:absolute;top:0;left:0;width:100%;height:100%;background:#1a2435;}
+.road-h{position:absolute;background:#243347;height:6px;}
+.road-v{position:absolute;background:#243347;width:6px;}
+.road-main-h{position:absolute;background:#2e4260;height:10px;}
+.road-main-v{position:absolute;background:#2e4260;width:10px;}
+.blk{position:absolute;background:#162030;border-radius:3px;}
+.water{position:absolute;background:#162f45;border-radius:10px;}
+.park{position:absolute;background:#1a3025;border-radius:6px;}
+.status-bar{position:absolute;top:0;left:0;right:0;height:50px;display:flex;align-items:center;justify-content:space-between;padding:16px 24px 0;z-index:80;pointer-events:none;}
+.s-time{color:#fff;font-size:15px;font-weight:500;}
+.s-icons{color:rgba(255,255,255,0.7);font-size:11px;display:flex;gap:6px;}
+.top-ui{position:absolute;top:50px;left:0;right:0;z-index:60;padding:8px 16px;display:flex;gap:8px;align-items:center;}
+.search-bar{flex:1;background:rgba(255,255,255,0.11);backdrop-filter:blur(12px);border-radius:24px;border:0.5px solid rgba(255,255,255,0.15);height:40px;display:flex;align-items:center;padding:0 14px;gap:8px;}
+.search-bar span{color:rgba(255,255,255,0.45);font-size:13px;}
+.icon-btn{width:40px;height:40px;background:rgba(255,255,255,0.11);backdrop-filter:blur(12px);border-radius:50%;border:0.5px solid rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;}
+.filter-strip{position:absolute;top:102px;left:0;right:0;z-index:60;display:flex;gap:8px;padding:0 16px;overflow-x:auto;scrollbar-width:none;}
+.filter-strip::-webkit-scrollbar{display:none;}
+.chip{background:rgba(255,255,255,0.09);backdrop-filter:blur(8px);border:0.5px solid rgba(255,255,255,0.13);border-radius:20px;padding:6px 14px;font-size:12px;color:rgba(255,255,255,0.65);white-space:nowrap;cursor:pointer;flex-shrink:0;transition:all .15s;}
+.chip.active{background:#FF385C;border-color:#FF385C;color:#fff;}
+.chip:hover{background:rgba(255,255,255,0.15);}
+.pulse-wrap{position:absolute;z-index:20;pointer-events:none;}
+.pulse-ring{position:absolute;border-radius:50%;border:2px solid #FF385C;animation:expandR 2s ease-out infinite;transform:translate(-50%,-50%);opacity:0;}
+.pulse-ring-2{animation-delay:.75s;}
+@keyframes expandR{0%{width:0;height:0;opacity:.7}100%{width:80px;height:80px;opacity:0}}
+.pin{position:absolute;cursor:pointer;z-index:30;transform:translate(-50%,-50%);transition:transform .15s;}
+.pin:hover{transform:translate(-50%,-50%) scale(1.12);}
+.pin:active{transform:translate(-50%,-50%) scale(0.96);}
+.pin-bubble{background:#fff;border-radius:20px;padding:5px 10px;display:flex;align-items:center;gap:5px;white-space:nowrap;border:2px solid transparent;position:relative;}
+.pin-bubble.live{border-color:#FF385C;}
+.pin-em{font-size:15px;}
+.pin-lbl{font-size:11px;font-weight:500;color:#111;}
+.pin-cnt{font-size:10px;color:#888;}
+.live-dot{width:6px;height:6px;background:#FF385C;border-radius:50%;animation:pd 1.4s ease-in-out infinite;flex-shrink:0;}
+@keyframes pd{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.75)}}
+.live-badge{position:absolute;top:-9px;right:-9px;background:#FF385C;color:#fff;font-size:9px;font-weight:600;padding:2px 5px;border-radius:8px;border:1.5px solid #0f1420;}
+.pin-solo{width:44px;height:44px;background:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;border:2px solid transparent;}
+.map-ctrl{position:absolute;right:16px;top:52%;transform:translateY(-50%);z-index:50;display:flex;flex-direction:column;gap:8px;}
+.ctrl{width:38px;height:38px;background:rgba(255,255,255,0.11);backdrop-filter:blur(8px);border-radius:10px;border:0.5px solid rgba(255,255,255,0.13);display:flex;align-items:center;justify-content:center;cursor:pointer;}
+.bottom-sheet{position:absolute;bottom:0;left:0;right:0;z-index:55;background:rgba(16,22,36,0.97);backdrop-filter:blur(20px);border-radius:24px 24px 0 0;border-top:0.5px solid rgba(255,255,255,0.09);transition:transform .35s cubic-bezier(.4,0,.2,1);padding-bottom:88px;}
+.bottom-sheet.collapsed{transform:translateY(calc(100% - 88px - 54px));}
+.sheet-handle-wrap{cursor:pointer;display:flex;flex-direction:column;align-items:center;}
+.sheet-handle{width:36px;height:4px;background:rgba(255,255,255,0.2);border-radius:2px;margin:12px auto 0;}
+.sheet-peek{display:flex;align-items:center;justify-content:space-between;padding:10px 18px 12px;cursor:pointer;width:100%;}
+.peek-title{color:#fff;font-size:15px;font-weight:500;}
+.peek-sub{color:rgba(255,255,255,0.4);font-size:12px;}
+.peek-arrow{color:rgba(255,255,255,0.4);font-size:18px;transition:transform .3s;}
+.bottom-sheet.collapsed .peek-arrow{transform:rotate(180deg);}
+.act-card{margin:0 14px 10px;background:rgba(255,255,255,0.055);border-radius:14px;border:0.5px solid rgba(255,255,255,0.08);padding:11px 13px;display:flex;align-items:center;gap:11px;cursor:pointer;transition:background .15s;}
+.act-card:hover{background:rgba(255,255,255,0.1);}
+.sport-icon-box{width:44px;height:44px;background:rgba(255,255,255,0.07);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;}
+.sport-icon-box.live-ic{background:rgba(255,56,92,0.14);}
+.ci{flex:1;min-width:0;}
+.ci-name{color:#fff;font-size:13px;font-weight:500;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ci-meta{color:rgba(255,255,255,0.4);font-size:11px;}
+.cr{text-align:right;flex-shrink:0;}
+.cr-time{color:rgba(255,255,255,0.5);font-size:11px;margin-bottom:4px;}
+.badge{font-size:10px;padding:3px 8px;border-radius:10px;font-weight:500;}
+.b-live{background:rgba(255,56,92,0.18);color:#FF385C;}
+.b-soon{background:rgba(255,184,0,0.13);color:#FFB800;}
+.b-open{background:rgba(30,200,120,0.13);color:#1EC878;}
+.tab-bar{position:absolute;bottom:0;left:0;right:0;height:82px;background:rgba(11,16,26,0.97);backdrop-filter:blur(20px);border-top:0.5px solid rgba(255,255,255,0.07);display:flex;align-items:flex-start;justify-content:space-around;padding-top:12px;z-index:200;}
+.tab-it{display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;}
+.t-lbl{font-size:10px;color:rgba(255,255,255,0.28);}
+.t-lbl.ta{color:#FF385C;}
+.add-btn{width:52px;height:32px;background:#FF385C;border-radius:14px;display:flex;align-items:center;justify-content:center;margin-bottom:2px;}
+.summary-overlay{position:absolute;top:0;left:0;right:0;bottom:0;z-index:150;background:rgba(0,0,0,0.5);display:none;flex-direction:column;}
+.summary-overlay.open{display:flex;}
+.summary-sheet{background:#f2f2f7;width:100%;border-radius:20px 20px 0 0;overflow:hidden;margin-top:auto;max-height:88%;display:flex;flex-direction:column;}
+.sh-nav{background:#fff;display:flex;align-items:center;justify-content:space-between;padding:14px 16px 12px;border-bottom:0.5px solid #e5e5ea;flex-shrink:0;}
+.sh-back{display:flex;align-items:center;gap:4px;color:#007AFF;font-size:15px;cursor:pointer;}
+.sh-center{text-align:center;}
+.sh-title{color:#000;font-size:16px;font-weight:600;}
+.sh-sub{color:#888;font-size:12px;margin-top:2px;}
+.sport-band{background:#fff;padding:14px 16px;border-bottom:0.5px solid #e5e5ea;flex-shrink:0;}
+.sport-band-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+.sport-name-big{font-size:20px;font-weight:600;color:#000;display:flex;align-items:center;gap:8px;}
+.live-pill{background:#ffebee;color:#c62828;font-size:12px;font-weight:600;padding:4px 10px;border-radius:10px;display:flex;align-items:center;gap:5px;}
+.live-pill-dot{width:6px;height:6px;background:#c62828;border-radius:50%;animation:pd 1.4s ease-in-out infinite;}
+.soon-pill{background:#fff3e0;color:#e65100;font-size:12px;font-weight:500;padding:4px 10px;border-radius:10px;}
+.open-pill{background:#e8f5e9;color:#2e7d32;font-size:12px;font-weight:500;padding:4px 10px;border-radius:10px;}
+.meta-row{display:flex;gap:14px;flex-wrap:wrap;}
+.meta-item{display:flex;align-items:center;gap:4px;color:#666;font-size:12px;}
+.priv-pub{color:#2e7d32;font-size:12px;display:flex;align-items:center;gap:4px;}
+.priv-prv{color:#e65100;font-size:12px;display:flex;align-items:center;gap:4px;}
+.iou-row{display:flex;gap:0;margin:10px 14px;background:#fff;border-radius:14px;overflow:hidden;border:0.5px solid #e5e5ea;flex-shrink:0;}
+.iou-cell{flex:1;padding:14px 8px;text-align:center;cursor:pointer;transition:background .15s;}
+.iou-cell:not(:last-child){border-right:0.5px solid #e5e5ea;}
+.iou-cell:hover{background:#f5f5f5;}
+.iou-cell:active{background:#ebebeb;}
+.iou-num{font-size:28px;font-weight:700;display:block;margin-bottom:2px;}
+.iou-in .iou-num{color:#34c759;}
+.iou-out .iou-num{color:#ff3b30;}
+.iou-unk .iou-num{color:#8e8e93;}
+.iou-label{font-size:12px;color:#8e8e93;font-weight:500;}
+.iou-chevron{font-size:11px;color:#c7c7cc;margin-top:2px;}
+.desc-block{background:#fff;margin:10px 0 0;padding:14px 16px;}
+.desc-label{font-size:12px;color:#8e8e93;margin-bottom:4px;}
+.desc-text{font-size:14px;color:#111;line-height:1.5;}
+.chat-preview{background:#fff;margin:10px 0 0;}
+.chat-sec-hdr{padding:12px 16px 8px;font-size:13px;font-weight:600;color:#000;border-bottom:0.5px solid #f0f0f0;}
+.chat-msg-light{display:flex;gap:9px;padding:10px 16px;border-bottom:0.5px solid #f5f5f5;}
+.chat-av-light{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex-shrink:0;color:#fff;}
+.chat-bubble-light{background:#f0f0f5;border-radius:4px 14px 14px 14px;padding:8px 12px;max-width:210px;}
+.chat-name-light{font-size:11px;color:#888;margin-bottom:3px;}
+.chat-text-light{font-size:13px;color:#111;line-height:1.4;}
+.chat-time-light{font-size:10px;color:#bbb;margin-top:3px;}
+.chat-input-wrap{padding:10px 16px;display:flex;gap:8px;align-items:center;background:#fff;border-top:0.5px solid #e5e5ea;}
+.chat-in-light{flex:1;background:#f0f0f5;border:none;border-radius:20px;height:36px;padding:0 14px;font-size:13px;color:#000;outline:none;}
+.chat-in-light::placeholder{color:#aaa;}
+.chat-send-light{width:34px;height:34px;background:#FF385C;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;}
+.summary-cta{background:#fff;border-top:0.5px solid #e5e5ea;padding:12px 16px 24px;display:flex;gap:10px;flex-shrink:0;}
+.btn-in{flex:1;height:48px;background:#34c759;border-radius:14px;border:none;color:#fff;font-size:15px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;}
+.btn-out{flex:1;height:48px;background:#f2f2f7;border-radius:14px;border:0.5px solid #d1d1d6;color:#ff3b30;font-size:15px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;}
+.btn-req{width:100%;height:48px;background:#f2f2f7;border-radius:14px;border:0.5px solid #d1d1d6;color:#555;font-size:14px;cursor:pointer;}
+.summary-scroll{overflow-y:auto;flex:1;}
+.roster-overlay{position:absolute;top:0;left:0;right:0;bottom:0;z-index:160;background:#f2f2f7;display:none;flex-direction:column;}
+.roster-overlay.open{display:flex;}
+.roster-nav{background:#fff;display:flex;align-items:center;justify-content:space-between;padding:54px 16px 12px;border-bottom:0.5px solid #e5e5ea;flex-shrink:0;}
+.roster-back{display:flex;align-items:center;gap:4px;color:#007AFF;font-size:15px;cursor:pointer;}
+.roster-nav-title{font-size:16px;font-weight:600;color:#000;text-align:center;}
+.roster-nav-sub{font-size:12px;color:#888;margin-top:2px;text-align:center;}
+.roster-scroll{flex:1;overflow-y:auto;}
+.roster-row{display:flex;align-items:center;padding:11px 16px;border-bottom:0.5px solid #f5f5f5;gap:12px;background:#fff;}
+.roster-av{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;color:#fff;position:relative;flex-shrink:0;}
+.status-dot{position:absolute;bottom:0;right:0;width:14px;height:14px;border-radius:50%;border:2px solid #f2f2f7;display:flex;align-items:center;justify-content:center;}
+.dot-in{background:#34c759;}
+.dot-out{background:#ff3b30;}
+.dot-unk{background:#c7c7cc;}
+.roster-info{flex:1;}
+.roster-name{font-size:15px;color:#000;}
+.roster-tag{font-size:11px;color:#8e8e93;margin-top:1px;}
+.roster-pos{background:#e5e5ea;color:#555;font-size:11px;font-weight:500;padding:2px 8px;border-radius:6px;flex-shrink:0;}
+.roster-sec-hdr{background:#f2f2f7;padding:10px 16px 6px;display:flex;justify-content:space-between;}
+.rs-title{font-size:13px;font-weight:600;color:#000;}
+.rs-count{font-size:13px;font-weight:600;color:#8e8e93;}
+.avc-a{background:#4a90d9;}.avc-b{background:#7b68ee;}.avc-c{background:#3cb371;}
+.avc-d{background:#e0872a;}.avc-e{background:#9b59b6;}.avc-f{background:#1abc9c;}
+.avc-g{background:#c0a020;}.avc-h{background:#c0608a;}.avc-i{background:#e05050;}
+.avc-j{background:#2e86ab;}.avc-k{background:#a23b72;}.avc-l{background:#457b9d;}
+</style>
+</head>
+<body>
+<div class="device">
+  <div class="map-layer">
+    <div class="water" style="left:55px;top:275px;width:190px;height:28px;transform:rotate(-7deg);"></div>
+    <div class="water" style="left:0;top:290px;width:90px;height:22px;"></div>
+    <div class="park" style="left:18px;top:175px;width:115px;height:85px;"></div>
+    <div class="park" style="left:240px;top:370px;width:95px;height:75px;"></div>
+    <div class="park" style="left:28px;top:450px;width:72px;height:62px;"></div>
+    <div class="road-main-h" style="left:0;right:0;top:338px;"></div>
+    <div class="road-h" style="left:0;right:0;top:238px;height:5px;"></div>
+    <div class="road-h" style="left:0;right:0;top:418px;height:5px;"></div>
+    <div class="road-h" style="left:0;right:0;top:498px;height:5px;"></div>
+    <div class="road-h" style="left:0;right:0;top:558px;height:5px;"></div>
+    <div class="road-main-v" style="left:158px;top:0;bottom:0;"></div>
+    <div class="road-v" style="left:78px;top:0;bottom:0;height:100%;"></div>
+    <div class="road-v" style="left:258px;top:0;bottom:0;height:100%;"></div>
+    <div class="road-v" style="left:328px;top:0;bottom:0;height:100%;"></div>
+    <div class="blk" style="left:88px;top:248px;width:62px;height:78px;"></div>
+    <div class="blk" style="left:168px;top:248px;width:82px;height:78px;"></div>
+    <div class="blk" style="left:168px;top:348px;width:82px;height:62px;"></div>
+    <div class="blk" style="left:88px;top:348px;width:62px;height:62px;"></div>
+    <div class="blk" style="left:268px;top:248px;width:52px;height:60px;"></div>
+  </div>
+
+  <div class="status-bar">
+    <span class="s-time">9:41</span>
+    <div class="s-icons"><span>●●●</span><span>WiFi</span><span>100%</span></div>
+  </div>
+
+  <div class="top-ui">
+    <div class="search-bar">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="2.5"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg>
+      <span>Išči aktivnosti...</span>
+    </div>
+    <div class="icon-btn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg></div>
+  </div>
+
+  <div class="filter-strip">
+    <div class="chip active" onclick="filterPins('vse',this)">Vse</div>
+    <div class="chip" onclick="filterPins('bball',this)">🏀 Košarka</div>
+    <div class="chip" onclick="filterPins('futsal',this)">⚽ Futsal</div>
+    <div class="chip" onclick="filterPins('cycling',this)">🚴 Kolesarstvo</div>
+    <div class="chip" onclick="filterPins('volley',this)">🏐 Odbojka</div>
+    <div class="chip" onclick="filterPins('run',this)">🏃 Tek</div>
+  </div>
+
+  <div class="pulse-wrap" style="left:163px;top:358px;"><div class="pulse-ring"></div><div class="pulse-ring pulse-ring-2"></div></div>
+  <div class="pulse-wrap" style="left:288px;top:298px;"><div class="pulse-ring" style="animation-delay:.3s;"></div><div class="pulse-ring pulse-ring-2" style="animation-delay:1.05s;"></div></div>
+
+  <div class="pin" id="pin-bball" style="left:163px;top:358px;" onclick="openSummary('bball')">
+    <div class="pin-bubble live"><div class="live-dot"></div><span class="pin-em">🏀</span><span class="pin-lbl">Pickup</span><span class="pin-cnt">8/10</span><div class="live-badge">LIVE</div></div>
+  </div>
+  <div class="pin" id="pin-futsal" style="left:288px;top:298px;" onclick="openSummary('futsal')">
+    <div class="pin-bubble live"><div class="live-dot"></div><span class="pin-em">⚽</span><span class="pin-lbl">Futsal</span><span class="pin-cnt">9/12</span><div class="live-badge">LIVE</div></div>
+  </div>
+  <div class="pin" id="pin-cycling" style="left:93px;top:468px;" onclick="openSummary('cycling')">
+    <div class="pin-bubble"><span class="pin-em">🚴</span><span class="pin-lbl">Kolesarjenje</span><span class="pin-cnt">4/8</span></div>
+  </div>
+  <div class="pin" id="pin-volley" style="left:278px;top:475px;" onclick="openSummary('volley')">
+    <div class="pin-bubble"><span class="pin-em">🏐</span><span class="pin-lbl">Odbojka</span><span class="pin-cnt">6/8</span></div>
+  </div>
+  <div class="pin" id="pin-tennis" style="left:198px;top:528px;" onclick="openSummary('tennis')">
+    <div class="pin-solo">🎾</div>
+  </div>
+  <div class="pin" id="pin-run" style="left:118px;top:578px;" onclick="openSummary('run')">
+    <div class="pin-solo">🏃</div>
+  </div>
+
+  <div class="map-ctrl">
+    <div class="ctrl"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
+    <div class="ctrl"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
+    <div class="ctrl" style="margin-top:4px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg></div>
+  </div>
+
+  <div class="bottom-sheet" id="bottom-sheet">
+    <div class="sheet-handle-wrap" onclick="toggleSheet()">
+      <div class="sheet-handle"></div>
+      <div class="sheet-peek">
+        <div><div class="peek-title">Aktivnosti v bližini</div><div class="peek-sub">Ljubljana · 6 aktivnosti</div></div>
+        <div class="peek-arrow" id="peek-arrow">⌃</div>
+      </div>
+    </div>
+    <div id="sheet-content">
+      <div class="act-card" onclick="openSummary('bball')">
+        <div class="sport-icon-box live-ic">🏀</div>
+        <div class="ci"><div class="ci-name">Pickup Basketball — Tivoli</div><div class="ci-meta">350m · 8/10 mest</div></div>
+        <div class="cr"><div class="cr-time">zdaj</div><div class="badge b-live">● LIVE</div></div>
+      </div>
+      <div class="act-card" onclick="openSummary('futsal')">
+        <div class="sport-icon-box live-ic">⚽</div>
+        <div class="ci"><div class="ci-name">Futsal — Šiška</div><div class="ci-meta">480m · 9/12 mest</div></div>
+        <div class="cr"><div class="cr-time">zdaj</div><div class="badge b-live">● LIVE</div></div>
+      </div>
+      <div class="act-card" onclick="openSummary('cycling')">
+        <div class="sport-icon-box">🚴</div>
+        <div class="ci"><div class="ci-name">Kolesarjenje — Rožnik</div><div class="ci-meta">1.1km · 4/8 mest</div></div>
+        <div class="cr"><div class="cr-time">čez 45 min</div><div class="badge b-soon">kmalu</div></div>
+      </div>
+      <div class="act-card" onclick="openSummary('volley')">
+        <div class="sport-icon-box">🏐</div>
+        <div class="ci"><div class="ci-name">Odbojka — Golovec</div><div class="ci-meta">1.4km · 6/8 mest</div></div>
+        <div class="cr"><div class="cr-time">17:00</div><div class="badge b-open">odprto</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-bar">
+    <div class="tab-it"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg><span class="t-lbl">Home</span></div>
+    <div class="tab-it"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FF385C" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg><span class="t-lbl ta">Mapa</span></div>
+    <div class="tab-it"><div class="add-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div></div>
+    <div class="tab-it"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span class="t-lbl">Inbox</span></div>
+    <div class="tab-it"><div style="width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;"><svg width="13" height="13" viewBox="0 0 24 24" fill="rgba(255,255,255,0.5)" stroke="none"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div><span class="t-lbl">Profil</span></div>
+  </div>
+
+  <!-- LAYER 1: SUMMARY -->
+  <div class="summary-overlay" id="summary-overlay">
+    <div class="summary-sheet">
+      <div class="sh-nav">
+        <div class="sh-back" onclick="closeSummary()"><svg width="10" height="16" viewBox="0 0 10 18" fill="none" stroke="#007AFF" stroke-width="2.5" stroke-linecap="round"><path d="M9 1L1 9l8 8"/></svg>Nazaj</div>
+        <div class="sh-center"><div class="sh-title" id="sh-title"></div><div class="sh-sub" id="sh-sub"></div></div>
+        <div style="width:60px;"></div>
+      </div>
+      <div class="summary-scroll">
+        <div class="sport-band" id="sport-band"></div>
+        <div class="iou-row">
+          <div class="iou-cell iou-in" onclick="openRoster('attending')"><span class="iou-num" id="iou-in-num">0</span><div class="iou-label">In</div><div class="iou-chevron">›</div></div>
+          <div class="iou-cell iou-out" onclick="openRoster('notAttending')"><span class="iou-num" id="iou-out-num">0</span><div class="iou-label">Out</div><div class="iou-chevron">›</div></div>
+          <div class="iou-cell iou-unk" onclick="openRoster('awaiting')"><span class="iou-num" id="iou-unk-num">0</span><div class="iou-label">Unknown</div><div class="iou-chevron">›</div></div>
+        </div>
+        <div class="desc-block" id="desc-block"></div>
+        <div class="chat-preview" id="chat-preview"></div>
+        <div style="height:10px;background:#f2f2f7;"></div>
+      </div>
+      <div class="summary-cta" id="summary-cta"></div>
+    </div>
+  </div>
+
+  <!-- LAYER 2: ROSTER -->
+  <div class="roster-overlay" id="roster-overlay">
+    <div class="roster-nav">
+      <div class="roster-back" onclick="closeRoster()"><svg width="10" height="16" viewBox="0 0 10 18" fill="none" stroke="#007AFF" stroke-width="2.5" stroke-linecap="round"><path d="M9 1L1 9l8 8"/></svg>Nazaj</div>
+      <div style="text-align:center;"><div class="roster-nav-title" id="roster-title"></div><div class="roster-nav-sub" id="roster-sub"></div></div>
+      <div style="width:60px;"></div>
+    </div>
+    <div class="roster-scroll" id="roster-scroll"></div>
+  </div>
+</div>
+
+<script>
+const acts={
+  bball:{name:'Pickup Basketball',sub:'Danes · zdaj · Tivoli',sport:'🏀 Košarka',status:'live',privacy:'public',location:'Tivoli, Ljubljana',distance:'350m',time:'Danes · vsako sredo 19:00',duration:'2 uri',description:'Sproščena pickup košarka. Ni potrebna izkušnja, vsi nivoji dobrodošli. Ponavadi igramo 5v5.',
+    attending:[{init:'MJ',name:'Miha J.',color:'avc-a',host:true},{init:'LK',name:'Luka K.',color:'avc-b'},{init:'NK',name:'Nina K.',color:'avc-c'},{init:'AV',name:'Anja V.',color:'avc-d'},{init:'TM',name:'Tine M.',color:'avc-e'},{init:'BP',name:'Blaž P.',color:'avc-f'},{init:'KZ',name:'Katja Z.',color:'avc-g'},{init:'RP',name:'Rok P.',color:'avc-h'}],
+    notAttending:[{init:'DL',name:'Domen L.',color:'avc-i'},{init:'SV',name:'Sara V.',color:'avc-j'},{init:'PM',name:'Peter M.',color:'avc-k'}],
+    awaiting:[{init:'GK',name:'Gal K.',color:'avc-l',pos:'PG'},{init:'MB',name:'Matej B.',color:'avc-a'},{init:'TV',name:'Tina V.',color:'avc-b'},{init:'RN',name:'Rok N.',color:'avc-c'},{init:'JL',name:'Jana L.',color:'avc-d'},{init:'BZ',name:'Bor Z.',color:'avc-e'},{init:'KP',name:'Kaja P.',color:'avc-f'},{init:'MS',name:'Marko S.',color:'avc-g'},{init:'IM',name:'Ines M.',color:'avc-h'},{init:'DK',name:'David K.',color:'avc-i'}],
+    chat:[{init:'MJ',color:'avc-a',name:'Miha J.',msg:'Gremo 10min, kdor zamudi pride naslednjič 😅',time:'9:28'},{init:'LK',color:'avc-b',name:'Luka K.',msg:'Pridem takoj! Parkiram',time:'9:31'},{init:'NK',color:'avc-c',name:'Nina K.',msg:'Prinesem žogo za rezervo 🏀',time:'9:35'}]},
+  futsal:{name:'Futsal — Šiška',sub:'Danes · zdaj · Šiška',sport:'⚽ Futsal',status:'live',privacy:'private',location:'Športni park Šiška',distance:'480m',time:'Danes · ponavljajoče ob sredah',duration:'1.5 ure',description:'Tekmovalna igra futsala na zakupljenem igrišču. Zaprta ekipa, prosi za dostop.',
+    attending:[{init:'GM',name:'Gašper M.',color:'avc-b',host:true},{init:'AL',name:'Andrej L.',color:'avc-a'},{init:'SF',name:'Sara F.',color:'avc-c'},{init:'NP',name:'Nejc P.',color:'avc-e'},{init:'VK',name:'Vid K.',color:'avc-d'},{init:'MH',name:'Maja H.',color:'avc-g'},{init:'BK',name:'Bojan K.',color:'avc-f'},{init:'TP',name:'Teja P.',color:'avc-h'},{init:'RM',name:'Rok M.',color:'avc-i'}],
+    notAttending:[{init:'JN',name:'Jana N.',color:'avc-j'},{init:'PL',name:'Peter L.',color:'avc-k'},{init:'AB',name:'Anja B.',color:'avc-l'}],
+    awaiting:[{init:'KR',name:'Kristjan R.',color:'avc-a'},{init:'MS',name:'Matej S.',color:'avc-b'},{init:'NB',name:'Nika B.',color:'avc-c'},{init:'FB',name:'Filip B.',color:'avc-d'},{init:'ZK',name:'Žiga K.',color:'avc-e'},{init:'LD',name:'Lana D.',color:'avc-f'},{init:'TZ',name:'Tina Z.',color:'avc-g'},{init:'BM',name:'Bor M.',color:'avc-h'},{init:'MV',name:'Maja V.',color:'avc-i'},{init:'GN',name:'Gal N.',color:'avc-j'}],
+    chat:[{init:'GM',color:'avc-b',name:'Gašper M.',msg:'Igrišče je rezervirano do 11h',time:'9:15'},{init:'AL',color:'avc-a',name:'Andrej L.',msg:'Super! Pridem s Petrom',time:'9:18'}]},
+  cycling:{name:'Kolesarjenje Rožnik',sub:'Danes · 10:30 · Rožnik',sport:'🚴 Kolesarjenje',status:'soon',privacy:'public',location:'Rožnik trailhead',distance:'1.1km',time:'Danes 10:30 · enkratno',duration:'~3 ure',description:'Jutranjo kolesarjenje po Rožniku. Primerno za vse ki zdržijo uro brez premora.',
+    attending:[{init:'PV',name:'Petra V.',color:'avc-c',host:true},{init:'MS',name:'Matej S.',color:'avc-a'},{init:'JK',name:'Jana K.',color:'avc-g'},{init:'FB',name:'Filip B.',color:'avc-d'}],
+    notAttending:[{init:'KR',name:'Klemen R.',color:'avc-i'}],
+    awaiting:[{init:'LD',name:'Lana D.',color:'avc-e'},{init:'TZ',name:'Tina Z.',color:'avc-j'},{init:'BM',name:'Bor M.',color:'avc-k'}],
+    chat:[{init:'PV',color:'avc-c',name:'Petra V.',msg:'Start ob 10:30 pri parkirišču 🌲',time:'8:45'},{init:'MS',color:'avc-a',name:'Matej S.',msg:'Koliko km planiramo?',time:'8:52'},{init:'PV',color:'avc-c',name:'Petra V.',msg:'Okrog 25km 🚴',time:'8:55'}]},
+  volley:{name:'Odbojka Golovec',sub:'Danes · 17:00 · Golovec',sport:'🏐 Odbojka',status:'open',privacy:'public',location:'Atletski stadion',distance:'1.4km',time:'Danes 17:00 · enkratno',duration:'2 uri',description:'Rekreativna odbojka na pesku. Izkušnje dobrodošle ampak ne obvezne.',
+    attending:[{init:'EB',name:'Eva B.',color:'avc-e',host:true},{init:'KM',name:'Kaja M.',color:'avc-g'},{init:'JH',name:'Jan H.',color:'avc-a'},{init:'ZB',name:'Žiga B.',color:'avc-d'},{init:'MC',name:'Maja Č.',color:'avc-h'},{init:'IL',name:'Ines L.',color:'avc-c'}],
+    notAttending:[],
+    awaiting:[{init:'RK',name:'Rok K.',color:'avc-b'},{init:'NL',name:'Nika L.',color:'avc-f'}],
+    chat:[{init:'EB',color:'avc-e',name:'Eva B.',msg:'Dobimo se pri vhodu ob 16:55 ✌️',time:'14:10'},{init:'KM',color:'avc-g',name:'Kaja M.',msg:'Pridem z avtobusom!',time:'14:22'}]},
+  tennis:{name:'Tenis Tivoli',sub:'Danes · 14:00 · Tivoli',sport:'🎾 Tenis',status:'open',privacy:'public',location:'Tenis igrišča Tivoli',distance:'900m',time:'Danes 14:00',duration:'1.5 ure',description:'Teniška igra. Prinesita lastne loparje, žoge so pri meni.',
+    attending:[{init:'AK',name:'Aleš K.',color:'avc-f',host:true}],notAttending:[],
+    awaiting:[{init:'PB',name:'Petra B.',color:'avc-c'},{init:'MM',name:'Marko M.',color:'avc-a'}],
+    chat:[{init:'AK',color:'avc-f',name:'Aleš K.',msg:'Iščem partnerje za dvojice 🎾',time:'11:30'}]},
+  run:{name:'Jutarnji tek',sub:'Jutri · 7:00 · Tivoli',sport:'🏃 Tek',status:'soon',privacy:'public',location:'Park Tivoli',distance:'1.2km',time:'Jutri 7:00',duration:'~1 ura',description:'Sproščen 5km jutarnji tek po parku. Tempo prilagodimo vsem.',
+    attending:[{init:'SK',name:'Sara K.',color:'avc-h',host:true},{init:'LD',name:'Lana D.',color:'avc-c'},{init:'MP',name:'Matija P.',color:'avc-a'}],
+    notAttending:[{init:'GV',name:'Gašper V.',color:'avc-i'}],
+    awaiting:[{init:'NB',name:'Nika B.',color:'avc-e'},{init:'TR',name:'Tina R.',color:'avc-j'},{init:'FK',name:'Filip K.',color:'avc-k'},{init:'MN',name:'Maja N.',color:'avc-l'}],
+    chat:[{init:'SK',color:'avc-h',name:'Sara K.',msg:'Lahkoten 5km, za vsakogar 🏃‍♀️',time:'včeraj'},{init:'LD',color:'avc-c',name:'Lana D.',msg:'Pridem! Začenjam jutranjo rutino',time:'včeraj'}]}
+};
+
+let currentAct=null,sheetOpen=true;
+
+function toggleSheet(){const s=document.getElementById('bottom-sheet');sheetOpen=!sheetOpen;sheetOpen?s.classList.remove('collapsed'):s.classList.add('collapsed');}
+
+function filterPins(type,el){document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));el.classList.add('active');const map={bball:'pin-bball',futsal:'pin-futsal',cycling:'pin-cycling',volley:'pin-volley',tennis:'pin-tennis',run:'pin-run'};if(type==='vse'){Object.values(map).forEach(id=>{const p=document.getElementById(id);if(p)p.style.opacity='1';});}else{Object.values(map).forEach(id=>{const p=document.getElementById(id);if(p)p.style.opacity='0.15';});const s=map[type];if(s){const p=document.getElementById(s);if(p)p.style.opacity='1';}}}
+
+function openSummary(id){
+  const a=acts[id];if(!a)return;currentAct=a;
+  document.getElementById('sh-title').textContent=a.name;
+  document.getElementById('sh-sub').textContent=a.sub;
+  document.getElementById('iou-in-num').textContent=a.attending.length;
+  document.getElementById('iou-out-num').textContent=a.notAttending.length;
+  document.getElementById('iou-unk-num').textContent=a.awaiting.length;
+  let sp=a.status==='live'?'<div class="live-pill"><div class="live-pill-dot"></div>LIVE</div>':a.status==='soon'?'<div class="soon-pill">Kmalu</div>':'<div class="open-pill">Odprto</div>';
+  let pp=a.privacy==='private'?'<div class="priv-prv"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Zasebno</div>':'<div class="priv-pub"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>Javno</div>';
+  document.getElementById('sport-band').innerHTML=`<div class="sport-band-row"><div class="sport-name-big">${a.sport}</div>${sp}</div><div class="meta-row"><div class="meta-item"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>${a.location} · ${a.distance}</div><div class="meta-item"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>${a.time} · ${a.duration}</div>${pp}</div>`;
+  document.getElementById('desc-block').innerHTML=`<div class="desc-label">O aktivnosti</div><div class="desc-text">${a.description}</div>`;
+  const ch=a.chat.map(c=>`<div class="chat-msg-light"><div class="chat-av-light ${c.color}">${c.init}</div><div><div class="chat-bubble-light"><div class="chat-name-light">${c.name}</div><div class="chat-text-light">${c.msg}</div></div><div class="chat-time-light">${c.time}</div></div></div>`).join('');
+  document.getElementById('chat-preview').innerHTML=`<div class="chat-sec-hdr">Chat</div>${ch}<div class="chat-input-wrap"><input class="chat-in-light" placeholder="Sporoči skupini..."><div class="chat-send-light"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></div></div>`;
+  document.getElementById('summary-cta').innerHTML=a.privacy==='private'?`<button class="btn-req">Prosi za dostop 🔒</button>`:`<button class="btn-in"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>IN &nbsp;<strong>${a.attending.length}</strong></button><button class="btn-out"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ff3b30" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>OUT &nbsp;<strong>${a.notAttending.length}</strong></button>`;
+  document.getElementById('summary-overlay').classList.add('open');
+}
+
+function closeSummary(){document.getElementById('summary-overlay').classList.remove('open');currentAct=null;}
+
+function openRoster(type){
+  if(!currentAct)return;const a=currentAct;
+  const labels={attending:'Attending',notAttending:'Not Attending',awaiting:'Unknown'};
+  const dc={attending:'dot-in',notAttending:'dot-out',awaiting:'dot-unk'};
+  const ic={attending:'<svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>',notAttending:'<svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',awaiting:'<span style="font-size:8px;color:white;font-weight:700;">?</span>'};
+  const players=a[type];
+  document.getElementById('roster-title').textContent=labels[type];
+  document.getElementById('roster-sub').textContent=`${a.name} · ${players.length} oseb`;
+  const rows=players.map(p=>`<div class="roster-row"><div class="roster-av ${p.color}">${p.init}<div class="status-dot ${dc[type]}">${ic[type]}</div></div><div class="roster-info"><div class="roster-name">${p.name}${p.host?' 👑':''}</div><div class="roster-tag">ROSTER</div></div>${p.pos?`<div class="roster-pos">${p.pos}</div>`:''}</div>`).join('');
+  document.getElementById('roster-scroll').innerHTML=`<div class="roster-sec-hdr"><span class="rs-title">${labels[type]}</span><span class="rs-count">${players.length}</span></div>${rows||'<div style="padding:20px 16px;color:#8e8e93;font-size:14px;text-align:center;">Ni podatkov</div>'}`;
+  document.getElementById('roster-overlay').classList.add('open');
+}
+
+function closeRoster(){document.getElementById('roster-overlay').classList.remove('open');}
+</script>
+<script src="junto.js"></script>
+<script>
+JUNTO.injectNav("map","dark");
+</script>
+</body>
+</html>
+<script>
+// Tab bar kliki
+document.querySelectorAll('.tab-it').forEach((t, i) => {
+  t.addEventListener('click', () => {
+    const screens = ['screen_home.html', 'screen_map.html', null, 'screen_messages.html', 'screen_profil.html'];
+    if (i === 2) { JUNTO.goCreate(); return; }
+    if (screens[i]) JUNTO.go(screens[i]);
+  });
+});
+// Klik na activity card v sheet
+document.querySelectorAll('.act-card').forEach(c => {
+  c.addEventListener('click', () => JUNTO.goActivity());
+});
+// Add btn
+document.querySelector('.add-btn')?.addEventListener('click', () => JUNTO.goCreate());
+</script>
