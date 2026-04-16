@@ -55,8 +55,8 @@ body{background:#fff;display:flex;justify-content:center;min-height:100vh;font-f
     <div class="section-label">Novo</div>
 
     <!-- JOIN REQUEST -->
-    <div class="notif-row unread" id="req-ales">
-      <div class="nav-av" style="background:#9b59b6;">AK
+    <div class="notif-row unread" id="req-ales" onclick="location.href='screen_activity.html'">
+      <div class="nav-av" onclick="location.href='screen_profil.html'" style="background:#9b59b6;">AK
         <div class="notif-type-icon icon-activity">
           <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
         </div>
@@ -65,8 +65,8 @@ body{background:#fff;display:flex;justify-content:center;min-height:100vh;font-f
         <div class="notif-text"><strong>ales.kovac</strong> želi vstopiti v tvojo aktivnost <strong>Košarka — BTC</strong></div>
         <div class="notif-time">2 min · Prošnja za pridružitev</div>
         <div class="notif-action" style="margin-top:8px;">
-          <button class="btn-accept" onclick="acceptRequest('req-ales',this)">Sprejmi</button>
-          <button class="btn-decline" onclick="declineRequest('req-ales',this)">Zavrni</button>
+          <button class="btn-accept" onclick="event.stopPropagation();acceptRequest('req-ales',this)">Sprejmi</button>
+          <button class="btn-decline" onclick="event.stopPropagation();declineRequest('req-ales',this)">Zavrni</button>
         </div>
       </div>
       <div class="unread-dot"></div>
@@ -74,7 +74,7 @@ body{background:#fff;display:flex;justify-content:center;min-height:100vh;font-f
 
     <!-- LIKE -->
     <div class="notif-row unread" onclick="location.href='screen_profil.html'">
-      <div class="nav-av" style="background:#4a90d9;">MJ
+      <div class="nav-av" onclick="location.href='screen_profil.html'" style="background:#4a90d9;">MJ
         <div class="notif-type-icon icon-heart">
           <svg width="10" height="10" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
         </div>
@@ -89,7 +89,7 @@ body{background:#fff;display:flex;justify-content:center;min-height:100vh;font-f
 
     <!-- COMMENT -->
     <div class="notif-row unread" onclick="location.href='screen_profil.html'">
-      <div class="nav-av" style="background:#7b68ee;">LK
+      <div class="nav-av" onclick="location.href='screen_profil.html'" style="background:#7b68ee;">LK
         <div class="notif-type-icon icon-comment">
           <svg width="10" height="10" viewBox="0 0 24 24" fill="white"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
         </div>
@@ -104,7 +104,7 @@ body{background:#fff;display:flex;justify-content:center;min-height:100vh;font-f
 
     <!-- ACTIVITY JOIN -->
     <div class="notif-row unread" onclick="location.href='screen_activity.html'">
-      <div class="nav-av" style="background:#3cb371;">PV
+      <div class="nav-av" onclick="location.href='screen_profil.html'" style="background:#3cb371;">PV
         <div class="notif-type-icon icon-activity">
           <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
         </div>
@@ -118,7 +118,7 @@ body{background:#fff;display:flex;justify-content:center;min-height:100vh;font-f
 
     <!-- TAG -->
     <div class="notif-row unread" onclick="location.href='screen_profil.html'">
-      <div class="nav-av" style="background:#2196F3;">TK
+      <div class="nav-av" onclick="location.href='screen_profil.html'" style="background:#2196F3;">TK
         <div class="notif-type-icon icon-tag">
           <svg width="10" height="10" viewBox="0 0 24 24" fill="white"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><circle cx="7" cy="7" r="1.5"/></svg>
         </div>
@@ -135,7 +135,7 @@ body{background:#fff;display:flex;justify-content:center;min-height:100vh;font-f
 
     <!-- FOLLOW -->
     <div class="notif-row" onclick="location.href='screen_profil.html'">
-      <div class="nav-av" style="background:#9C27B0;">AV
+      <div class="nav-av" onclick="location.href='screen_profil.html'" style="background:#9C27B0;">AV
         <div class="notif-type-icon icon-follow">
           <svg width="10" height="10" viewBox="0 0 24 24" fill="white"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
         </div>
@@ -149,7 +149,7 @@ body{background:#fff;display:flex;justify-content:center;min-height:100vh;font-f
 
     <!-- LIKE OLD -->
     <div class="notif-row" onclick="location.href='screen_profil.html'">
-      <div class="nav-av" style="background:#FF9500;">LP
+      <div class="nav-av" onclick="location.href='screen_profil.html'" style="background:#FF9500;">LP
         <div class="notif-type-icon icon-heart">
           <svg width="10" height="10" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
         </div>
@@ -163,7 +163,7 @@ body{background:#fff;display:flex;justify-content:center;min-height:100vh;font-f
 
     <!-- NEARBY ACTIVITY -->
     <div class="notif-row" onclick="location.href='screen_activity.html'">
-      <div class="nav-av" style="background:#FF385C;font-size:22px;">🏀
+      <div class="nav-av" onclick="location.href='screen_profil.html'" style="background:#FF385C;font-size:22px;">🏀
         <div class="notif-type-icon icon-activity">
           <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/></svg>
         </div>
@@ -175,8 +175,8 @@ body{background:#fff;display:flex;justify-content:center;min-height:100vh;font-f
     </div>
 
     <!-- JOIN REQUEST 2 -->
-    <div class="notif-row" id="req-tina">
-      <div class="nav-av" style="background:#e0872a;">TM
+    <div class="notif-row" id="req-tina" onclick="location.href='screen_activity.html'">
+      <div class="nav-av" onclick="location.href='screen_profil.html'" style="background:#e0872a;">TM
         <div class="notif-type-icon icon-activity">
           <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
         </div>
@@ -185,8 +185,8 @@ body{background:#fff;display:flex;justify-content:center;min-height:100vh;font-f
         <div class="notif-text"><strong>tina.mlakar</strong> želi vstopiti v <strong>Futsal — Šiška</strong></div>
         <div class="notif-time">2 dni nazaj · Prošnja za pridružitev</div>
         <div class="notif-action" style="margin-top:8px;">
-          <button class="btn-accept" onclick="acceptRequest('req-tina',this)">Sprejmi</button>
-          <button class="btn-decline" onclick="declineRequest('req-tina',this)">Zavrni</button>
+          <button class="btn-accept" onclick="event.stopPropagation();acceptRequest('req-tina',this)">Sprejmi</button>
+          <button class="btn-decline" onclick="event.stopPropagation();declineRequest('req-tina',this)">Zavrni</button>
         </div>
       </div>
     </div>
@@ -240,9 +240,19 @@ function markAllRead() {
   document.querySelectorAll('.unread-dot').forEach(function(d) {
     d.remove();
   });
-  // Hide message dot too
   var dot = document.getElementById('msgDot');
   if (dot) dot.style.display = 'none';
+  // Store that notifications were read
+  try { sessionStorage.setItem('notif_read','1'); } catch(e) {}
+}
+
+// Check pending requests - keep heart dot until resolved
+function checkPending() {
+  var pending = document.querySelectorAll('.notif-row .notif-action').length;
+  if (pending === 0) {
+    var dot = document.getElementById('msgDot');
+    if (dot) dot.style.display = 'none';
+  }
 }
 </script>
 </body>
