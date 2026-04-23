@@ -51,8 +51,8 @@ body{background:#0f1420;max-width:390px;margin:0 auto;min-height:100vh;font-fami
 .map-ctrl{position:fixed;right:calc(50% - 179px);top:46%;transform:translateY(-50%);z-index:50;display:flex;flex-direction:column;gap:8px;}
 .ctrl{width:40px;height:40px;background:rgba(15,15,25,0.88);backdrop-filter:blur(8px);border-radius:12px;border:0.5px solid rgba(255,255,255,0.18);display:flex;align-items:center;justify-content:center;cursor:pointer;color:#fff;}
 .ctrl:active{opacity:0.7;}
-.bottom-sheet{position:fixed;bottom:82px;left:50%;transform:translateX(-50%);width:390px;z-index:55;background:rgba(12,16,28,0.97);backdrop-filter:blur(24px);border-radius:24px 24px 0 0;border-top:0.5px solid rgba(255,255,255,0.09);transition:transform .35s cubic-bezier(.4,0,.2,1);}
-.bottom-sheet.collapsed{transform:translateY(calc(100% - 72px));}
+.bottom-sheet{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:390px;z-index:55;background:rgba(12,16,28,0.97);backdrop-filter:blur(24px);border-radius:24px 24px 0 0;border-top:0.5px solid rgba(255,255,255,0.09);transition:transform .35s cubic-bezier(.4,0,.2,1);padding-bottom:82px;}
+.bottom-sheet.collapsed{transform:translateY(calc(100% - 82px - 72px));}
 .sheet-handle-wrap{cursor:pointer;display:flex;flex-direction:column;align-items:center;}
 .sheet-handle{width:36px;height:4px;background:rgba(255,255,255,0.2);border-radius:2px;margin:12px auto 0;}
 .sheet-peek{display:flex;align-items:center;justify-content:space-between;padding:10px 18px 12px;}
@@ -164,7 +164,7 @@ body{background:#0f1420;max-width:390px;margin:0 auto;min-height:100vh;font-fami
         <div class="peek-arrow" id="peek-arrow">⌃</div>
       </div>
     </div>
-    <div>
+    <div style="overflow:hidden;">
       <div class="act-card" onclick="openDetail('bball')"><div class="sport-icon-box live-ic">🏀</div><div class="ci"><div class="ci-name">Pickup Basketball — Tivoli</div><div class="ci-meta">350m · 8/10 mest</div></div><div class="cr"><div class="cr-time">zdaj</div><div class="badge b-live">● LIVE</div></div></div>
       <div class="act-card" onclick="openDetail('futsal')"><div class="sport-icon-box live-ic">⚽</div><div class="ci"><div class="ci-name">Futsal — Šiška</div><div class="ci-meta">480m · 9/12 mest</div></div><div class="cr"><div class="cr-time">zdaj</div><div class="badge b-live">● LIVE</div></div></div>
       <div class="act-card" onclick="openDetail('cycling')"><div class="sport-icon-box">🚴</div><div class="ci"><div class="ci-name">Kolesarjenje — Rožnik</div><div class="ci-meta">1.1km · 4/8 mest</div></div><div class="cr"><div class="cr-time">čez 45 min</div><div class="badge b-soon">kmalu</div></div></div>
