@@ -230,15 +230,10 @@ body{background:#f2f2f7;max-width:390px;margin:0 auto;min-height:100vh;font-fami
         <div class="section-title" style="margin:0;">Skupinski chat</div>
         <div style="font-size:12px;color:#8e8e93;" id="chat-count">4 sporočila</div>
       </div>
-      <div class="chat-msgs" id="chat-msgs">
-        <div class="chat-msg"><div class="msg-av" style="background:#FF6B35;" onclick="location.href='screen_profil.html'">M</div><div><div class="msg-name-row"><span class="msg-name" onclick="location.href='screen_profil.html'">Miha</span><span class="msg-badge">🏀 BALLER</span><span class="msg-time">17:04</span></div><div class="msg-text">Smo na igrišču, kdo pride? 🏀🔥</div></div></div>
-        <div class="chat-msg"><div class="msg-av" style="background:#4CAF50;" onclick="location.href='screen_profil.html'">J</div><div><div class="msg-name-row"><span class="msg-name" onclick="location.href='screen_profil.html'">Jan</span><span class="msg-time">17:11</span></div><div class="msg-text">Pridem v 10 min 🙏</div></div></div>
-        <div class="chat-msg"><div class="msg-av" style="background:#2196F3;" onclick="location.href='screen_profil.html'">T</div><div><div class="msg-name-row"><span class="msg-name" onclick="location.href='screen_profil.html'">Tomaž</span><span class="msg-time">17:14</span></div><div class="msg-text">Sem noter, igramo 3v3? 💪</div></div></div>
-        <div class="chat-msg"><div class="msg-av" style="background:#FF6B35;" onclick="location.href='screen_profil.html'">M</div><div><div class="msg-name-row"><span class="msg-name" onclick="location.href='screen_profil.html'">Miha</span><span class="msg-time">17:15</span></div><div class="msg-text">Ja, rabmo še enega 👀</div></div></div>
-      </div>
+      <div class="chat-msgs" id="chat-msgs"></div>
       <div class="chat-input-row">
         <div class="my-av">Ti</div>
-        <input class="chat-input" id="chat-input" placeholder="Napiši sporočilo..." onkeydown="if(event.key==='Enter')sendChat()"/>
+        <input class="chat-input" id="chat-input" placeholder="Napiši sporočilo..." oninput="window._onChatInput&&window._onChatInput()" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat();}"/>
         <button class="chat-send" onclick="sendChat()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button>
       </div>
     </div>
@@ -319,44 +314,50 @@ body{background:#f2f2f7;max-width:390px;margin:0 auto;min-height:100vh;font-fami
 </div>
 
 <script type="module">
-// Naloži aktivnost iz sessionStorage (poslana iz mape ali feeda)
+import { onAuth, loginWithGoogle, sendChatMessage, deleteChatMessage, listenChat, setTyping, listenTyping } from './firebase-config.js';
+
+let currentAct = null;
+let currentUser = null;
+let typingTimer = null;
+let chatUnsub = null;
+let typingUnsub = null;
+
+function isLiveNow(a) {
+  const dateStr = a.date || '';
+  if (!dateStr.includes('Danes') && !dateStr.includes('danes')) return false;
+  const [h,m] = (a.time||'00:00').split(':').map(Number);
+  const now = new Date(), start = new Date(now); start.setHours(h,m,0,0);
+  let dur = 60;
+  if ((a.duration||'').includes('2 uri')) dur=120;
+  if ((a.duration||'').includes('3 ure')) dur=180;
+  return now>=start && now<=new Date(start.getTime()+dur*60000);
+}
+
+// Naloži aktivnost
 const actRaw = sessionStorage.getItem('junto_current_act');
 if (actRaw) {
   try {
     const act = JSON.parse(actRaw);
-    
-    // Cover
-    const coverBg = document.querySelector('.cover-bg');
-    if (coverBg) coverBg.textContent = act.sportIcon || '🏃';
-    
-    const coverSportIcon = document.querySelector('.cover-sport-icon');
-    if (coverSportIcon) coverSportIcon.textContent = act.sportIcon || '🏃';
-    
-    const coverSportName = document.querySelector('.cover-sport-name');
-    if (coverSportName) coverSportName.textContent = act.sport || '';
+    currentAct = act;
 
-    // LIVE badge
+    // Cover
+    document.querySelector('.cover-bg').textContent = act.sportIcon || '🏃';
+    document.querySelector('.cover-sport-icon').textContent = act.sportIcon || '🏃';
+    document.querySelector('.cover-sport-name').textContent = act.sport || '';
+
+    // LIVE
     const liveBadge = document.querySelector('.cover-title .live-badge');
-    function isLiveNow(a) {
-      const dateStr = a.date || '';
-      if (!dateStr.includes('Danes') && !dateStr.includes('danes')) return false;
-      const [h,m] = (a.time||'00:00').split(':').map(Number);
-      const now = new Date(); const start = new Date(now); start.setHours(h,m,0,0);
-      let dur = 60;
-      if ((a.duration||'').includes('2 uri')) dur=120;
-      if ((a.duration||'').includes('3 ure')) dur=180;
-      return now>=start && now<=new Date(start.getTime()+dur*60000);
-    }
     if (liveBadge) liveBadge.style.display = isLiveNow(act) ? 'flex' : 'none';
 
+    // Lokacija
     const coverLoc = document.querySelector('.cover-location');
-    if (coverLoc) coverLoc.textContent = '📍 ' + (act.location || '') + (act.locationSub ? ' · ' + act.locationSub : '');
+    if (coverLoc) coverLoc.textContent = '📍 ' + (act.location||'') + (act.locationSub ? ' · '+act.locationSub : '');
 
     // Meta pills
-    const metaPills = document.querySelectorAll('.meta-pill');
-    if (metaPills[0]) metaPills[0].innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>${act.time||''} · ${act.date||''}`;
-    if (metaPills[1]) metaPills[1].innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>${act.skill||'Vsi nivoji'}`;
-    if (metaPills[2]) metaPills[2].innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>${act.isPrivate?'Zasebno':'Javno'}`;
+    const pills = document.querySelectorAll('.meta-pill');
+    if (pills[0]) pills[0].innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>${act.time||''} · ${act.date||''}`;
+    if (pills[1]) pills[1].innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>${act.skill||'Vsi nivoji'}`;
+    if (pills[2]) pills[2].innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>${act.isPrivate?'Zasebno':'Javno'}`;
 
     // Organizator
     const orgAv = document.querySelector('.org-av');
@@ -373,122 +374,196 @@ if (actRaw) {
     const spotsBar = document.querySelector('.spots-bar-fill');
     if (spotsBar) spotsBar.style.width = Math.round(spotsUsed/spotsTotal*100) + '%';
 
-    // Avatar stack
     const avatarStack = document.querySelector('.avatars-stack');
-    if (avatarStack && act.udelezenecIme) {
+    if (avatarStack) {
       const colors = ['#FF6B35','#4CAF50','#2196F3','#9C27B0','#FF385C'];
-      avatarStack.innerHTML = act.udelezenecIme.slice(0,4).map((name,i) => 
-        `<div class="p-av" style="background:${colors[i%colors.length]};" onclick="openRoster()">${name[0].toUpperCase()}</div>`
-      ).join('') + `<div class="p-av" style="background:#f0f0f0;color:#bbb;font-size:18px;" onclick="openRoster()">+</div>`;
+      if (act.udelezenecIme && act.udelezenecIme.length > 0) {
+        avatarStack.innerHTML = act.udelezenecIme.slice(0,4).map((name,i) =>
+          `<div class="p-av" style="background:${colors[i%colors.length]};" onclick="openRoster()">${name[0].toUpperCase()}</div>`
+        ).join('') + `<div class="p-av" style="background:#f0f0f0;color:#bbb;font-size:18px;" onclick="openRoster()">+</div>`;
+      } else {
+        avatarStack.innerHTML = '<div style="color:#8e8e93;font-size:13px;">Bodi prvi 🙌</div>';
+      }
     }
 
     // Opis
     const descEl = document.querySelector('.desc-text');
-    if (descEl && act.description) descEl.textContent = act.description;
+    if (descEl) descEl.textContent = act.description || '';
 
-    // Mapa lokacije
-    if (act.lat && act.lon) {
-      const lat = parseFloat(act.lat), lon = parseFloat(act.lon);
-      amap.setView([lat, lon], 15);
-      document.querySelectorAll('.leaflet-marker-pane .leaflet-marker-icon').forEach(m=>m.remove());
-      L.circleMarker([lat, lon], {radius:10, fillColor:'#FF385C', color:'#fff', weight:3, fillOpacity:1}).addTo(amap);
-    }
-
-    // Naslov strani
-    document.title = 'Junto — ' + act.sport + ' · ' + act.location;
-    
-    // Posodobi lokacija label
+    // Lokacija label
     const locText = document.getElementById('actLocText');
     if (locText) locText.textContent = (act.location||'') + (act.locationSub ? ' · '+act.locationSub : '');
 
+    // Mapa
+    if (act.lat && act.lon) {
+      setTimeout(() => {
+        const lat = parseFloat(act.lat), lon = parseFloat(act.lon);
+        amap.setView([lat, lon], 15);
+        amap.invalidateSize();
+        L.circleMarker([lat, lon], {radius:10, fillColor:'#FF385C', color:'#fff', weight:3, fillOpacity:1}).addTo(amap);
+      }, 400);
+    }
+
+    document.title = 'Junto — ' + act.sport + ' · ' + act.location;
+
+    // ── Chat ──────────────────────────────────────────────────
+    const chatMsgsEl = document.getElementById('chat-msgs');
+    const chatCountEl = document.getElementById('chat-count');
+    
+    // Počisti dummy
+    if (chatMsgsEl) chatMsgsEl.innerHTML = '<div style="padding:16px;text-align:center;color:#8e8e93;font-size:13px;">Nalagam chat...</div>';
+
+    if (act.id) {
+      chatUnsub = listenChat(act.id, msgs => {
+        if (!chatMsgsEl) return;
+        const wasAtBottom = chatMsgsEl.scrollHeight - chatMsgsEl.scrollTop <= chatMsgsEl.clientHeight + 60;
+        
+        if (chatCountEl) chatCountEl.textContent = msgs.length + ' sporočil';
+        
+        if (!msgs.length) {
+          chatMsgsEl.innerHTML = '<div style="padding:16px;text-align:center;color:#8e8e93;font-size:13px;">Začnite pogovor 💬</div>';
+          return;
+        }
+
+        chatMsgsEl.innerHTML = msgs.map(msg => {
+          const isMe = currentUser && msg.uid === currentUser.uid;
+          const time = msg.createdAt ? new Date(msg.createdAt.toMillis()).toLocaleTimeString('sl-SI',{hour:'2-digit',minute:'2-digit'}) : '';
+          return `<div class="chat-msg" style="${isMe?'flex-direction:row-reverse;align-items:flex-end;':''}">
+            <div class="msg-av" style="background:${isMe?'#FF385C':'#8e8e93'};flex-shrink:0;">${(msg.displayName||'?')[0].toUpperCase()}</div>
+            <div style="max-width:72%;display:flex;flex-direction:column;${isMe?'align-items:flex-end;':''}">
+              <div class="msg-name-row" style="${isMe?'justify-content:flex-end;':''}">
+                <span class="msg-name">${isMe?'Ti':msg.displayName||'?'}</span>
+                <span class="msg-time">${time}</span>
+              </div>
+              <div class="msg-text" style="${isMe?'background:#FF385C;color:#fff;border-radius:16px 4px 16px 16px;':'border-radius:4px 16px 16px 16px;'}">${msg.text}</div>
+              ${isMe?`<div style="font-size:10px;color:#aaa;margin-top:2px;cursor:pointer;" onclick="window._deleteMsg('${msg.id}')">Zbriši</div>`:''}
+            </div>
+          </div>`;
+        }).join('');
+
+        if (wasAtBottom) chatMsgsEl.scrollTop = chatMsgsEl.scrollHeight;
+      });
+
+      typingUnsub = listenTyping(act.id, typingUsers => {
+        const el = document.getElementById('typing-indicator');
+        if (el) {
+          el.textContent = typingUsers.length > 0 ? typingUsers.join(', ') + ' piše...' : '';
+          el.style.display = typingUsers.length > 0 ? 'block' : 'none';
+        }
+      });
+    }
   } catch(e) { console.error('Activity load error:', e); }
 }
+
+// Auth
+onAuth(user => {
+  currentUser = user;
+  // Re-render chat da se pokaže "Ti" pravilno
+  if (currentAct?.id && user) {
+    console.log('Prijavljen:', user.displayName);
+  }
+});
+
+// Globalne chat funkcije
+window._sendChatMsg = async function() {
+  const inp = document.getElementById('chat-input');
+  const text = inp.value.trim();
+  if (!text) return;
+  if (!currentUser) {
+    const user = await loginWithGoogle();
+    if (!user) return;
+  }
+  if (!currentAct?.id) { 
+    // Brez Firebase ID - samo lokalno pokaži
+    return; 
+  }
+  try {
+    await sendChatMessage(currentAct.id, text);
+    inp.value = '';
+    if (currentAct?.id) setTyping(currentAct.id, false);
+    clearTimeout(typingTimer);
+  } catch(e) { console.error('Send error:', e); }
+};
+
+window._deleteMsg = async function(msgId) {
+  if (!currentAct?.id || !currentUser) return;
+  if (confirm('Zbriši sporočilo?')) {
+    try { await deleteChatMessage(currentAct.id, msgId); } catch(e) {}
+  }
+};
+
+window._onChatInput = function() {
+  if (!currentAct?.id || !currentUser) return;
+  setTyping(currentAct.id, true);
+  clearTimeout(typingTimer);
+  typingTimer = setTimeout(() => {
+    if (currentAct?.id) setTyping(currentAct.id, false);
+  }, 3000);
+};
 </script>
 
 <script>
 // MAP
-const amap=L.map('activity-map',{center:[46.0540,14.5120],zoom:16,zoomControl:false,attributionControl:false});
+const amap=L.map('activity-map',{center:[46.0540,14.5120],zoom:15,zoomControl:false,attributionControl:false});
 L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{maxZoom:19}).addTo(amap);
-L.circleMarker([46.0540,14.5120],{radius:10,fillColor:'#FF385C',color:'#fff',weight:3,fillOpacity:1}).addTo(amap);
 
 // JOIN
 let joined=false;
 function handleJoin(){
   joined=!joined;
   const bjb=document.getElementById('bottom-join');
-  if(joined){bjb.textContent='✓ Pridružen — tapni za odjavo';bjb.classList.add('joined');showToast('🏀 Pridružen! Skupina te čaka.');setTimeout(()=>addChatMsg('Ti','#FF385C','Pridem! 🙌','zdaj'),800);}
+  if(joined){bjb.textContent='✓ Pridružen — tapni za odjavo';bjb.classList.add('joined');showToast('🙌 Pridružen!');}
   else{bjb.textContent='Pridruži se zdaj →';bjb.classList.remove('joined');}
 }
 
 // WATCH / BELL
 let watching=false,belled=false;
-function toggleWatch(){watching=!watching;document.getElementById('watch-btn').style.background=watching?'rgba(0,122,255,0.7)':'rgba(0,0,0,0.4)';showToast(watching?'👁 Spremljaš — dobiš live obvestila':'👁 Ne spremljaš več');}
-function toggleBell(){belled=!belled;document.getElementById('bell-btn').style.background=belled?'rgba(255,149,0,0.7)':'rgba(0,0,0,0.4)';showToast(belled?'🔔 Obvestili te bomo ko se sprosti mesto':'🔕 Obvestila izklopljena');}
+function toggleWatch(){watching=!watching;document.getElementById('watch-btn').style.background=watching?'rgba(0,122,255,0.7)':'rgba(0,0,0,0.4)';showToast(watching?'👁 Spremljaš live':'Ne spremljaš');}
+function toggleBell(){belled=!belled;document.getElementById('bell-btn').style.background=belled?'rgba(255,149,0,0.7)':'rgba(0,0,0,0.4)';showToast(belled?'🔔 Obvestili te bomo':'🔕 Izklopljeno');}
 
-// CHAT
-let msgCount=4;
-function sendChat(){
-  const inp=document.getElementById('chat-input');const text=inp.value.trim();if(!text)return;
-  addChatMsg('Ti','#FF385C',text,'zdaj');inp.value='';msgCount++;
-  document.getElementById('chat-count').textContent=msgCount+' sporočil';
-  setTimeout(()=>{const r=['Super! 🙌','Ja! 👍','💪','🔥','Odlično!'];const p=[{n:'Miha',c:'#FF6B35'},{n:'Jan',c:'#4CAF50'},{n:'Tomaž',c:'#2196F3'}][Math.floor(Math.random()*3)];addChatMsg(p.n,p.c,r[Math.floor(Math.random()*r.length)],'zdaj');msgCount++;document.getElementById('chat-count').textContent=msgCount+' sporočil';},1500);
-}
-function addChatMsg(name,color,text,time){
-  const w=document.getElementById('chat-msgs');
-  const d=document.createElement('div');d.className='chat-msg';
-  d.innerHTML=`<div class="msg-av" style="background:${color};">${name[0]}</div><div><div class="msg-name-row"><span class="msg-name">${name}</span><span class="msg-time">${time}</span></div><div class="msg-text">${text}</div></div>`;
-  w.appendChild(d);w.scrollTop=w.scrollHeight;
-}
+// CHAT wrappers (kličejo module funkcije)
+function sendChat(){window._sendChatMsg && window._sendChatMsg();}
 
 // ROSTER
 function openRoster(){document.getElementById('rosterOverlay').classList.add('open');}
 function closeRoster(){document.getElementById('rosterOverlay').classList.remove('open');}
 
 // PHOTOS
-const photos=[{emoji:'🏀',bg:'linear-gradient(135deg,#FFF0E6,#FFD4A8)',cap:'Miha · 17:06'},{emoji:'🏃',bg:'linear-gradient(135deg,#E3F2FD,#BBDEFB)',cap:'Jan · 17:12'},{emoji:'🙌',bg:'linear-gradient(135deg,#E8F5E9,#C8E6C9)',cap:'Tomaž · 17:18'}];
-function openPhoto(i){const p=photos[i];const img=document.getElementById('photo-fs-img');img.style.background=p.bg;img.textContent=p.emoji;document.getElementById('photo-cap').textContent=p.cap;document.getElementById('photoFS').classList.add('open');}
+function openPhoto(i){}
 function closePhoto(){document.getElementById('photoFS').classList.remove('open');}
-function toggleLike(el){const ic=document.getElementById('like-icon');const liked=ic.getAttribute('fill')==='red';ic.setAttribute('fill',liked?'none':'red');ic.setAttribute('stroke',liked?'white':'red');el.querySelector('span').textContent=liked?'Všeč mi je':'Všeč mi je ❤️';}
 
 // SHARE
 function openShare(){document.getElementById('shareOverlay').classList.add('open');}
 function closeShare(){document.getElementById('shareOverlay').classList.remove('open');}
-function shareStory(){closeShare();location.href='screen_story.html';}
 function copyLink(){showToast('🔗 Link skopiran!');closeShare();}
-function sendShare(){const sel=document.querySelectorAll('.share-friend.sel');closeShare();showToast(sel.length>0?`✓ Poslano ${sel.length} oseb${sel.length===1?'i':'am'}!`:'✓ Poslano!');}
+function sendShare(){closeShare();showToast('✓ Poslano!');}
 
-// TOAST
-function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
-
-function goToMapFromActivity() {
-  const actRaw = sessionStorage.getItem('junto_current_act');
-  if (actRaw) {
-    try {
-      const act = JSON.parse(actRaw);
-      if (act.id) sessionStorage.setItem('junto_focus_act', act.id);
-    } catch(e) {}
-  }
-  location.href = 'screen_map.html';
+// MAP click -> screen_map
+function goToMapFromActivity(){
+  const actRaw=sessionStorage.getItem('junto_current_act');
+  if(actRaw){try{const act=JSON.parse(actRaw);if(act.id)sessionStorage.setItem('junto_focus_act',act.id);}catch(e){}}
+  location.href='screen_map.html';
 }
 
-function uploadActivityPhoto(input) {
-  const file = input.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = e => {
-    const row = document.getElementById('photosRow');
-    const thumb = document.createElement('div');
-    thumb.className = 'photo-thumb';
-    thumb.style.cssText = 'flex-shrink:0;overflow:hidden;';
-    thumb.innerHTML = `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover;">
-      <div class="photo-poster">${new Date().toLocaleTimeString('sl-SI',{hour:'2-digit',minute:'2-digit'})}</div>`;
-    // Vstavi pred upload gumb
-    row.insertBefore(thumb, row.firstChild);
+// Photo upload
+function uploadActivityPhoto(input){
+  const file=input.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const row=document.getElementById('photosRow');
+    const thumb=document.createElement('div');
+    thumb.className='photo-thumb';
+    thumb.style.cssText='flex-shrink:0;overflow:hidden;';
+    thumb.innerHTML=`<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover;"><div class="photo-poster">${new Date().toLocaleTimeString('sl-SI',{hour:'2-digit',minute:'2-digit'})}</div>`;
+    row.insertBefore(thumb,row.firstChild);
     showToast('📸 Fotka dodana!');
   };
   reader.readAsDataURL(file);
-  input.value = '';
+  input.value='';
 }
+
+// TOAST
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
 </script>
 </body>
 </html>

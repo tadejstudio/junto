@@ -578,36 +578,38 @@ const dayNames=['Ned','Pon','Tor','Sre','Čet','Pet','Sob'];
 const durations=['30 minut','45 minut','1 ura','1,5 ure','2 uri','2,5 ure','3 ure','Odprto (brez konca)'];
 
 const allLocations=[
-  {icon:'🏀',sport:['Košarka'],name:'Tivoli igrišče',sub:'Park Tivoli, Ljubljana'},
-  {icon:'🏀',sport:['Košarka'],name:'Igrišče Fužine',sub:'Fužine, Ljubljana'},
-  {icon:'🏀',sport:['Košarka'],name:'Igrišče Šiška',sub:'Šiška, Ljubljana'},
-  {icon:'🏀',sport:['Košarka'],name:'OŠ Vodmat — igrišče',sub:'Vodmat, Ljubljana'},
-  {icon:'🏀',sport:['Košarka'],name:'OŠ Polje — igrišče',sub:'Polje, Ljubljana'},
-  {icon:'🏀',sport:['Košarka'],name:'BTC košarkarsko igrišče',sub:'BTC City, Ljubljana'},
-  {icon:'⚽',sport:['Futsal'],name:'Futsal Šmarna Gora',sub:'Šmarna Gora, Ljubljana'},
-  {icon:'⚽',sport:['Futsal'],name:'Stadion Stožice',sub:'Stožice, Ljubljana'},
-  {icon:'⚽',sport:['Futsal'],name:'ŠRC Ilirija',sub:'Kolezijska ul., Ljubljana'},
-  {icon:'⚽',sport:['Futsal'],name:'Futsal arena BTC',sub:'BTC City, Ljubljana'},
-  {icon:'🏐',sport:['Odbojka'],name:'Dvorana Kodeljevo',sub:'Kodeljevo, Ljubljana'},
-  {icon:'🏐',sport:['Odbojka'],name:'Plaža Tivoli (peščišče)',sub:'Park Tivoli, Ljubljana'},
-  {icon:'🏐',sport:['Odbojka'],name:'Športna dvorana Šiška',sub:'Šiška, Ljubljana'},
-  {icon:'🎾',sport:['Tenis'],name:'Teniški klub Ilirija',sub:'Kolezijska ul., Ljubljana'},
-  {icon:'🎾',sport:['Tenis'],name:'Teniški klub Ljubljana',sub:'Štepanjsko naselje'},
-  {icon:'🎾',sport:['Tenis'],name:'TC BTC',sub:'BTC City, Ljubljana'},
-  {icon:'🎾',sport:['Tenis'],name:'TC Tivoli',sub:'Park Tivoli, Ljubljana'},
-  {icon:'🏋️',sport:['Kolesarjenje','Tek','Pohodništvo','Smučanje'],name:'Fitness center BTC',sub:'BTC City, Ljubljana'},
-  {icon:'🏃',sport:['Tek'],name:'Atletski stadion Šiška',sub:'Šiška, Ljubljana'},
-  {icon:'🏃',sport:['Tek'],name:'Pot ob Ljubljanici',sub:'Ob reki, Ljubljana'},
-  {icon:'🏃',sport:['Tek'],name:'Rožnik — tekaška pot',sub:'Rožnik, Ljubljana'},
-  {icon:'🥾',sport:['Pohodništvo'],name:'Šmarna Gora — vrh',sub:'Šmarna Gora, 669m'},
-  {icon:'🥾',sport:['Pohodništvo'],name:'Rožnik — vrh',sub:'Rožnik, Ljubljana'},
-  {icon:'🥾',sport:['Pohodništvo'],name:'Golovec — gozdna pot',sub:'Golovec, Ljubljana'},
-  {icon:'🚴',sport:['Kolesarjenje'],name:'Pot spominov in tovarištva',sub:'Obroč Ljubljane'},
-  {icon:'🚴',sport:['Kolesarjenje'],name:'Pot ob Ljubljanici',sub:'Ob reki, Ljubljana'},
-  {icon:'🚴',sport:['Kolesarjenje'],name:'Rakovnik — kolesarska pot',sub:'Rakovnik, Ljubljana'},
-  {icon:'⛷️',sport:['Smučanje'],name:'Krvavec',sub:'Cerklje na Gorenjskem'},
-  {icon:'⛷️',sport:['Smučanje'],name:'Kranjska Gora',sub:'Kranjska Gora'},
-  {icon:'⛷️',sport:['Smučanje'],name:'Mariborsko Pohorje',sub:'Maribor'},
+  {icon:'🏀',sport:['Košarka'],name:'Tivoli igrišče',sub:'Park Tivoli, Ljubljana',lat:46.0527,lon:14.4953},
+  {icon:'🏀',sport:['Košarka'],name:'Igrišče Fužine',sub:'Fužine, Ljubljana',lat:46.0611,lon:14.5467},
+  {icon:'🏀',sport:['Košarka'],name:'Igrišče Šiška',sub:'Šiška, Ljubljana',lat:46.0778,lon:14.4889},
+  {icon:'🏀',sport:['Košarka'],name:'OŠ Vodmat — igrišče',sub:'Vodmat, Ljubljana',lat:46.0444,lon:14.5244},
+  {icon:'🏀',sport:['Košarka'],name:'OŠ Polje — igrišče',sub:'Polje, Ljubljana',lat:46.0556,lon:14.5678},
+  {icon:'🏀',sport:['Košarka'],name:'BTC košarkarsko igrišče',sub:'BTC City, Ljubljana',lat:46.0661,lon:14.5272},
+  {icon:'⚽',sport:['Futsal','Nogomet'],name:'Futsal Šmarna Gora',sub:'Šmarna Gora, Ljubljana',lat:46.1167,lon:14.4333},
+  {icon:'⚽',sport:['Futsal','Nogomet'],name:'Stadion Stožice',sub:'Stožice, Ljubljana',lat:46.0889,lon:14.5278},
+  {icon:'⚽',sport:['Futsal','Nogomet'],name:'ŠRC Ilirija',sub:'Kolezijska ul., Ljubljana',lat:46.0467,lon:14.5061},
+  {icon:'⚽',sport:['Futsal','Nogomet'],name:'Futsal arena BTC',sub:'BTC City, Ljubljana',lat:46.0656,lon:14.5289},
+  {icon:'🏐',sport:['Odbojka'],name:'Dvorana Kodeljevo',sub:'Kodeljevo, Ljubljana',lat:46.0556,lon:14.5389},
+  {icon:'🏐',sport:['Odbojka'],name:'Plaža Tivoli (peščišče)',sub:'Park Tivoli, Ljubljana',lat:46.0511,lon:14.4922},
+  {icon:'🏐',sport:['Odbojka'],name:'Športna dvorana Šiška',sub:'Šiška, Ljubljana',lat:46.0756,lon:14.4933},
+  {icon:'🎾',sport:['Tenis'],name:'Teniški klub Ilirija',sub:'Kolezijska ul., Ljubljana',lat:46.0456,lon:14.5067},
+  {icon:'🎾',sport:['Tenis'],name:'Teniški klub Ljubljana',sub:'Štepanjsko naselje',lat:46.0367,lon:14.5289},
+  {icon:'🎾',sport:['Tenis'],name:'TC BTC',sub:'BTC City, Ljubljana',lat:46.0644,lon:14.5261},
+  {icon:'🎾',sport:['Tenis'],name:'TC Tivoli',sub:'Park Tivoli, Ljubljana',lat:46.0522,lon:14.4944},
+  {icon:'🏋️',sport:['Kolesarjenje','Tek','Pohodništvo','Smučanje'],name:'Fitness center BTC',sub:'BTC City, Ljubljana',lat:46.0667,lon:14.5256},
+  {icon:'🏃',sport:['Tek'],name:'Atletski stadion Šiška',sub:'Šiška, Ljubljana',lat:46.0789,lon:14.4878},
+  {icon:'🏃',sport:['Tek'],name:'Pot ob Ljubljanici',sub:'Ob reki, Ljubljana',lat:46.0489,lon:14.5078},
+  {icon:'🏃',sport:['Tek'],name:'Rožnik — tekaška pot',sub:'Rožnik, Ljubljana',lat:46.0511,lon:14.4778},
+  {icon:'🥾',sport:['Pohodništvo'],name:'Šmarna Gora — vrh',sub:'Šmarna Gora, 669m',lat:46.1178,lon:14.4289},
+  {icon:'🥾',sport:['Pohodništvo'],name:'Rožnik — vrh',sub:'Rožnik, Ljubljana',lat:46.0522,lon:14.4756},
+  {icon:'🥾',sport:['Pohodništvo'],name:'Golovec — gozdna pot',sub:'Golovec, Ljubljana',lat:46.0378,lon:14.5433},
+  {icon:'🚴',sport:['Kolesarjenje'],name:'Pot spominov in tovarištva',sub:'Obroč Ljubljane',lat:46.0569,lon:14.5058},
+  {icon:'🚴',sport:['Kolesarjenje'],name:'Pot ob Ljubljanici',sub:'Ob reki, Ljubljana',lat:46.0489,lon:14.5078},
+  {icon:'🚴',sport:['Kolesarjenje'],name:'Rakovnik — kolesarska pot',sub:'Rakovnik, Ljubljana',lat:46.0456,lon:14.4878},
+  {icon:'🧗',sport:['Plezanje'],name:'Plezalni center Skala',sub:'Ljubljana',lat:46.0511,lon:14.5144},
+  {icon:'🧗',sport:['Plezanje'],name:'Plezalna stena Šiška',sub:'Šiška, Ljubljana',lat:46.0778,lon:14.4944},
+  {icon:'⛷️',sport:['Smučanje'],name:'Krvavec',sub:'Cerklje na Gorenjskem',lat:46.2978,lon:14.5356},
+  {icon:'⛷️',sport:['Smučanje'],name:'Kranjska Gora',sub:'Kranjska Gora',lat:46.4822,lon:13.7878},
+  {icon:'⛷️',sport:['Smučanje'],name:'Mariborsko Pohorje',sub:'Maribor',lat:46.5189,lon:15.5811},
 ];
 
 let filteredLocs=[];
@@ -760,6 +762,7 @@ function confirmFreeAddr(){
 function selectLoc(i){
   const l=filteredLocs[i];
   state.location=l.name; state.locationSub=l.sub;
+  state.lat=l.lat||null; state.lon=l.lon||null;
   document.getElementById('mapLocName').textContent=l.name;
   document.getElementById('mapLocSub').textContent=l.sub;
   closeModal('locationModal'); updatePreview(); drawMap();
