@@ -136,7 +136,7 @@ function listenTyping(activityId, callback) {
   });
 }
 
-// ── Join / Leave aktivnost ───────────────────────────────────
+// ── Join / Leave ──────────────────────────────────────────────
 async function joinActivity(activityId) {
   const user = auth.currentUser;
   if (!user) throw new Error("Nisi prijavljen");
@@ -169,9 +169,7 @@ async function uploadActivityPhoto(activityId, file, uploaderName) {
   await uploadBytes(storageRef, file);
   const url = await getDownloadURL(storageRef);
   await addDoc(collection(db, "aktivnosti", activityId, "photos"), {
-    url,
-    uploaderName: user.displayName,
-    uploaderId: user.uid,
+    url, uploaderName: user.displayName, uploaderId: user.uid,
     createdAt: serverTimestamp(),
   });
   return url;

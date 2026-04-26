@@ -201,7 +201,7 @@ body{background:#f2f2f7;max-width:390px;margin:0 auto;min-height:100vh;font-fami
       <div class="section-title">Fotke</div>
       <div class="photos-row" id="photosRow">
         <!-- Upload gumb - vedno prvi -->
-        <div class="photo-thumb" style="background:#f2f2f7;border:2px dashed #ddd;" onclick="document.getElementById('photoUploadInput').click()">
+        <div class="photo-thumb photo-upload-btn" style="background:#f2f2f7;border:2px dashed #ddd;" onclick="document.getElementById('photoUploadInput').click()">
           <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#8e8e93" stroke-width="1.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
             <span style="font-size:10px;color:#8e8e93;">Dodaj</span>
@@ -314,7 +314,7 @@ body{background:#f2f2f7;max-width:390px;margin:0 auto;min-height:100vh;font-fami
 </div>
 
 <script type="module">
-import { onAuth, loginWithGoogle, sendChatMessage, deleteChatMessage, listenChat, setTyping, listenTyping, joinActivity, leaveActivity, listenActivity, uploadActivityPhoto as uploadPhoto, listenPhotos } from './firebase-config.js';
+import { onAuth, loginWithGoogle, sendChatMessage, deleteChatMessage, listenChat, setTyping, listenTyping, joinActivity, leaveActivity, listenActivity, uploadActivityPhoto as fbUploadPhoto, listenPhotos } from './firebase-config.js';
 
 let currentAct = null;
 let currentUser = null;
@@ -451,59 +451,40 @@ if (actRaw) {
           el.style.display = typingUsers.length > 0 ? 'block' : 'none';
         }
       });
-    }
-  } catch(e) { console.error('Activity load error:', e); }
-}
 
-// Auth + join status
-onAuth(user => {
-  currentUser = user;
-  if (user && currentAct?.id) {
-    // Preveri ali je že pridružen
-    const isJoined = currentAct.udelezenci && currentAct.udelezenci.includes(user.uid);
-    updateJoinBtn(isJoined);
-  }
-});
-
-// Poslušaj spremembe aktivnosti (udeleženci, fotke)
-if (actRaw) {
-  try {
-    const act = JSON.parse(actRaw);
-    if (act.id) {
-      // Live updates za udeležence
+      // Live udeleženci + join status
       listenActivity(act.id, updatedAct => {
         currentAct = updatedAct;
-        sessionStorage.setItem('junto_current_act', JSON.stringify(updatedAct));
-        
-        // Posodobi udeležence
         const spotsUsed = updatedAct.udelezenci ? updatedAct.udelezenci.length : 1;
         const spotsTotal = updatedAct.players || 10;
         const spotsFree = spotsTotal - spotsUsed;
         const spotsInfo = document.querySelector('.spots-info');
         if (spotsInfo) spotsInfo.innerHTML = `<strong>${spotsFree} mest</strong> prostih od ${spotsTotal}`;
         const spotsBar = document.querySelector('.spots-bar-fill');
-        if (spotsBar) spotsBar.style.width = Math.round(spotsUsed/spotsTotal*100) + '%';
-        
-        // Avatarji
+        if (spotsBar) spotsBar.style.width = Math.round(spotsUsed/spotsTotal*100)+'%';
         const avatarStack = document.querySelector('.avatars-stack');
         if (avatarStack && updatedAct.udelezenecIme) {
-          const colors = ['#FF6B35','#4CAF50','#2196F3','#9C27B0','#FF385C'];
-          avatarStack.innerHTML = updatedAct.udelezenecIme.slice(0,4).map((name,i) =>
-            `<div class="p-av" style="background:${colors[i%colors.length]};" onclick="openRoster()">${name[0].toUpperCase()}</div>`
+          const colors=['#FF6B35','#4CAF50','#2196F3','#9C27B0','#FF385C'];
+          avatarStack.innerHTML = updatedAct.udelezenecIme.slice(0,4).map((n,i)=>
+            `<div class="p-av" style="background:${colors[i%colors.length]};" onclick="openRoster()">${n[0].toUpperCase()}</div>`
           ).join('') + `<div class="p-av" style="background:#f0f0f0;color:#bbb;font-size:18px;" onclick="openRoster()">+</div>`;
         }
-        
         // Join gumb
-        if (currentUser) updateJoinBtn(updatedAct.udelezenci && updatedAct.udelezenci.includes(currentUser.uid));
+        if (currentUser) {
+          const isJoined = updatedAct.udelezenci && updatedAct.udelezenci.includes(currentUser.uid);
+          const btn = document.getElementById('bottom-join');
+          if (btn) {
+            if (isJoined) { btn.textContent='✓ Pridružen — tapni za odjavo'; btn.classList.add('joined'); }
+            else { btn.textContent='Pridruži se zdaj →'; btn.classList.remove('joined'); }
+          }
+        }
       });
 
       // Live fotke
       listenPhotos(act.id, photos => {
         const row = document.getElementById('photosRow');
         if (!row) return;
-        // Shrani upload gumb
-        const uploadBtn = row.querySelector('[onclick*="photoUploadInput"]');
-        // Nastavi fotke + upload gumb
+        const uploadBtn = row.querySelector('.photo-upload-btn');
         const photoHtml = photos.map(p => {
           const time = p.createdAt ? new Date(p.createdAt.toMillis()).toLocaleTimeString('sl-SI',{hour:'2-digit',minute:'2-digit'}) : '';
           return `<div class="photo-thumb" style="flex-shrink:0;overflow:hidden;">
@@ -511,43 +492,26 @@ if (actRaw) {
             <div class="photo-poster">${p.uploaderName||'?'} · ${time}</div>
           </div>`;
         }).join('');
-        row.innerHTML = (uploadBtn ? uploadBtn.outerHTML : '') + photoHtml;
+        if (uploadBtn) {
+          row.innerHTML = uploadBtn.outerHTML + photoHtml;
+        } else {
+          row.innerHTML = row.querySelector('[onclick*="photoUploadInput"]')?.outerHTML || '' + photoHtml;
+        }
       });
     }
-  } catch(e) {}
+  } catch(e) { console.error('Activity load error:', e); }
 }
 
-function updateJoinBtn(isJoined) {
-  const btn = document.getElementById('bottom-join');
-  if (!btn) return;
-  if (isJoined) {
-    btn.textContent = '✓ Pridružen — tapni za odjavo';
-    btn.classList.add('joined');
-  } else {
-    btn.textContent = 'Pridruži se zdaj →';
-    btn.classList.remove('joined');
+// Auth
+onAuth(user => {
+  currentUser = user;
+  // Re-render chat da se pokaže "Ti" pravilno
+  if (currentAct?.id && user) {
+    console.log('Prijavljen:', user.displayName);
   }
-}
+});
 
 // Globalne chat funkcije
-window._joinOrLeave = async function() {
-  if (!currentUser) {
-    const user = await loginWithGoogle();
-    if (!user) return;
-  }
-  if (!currentAct?.id) return;
-  const isJoined = currentAct.udelezenci && currentAct.udelezenci.includes(currentUser.uid);
-  try {
-    if (isJoined) {
-      await leaveActivity(currentAct.id);
-      showToast('Odjavljen iz aktivnosti');
-    } else {
-      await joinActivity(currentAct.id);
-      showToast('🙌 Pridružen!');
-    }
-  } catch(e) { showToast('❌ ' + e.message); }
-};
-
 window._sendChatMsg = async function() {
   const inp = document.getElementById('chat-input');
   const text = inp.value.trim();
@@ -590,9 +554,17 @@ window._onChatInput = function() {
 const amap=L.map('activity-map',{center:[46.0540,14.5120],zoom:15,zoomControl:false,attributionControl:false});
 L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{maxZoom:19}).addTo(amap);
 
-// JOIN
-let joined=false;
-function handleJoin(){ window._joinOrLeave && window._joinOrLeave(); }
+// JOIN - Firebase
+function handleJoin(){
+  if (!currentUser) { loginWithGoogle().then(u => { if(u) handleJoin(); }); return; }
+  if (!currentAct?.id) return;
+  const isJoined = currentAct.udelezenci && currentAct.udelezenci.includes(currentUser.uid);
+  if (isJoined) {
+    leaveActivity(currentAct.id).then(()=>showToast('Odjavljen iz aktivnosti')).catch(e=>showToast('❌ '+e.message));
+  } else {
+    joinActivity(currentAct.id).then(()=>showToast('🙌 Pridružen!')).catch(e=>showToast('❌ '+e.message));
+  }
+}
 
 // WATCH / BELL
 let watching=false,belled=false;
@@ -626,12 +598,12 @@ function goToMapFromActivity(){
 // Photo upload
 function uploadActivityPhoto(input){
   const file=input.files[0]; if(!file) return;
-  if (!currentAct?.id) { showToast('❌ Ni aktivnosti'); return; }
-  if (!currentUser) { showToast('❌ Najprej se prijavi'); return; }
-  showToast('📤 Nalagam sliko...');
-  uploadPhoto(currentAct.id, file, currentUser.displayName)
-    .then(() => showToast('📸 Fotka shranjena!'))
-    .catch(e => showToast('❌ Napaka: ' + e.message));
+  if(!currentAct?.id){showToast('❌ Ni aktivnosti');return;}
+  if(!currentUser){showToast('❌ Najprej se prijavi');return;}
+  showToast('📤 Nalagam...');
+  fbUploadPhoto(currentAct.id, file, currentUser.displayName)
+    .then(()=>showToast('📸 Fotka shranjena!'))
+    .catch(e=>showToast('❌ '+e.message));
   input.value='';
 }
 
