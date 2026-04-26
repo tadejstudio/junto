@@ -970,7 +970,9 @@ window.filterLocs = function() {
 
   nominatimTimer = setTimeout(async () => {
     try {
-      const results = await JUNTO.searchLocation(q + ' Ljubljana');
+      const searchUrl = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=8&accept-language=sl,hr,it,en&countrycodes=si,it,hr`;
+      const resp = await fetch(searchUrl, { headers: { 'Accept-Language': 'sl,hr,it,en' } });
+      const results = await resp.json();
       if (!results.length) {
         document.getElementById('locList').innerHTML = '<div style="padding:20px 0;color:var(--text3);font-size:14px;text-align:center;">Ni zadetkov — vpiši naslov zgoraj ↑</div>';
         return;
