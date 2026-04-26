@@ -372,24 +372,24 @@
 
     <!-- PRIMARY: Time filter -->
     <div class="time-filter">
-      <div class="time-chip live-chip active" onclick="setTimeFilter('live',this)"><span class="live-dot-inline"></span>LIVE</div>
-      <div class="time-chip" onclick="setTimeFilter('danes',this)">Danes</div>
-      <div class="time-chip" onclick="setTimeFilter('jutri',this)">Jutri</div>
-      <div class="time-chip" onclick="setTimeFilter('teden',this)">Ta teden</div>
+      <div class="time-chip live-chip active" onclick="window._setTimeFilter('live',this)"><span class="live-dot-inline"></span>LIVE</div>
+      <div class="time-chip" onclick="window._setTimeFilter('danes',this)">Danes</div>
+      <div class="time-chip" onclick="window._setTimeFilter('jutri',this)">Jutri</div>
+      <div class="time-chip" onclick="window._setTimeFilter('teden',this)">Ta teden</div>
     </div>
   </div>
 
   <!-- SECONDARY: Sport filter -->
   <div class="sport-filter-wrap">
-    <div class="sport-filters">
-      <div class="chip active" onclick="setSportFilter('vse',this)">🏃 Vse</div>
-      <div class="chip" onclick="setSportFilter('Košarka',this)">🏀 Košarka</div>
-      <div class="chip" onclick="setSportFilter('Kolesarjenje',this)">🚴 Kolesarstvo</div>
-      <div class="chip" onclick="setSportFilter('Pohod',this)">🥾 Pohod</div>
-      <div class="chip" onclick="setSportFilter('Gym',this)">💪 Gym</div>
-      <div class="chip" onclick="setSportFilter('Futsal',this)">⚽ Futsal</div>
-      <div class="chip" onclick="setSportFilter('Tek',this)">🏃 Tek</div>
-      <div class="chip" onclick="setSportFilter('Tenis',this)">🎾 Tenis</div>
+    <div class="sport-filters" style="-webkit-overflow-scrolling:touch;">
+      <div class="chip active" onclick="window._setSportFilter('vse',this)">🏃 Vse</div>
+      <div class="chip" onclick="window._setSportFilter('Košarka',this)">🏀 Košarka</div>
+      <div class="chip" onclick="window._setSportFilter('Kolesarjenje',this)">🚴 Kolesarstvo</div>
+      <div class="chip" onclick="window._setSportFilter('Pohod',this)">🥾 Pohod</div>
+      <div class="chip" onclick="window._setSportFilter('Futsal',this)">⚽ Futsal</div>
+      <div class="chip" onclick="window._setSportFilter('Tek',this)">🏃 Tek</div>
+      <div class="chip" onclick="window._setSportFilter('Tenis',this)">🎾 Tenis</div>
+      <div class="chip" onclick="window._setSportFilter('Gym',this)">💪 Gym</div>
     </div>
   </div>
 
@@ -503,10 +503,67 @@ function timeAgo(ts) {
   return Math.floor(diff/1440) + ' dni nazaj';
 }
 
+// Filter state
+let activeTimeFilter = 'live';
+let activeSportFilter = 'vse';
+let allActivities = [];
+
+window._setTimeFilter = function(filter, el) {
+  activeTimeFilter = filter;
+  document.querySelectorAll('.time-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  renderFeed();
+};
+window._setSportFilter = function(filter, el) {
+  activeSportFilter = filter;
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  renderFeed();
+};
+
 function isLive(act) {
-  if (!act.createdAt) return false;
-  const ms = act.createdAt.toMillis ? act.createdAt.toMillis() : Date.now();
-  return (Date.now() - ms) < 3 * 60 * 60 * 1000; // 3 ure
+  const dateStr = act.date || '';
+  if (!dateStr.includes('Danes') && !dateStr.includes('danes')) return false;
+  const timeStr = act.time || '00:00';
+  const durationStr = act.duration || '1 ura';
+  const now = new Date();
+  const [h, m] = timeStr.split(':').map(Number);
+  const start = new Date(now); start.setHours(h, m, 0, 0);
+  let durMin = 60;
+  if (durationStr.includes('30 min')) durMin = 30;
+  else if (durationStr.includes('1.5') || durationStr.includes('90')) durMin = 90;
+  else if (durationStr.includes('2 uri')) durMin = 120;
+  else if (durationStr.includes('3 ure')) durMin = 180;
+  const end = new Date(start.getTime() + durMin * 60000);
+  return now >= start && now <= end;
+}
+
+function matchesTimeFilter(act) {
+  const dateStr = act.date || '';
+  if (activeTimeFilter === 'live') return isLive(act);
+  if (activeTimeFilter === 'danes') return dateStr.includes('Danes') || dateStr.includes('danes');
+  if (activeTimeFilter === 'jutri') return dateStr.includes('Jutri') || dateStr.includes('jutri');
+  return true;
+}
+
+function renderFeed() {
+  const feed = document.getElementById('firebaseFeed');
+  let filtered = allActivities;
+  if (activeSportFilter !== 'vse') filtered = filtered.filter(a => a.sport === activeSportFilter);
+  if (activeTimeFilter !== 'teden') filtered = filtered.filter(matchesTimeFilter);
+  if (!filtered.length) {
+    feed.innerHTML = '<div style="padding:40px 20px;text-align:center;color:#8e8e93;font-size:15px;">Ni aktivnosti za ta filter.<br><small>Ustvari novo ali izberi drug filter.</small></div>';
+    return;
+  }
+  const live = filtered.filter(a => isLive(a));
+  const rest = filtered.filter(a => !isLive(a));
+  let html = '';
+  if (live.length) html += '<div class="section-label">🔴 V živo zdaj</div>' + live.map(renderCard).join('');
+  if (rest.length) {
+    if (live.length) html += '<div class="section-label" style="margin-top:4px">Prihajajoče</div>';
+    html += rest.map(renderCard).join('');
+  }
+  feed.innerHTML = html;
 }
 
 function renderCard(act) {
@@ -556,66 +613,6 @@ function renderCard(act) {
 }
 
 // Listen za real-time updates
-// Filter state
-let activeTimeFilter = 'live';
-let activeSportFilter = 'vse';
-let allActivities = [];
-
-function setTimeFilter(filter, el) {
-  activeTimeFilter = filter;
-  document.querySelectorAll('.time-chip').forEach(c => c.classList.remove('active'));
-  el.classList.add('active');
-  renderFeed();
-}
-
-function setSportFilter(filter, el) {
-  activeSportFilter = filter;
-  document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
-  el.classList.add('active');
-  renderFeed();
-}
-
-function matchesTimeFilter(act) {
-  if (activeTimeFilter === 'live') return isLive(act);
-  const today = new Date();
-  const todayStr = today.toLocaleDateString('sl-SI', {day:'numeric', month:'short'});
-  const tomorrow = new Date(today); tomorrow.setDate(today.getDate()+1);
-  const tomorrowStr = tomorrow.toLocaleDateString('sl-SI', {day:'numeric', month:'short'});
-  const dateStr = act.date || '';
-  if (activeTimeFilter === 'danes') return dateStr.includes('Danes') || dateStr.includes(todayStr);
-  if (activeTimeFilter === 'jutri') return dateStr.includes('Jutri') || dateStr.includes(tomorrowStr);
-  if (activeTimeFilter === 'teden') return true; // pokaži vse
-  return true;
-}
-
-function renderFeed() {
-  const feed = document.getElementById('firebaseFeed');
-  let filtered = allActivities;
-  
-  if (activeSportFilter !== 'vse') {
-    filtered = filtered.filter(a => a.sport === activeSportFilter);
-  }
-  
-  if (activeTimeFilter !== 'teden') {
-    filtered = filtered.filter(matchesTimeFilter);
-  }
-
-  if (!filtered.length) {
-    feed.innerHTML = '<div style="padding:40px 20px;text-align:center;color:#8e8e93;font-size:15px;">Ni aktivnosti za izbrani filter.<br><span style="font-size:13px;margin-top:8px;display:block;">Bodi prvi in ustvari novo! 🏃</span></div>';
-    return;
-  }
-
-  const live = filtered.filter(a => isLive(a));
-  const rest = filtered.filter(a => !isLive(a));
-  let html = '';
-  if (live.length) {
-    html += live.map(renderCard).join('');
-    if (rest.length) html += '<div class="section-label" style="margin-top:4px">Vse aktivnosti</div>';
-  }
-  html += rest.map(renderCard).join('');
-  feed.innerHTML = html;
-}
-
 listenAktivnosti(activities => {
   allActivities = activities;
   document.getElementById('feedLoading').style.display = 'none';
