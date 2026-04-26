@@ -1,6 +1,6 @@
 // firebase-config.js — Junto Firebase konfiguracija
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, collection, addDoc, getDocs, onSnapshot, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getFirestore, collection, addDoc, getDocs, onSnapshot, query, orderBy, serverTimestamp, deleteDoc, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut, browserLocalPersistence, setPersistence } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
@@ -85,8 +85,60 @@ function listenAktivnosti(callback) {
   });
 }
 
+// ── Chat ─────────────────────────────────────────────────────
+async function sendChatMessage(activityId, text) {
+  const user = auth.currentUser;
+  if (!user || !text.trim()) throw new Error("Ni sporočila ali prijave");
+  
+  return await addDoc(collection(db, "aktivnosti", activityId, "chat"), {
+    text: text.trim(),
+    uid: user.uid,
+    displayName: user.displayName,
+    photoURL: user.photoURL,
+    createdAt: serverTimestamp(),
+  });
+}
+
+async function deleteChatMessage(activityId, messageId) {
+  const user = auth.currentUser;
+  if (!user) return;
+  await deleteDoc(doc(db, "aktivnosti", activityId, "chat", messageId));
+}
+
+function listenChat(activityId, callback) {
+  const q = query(
+    collection(db, "aktivnosti", activityId, "chat"),
+    orderBy("createdAt", "asc")
+  );
+  return onSnapshot(q, snap => {
+    callback(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+  });
+}
+
+async function setTyping(activityId, isTyping) {
+  const user = auth.currentUser;
+  if (!user) return;
+  try {
+    await setDoc(doc(db, "aktivnosti", activityId, "typing", user.uid), {
+      displayName: user.displayName,
+      isTyping,
+      updatedAt: serverTimestamp(),
+    });
+  } catch(e) {}
+}
+
+function listenTyping(activityId, callback) {
+  return onSnapshot(collection(db, "aktivnosti", activityId, "typing"), snap => {
+    const typingUsers = snap.docs
+      .filter(d => d.data().isTyping && d.id !== auth.currentUser?.uid)
+      .map(d => d.data().displayName);
+    callback(typingUsers);
+  });
+}
+
 export {
   db, storage, auth,
   loginWithGoogle, logout, getCurrentUser, onAuth,
-  objavljiAktivnost, getAktivnosti, listenAktivnosti
+  objavljiAktivnost, getAktivnosti, listenAktivnosti,
+  sendChatMessage, deleteChatMessage, listenChat, setTyping, listenTyping
 };

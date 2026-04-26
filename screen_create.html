@@ -904,7 +904,8 @@ async function doPublish(){
       lat: state.lat || null, lon: state.lon || null,
     };
 
-    await objavljiAktivnost(actData, photoFile);
+    const newActId = await objavljiAktivnost(actData, photoFile);
+    window._lastPublishedActId = newActId;
 
     document.getElementById('s-sport').textContent=state.sportIcon+' '+state.sport;
     document.getElementById('s-loc').textContent=state.location;
@@ -922,7 +923,15 @@ async function doPublish(){
     btn.innerHTML = 'Objavi aktivnost';
   }
 }
-function goToMap(){window.location.href=MAP_URL;}
+function goToMap(){
+  // Shrani zadnjo aktivnost da mapa ve kam it
+  try {
+    if (window._lastPublishedActId) {
+      sessionStorage.setItem('junto_focus_act', window._lastPublishedActId);
+    }
+  } catch(e) {}
+  window.location.href=MAP_URL;
+}
 function goToFeed(){window.location.href=HOME_URL;}
 
 // TOAST

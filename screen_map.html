@@ -130,12 +130,17 @@ body{background:#0f1420;max-width:390px;margin:0 auto;min-height:100vh;font-fami
   </div>
 
   <div class="filter-strip">
-    <div class="chip active" onclick="filterPins('vse',this)">Vse</div>
-    <div class="chip" onclick="filterPins('bball',this)">🏀 Košarka</div>
-    <div class="chip" onclick="filterPins('futsal',this)">⚽ Futsal</div>
-    <div class="chip" onclick="filterPins('cycling',this)">🚴 Kolesarstvo</div>
-    <div class="chip" onclick="filterPins('volley',this)">🏐 Odbojka</div>
-    <div class="chip" onclick="filterPins('run',this)">🏃 Tek</div>
+    <div class="chip active" onclick="filterSport('vse',this)">Vse</div>
+    <div class="chip" onclick="filterSport('Košarka',this)">🏀 Košarka</div>
+    <div class="chip" onclick="filterSport('Nogomet',this)">⚽ Nogomet</div>
+    <div class="chip" onclick="filterSport('Kolesarjenje',this)">🚴 Kolesarstvo</div>
+    <div class="chip" onclick="filterSport('Odbojka',this)">🏐 Odbojka</div>
+    <div class="chip" onclick="filterSport('Tek',this)">🏃 Tek</div>
+    <div class="chip" onclick="filterSport('Tenis',this)">🎾 Tenis</div>
+    <div class="chip" onclick="filterSport('Kajtanje',this)">🏄 Kajtanje</div>
+    <div class="chip" onclick="filterSport('Plezanje',this)">🧗 Plezanje</div>
+    <div class="chip" onclick="filterSport('Pohodništvo',this)">🥾 Pohod</div>
+    <div class="chip" onclick="filterSport('Smučanje',this)">⛷️ Smučanje</div>
   </div>
 
   <div class="map-ctrl">
@@ -303,7 +308,7 @@ function renderSheetList(acts) {
   const city = (userLat===46.0569 && userLon===14.5058) ? 'Ljubljana' : 'V bližini';
   document.getElementById('peekSub').textContent = city + ' · ' + acts.length + ' aktivnosti';
 
-  list.innerHTML = withDist.slice(0,10).map(act => {
+  list.innerHTML = withDist.slice(0,5).map(act => {
     const live = isLiveAct(act);
     const spotsUsed = act.udelezenci ? act.udelezenci.length : 1;
     const dist = act._dist < 999 ? (act._dist<1 ? Math.round(act._dist*1000)+'m' : act._dist.toFixed(1)+'km') : '';
@@ -344,6 +349,7 @@ function openFirebaseDetail(actId) {
 // Geolocation
 function initGeolocation() {
   if (!navigator.geolocation) return;
+  const geoOptions = {enableHighAccuracy: true, timeout: 10000, maximumAge: 60000};
   navigator.geolocation.getCurrentPosition(pos => {
     userLat = pos.coords.latitude;
     userLon = pos.coords.longitude;
@@ -353,7 +359,7 @@ function initGeolocation() {
       const filtered = activeSportFilter==='vse' ? allFirebaseActs : allFirebaseActs.filter(a=>a.sport===activeSportFilter);
       renderSheetList(filtered);
     }
-  }, () => {});
+  }, () => {}, geoOptions);
 }
 
 // Firebase
@@ -365,6 +371,18 @@ async function loadFirebaseActs() {
       const filtered = activeSportFilter==='vse' ? acts : acts.filter(a=>a.sport===activeSportFilter);
       addFirebaseMarkers(filtered);
       renderSheetList(filtered);
+      // Preveri focus aktivnost (po kreaciji)
+      try {
+        const focusId = sessionStorage.getItem('junto_focus_act');
+        if (focusId) {
+          sessionStorage.removeItem('junto_focus_act');
+          const focusAct = acts.find(a => a.id === focusId);
+          if (focusAct && focusAct.lat && focusAct.lon) {
+            map.setView([parseFloat(focusAct.lat), parseFloat(focusAct.lon)], 15);
+            return;
+          }
+        }
+      } catch(e) {}
       if (acts.length>0 && acts[0].lat) {
         const lats=acts.filter(a=>a.lat).map(a=>parseFloat(a.lat));
         const lons=acts.filter(a=>a.lon).map(a=>parseFloat(a.lon));
