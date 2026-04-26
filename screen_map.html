@@ -123,30 +123,19 @@ body{background:#0f1420;max-width:390px;margin:0 auto;min-height:100vh;font-fami
     <div class="s-icons"><span>●●●</span><span>WiFi</span><span>100%</span></div>
   </div>
 
-  <div class="top-ui">
-    <div class="search-bar">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="2.5"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg>
-      <input type="text" id="searchInput" placeholder="Išči kraj v Sloveniji..." autocomplete="off"/>
-    </div>
+  <div class="top-ui" style="justify-content:flex-end;">
     <div class="icon-btn" onclick="toggleFilter()" title="Filtri">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
     </div>
   </div>
 
-  <div class="search-results" id="searchResults"></div>
-
   <div class="filter-strip">
-    <div class="chip active" onclick="filterSport('vse',this)">Vse</div>
-    <div class="chip" onclick="filterSport('Košarka',this)">🏀 Košarka</div>
-    <div class="chip" onclick="filterSport('Nogomet',this)">⚽ Nogomet</div>
-    <div class="chip" onclick="filterSport('Kolesarjenje',this)">🚴 Kolesarstvo</div>
-    <div class="chip" onclick="filterSport('Odbojka',this)">🏐 Odbojka</div>
-    <div class="chip" onclick="filterSport('Tek',this)">🏃 Tek</div>
-    <div class="chip" onclick="filterSport('Tenis',this)">🎾 Tenis</div>
-    <div class="chip" onclick="filterSport('Kajtanje',this)">🏄 Kajtanje</div>
-    <div class="chip" onclick="filterSport('Plezanje',this)">🧗 Plezanje</div>
-    <div class="chip" onclick="filterSport('Pohodništvo',this)">🥾 Pohod</div>
-    <div class="chip" onclick="filterSport('Smučanje',this)">⛷️ Smučanje</div>
+    <div class="chip active" onclick="filterPins('vse',this)">Vse</div>
+    <div class="chip" onclick="filterPins('bball',this)">🏀 Košarka</div>
+    <div class="chip" onclick="filterPins('futsal',this)">⚽ Futsal</div>
+    <div class="chip" onclick="filterPins('cycling',this)">🚴 Kolesarstvo</div>
+    <div class="chip" onclick="filterPins('volley',this)">🏐 Odbojka</div>
+    <div class="chip" onclick="filterPins('run',this)">🏃 Tek</div>
   </div>
 
   <div class="map-ctrl">
@@ -165,17 +154,11 @@ body{background:#0f1420;max-width:390px;margin:0 auto;min-height:100vh;font-fami
     <div class="sheet-handle-wrap" onclick="toggleSheet()">
       <div class="sheet-handle"></div>
       <div class="sheet-peek">
-        <div><div class="peek-title">Aktivnosti v bližini</div><div class="peek-sub">Ljubljana · 5 aktivnosti</div></div>
+        <div><div class="peek-title">Aktivnosti v bližini</div><div class="peek-sub" id="peekSub">Nalagam...</div></div>
         <div class="peek-arrow" id="peek-arrow">⌃</div>
       </div>
     </div>
-    <div>
-      <div class="act-card" onclick="openDetail('bball')"><div class="sport-icon-box live-ic">🏀</div><div class="ci"><div class="ci-name">Pickup Basketball — Tivoli</div><div class="ci-meta">350m · 8/10 mest</div></div><div class="cr"><div class="cr-time">zdaj</div><div class="badge b-live">● LIVE</div></div></div>
-      <div class="act-card" onclick="openDetail('futsal')"><div class="sport-icon-box live-ic">⚽</div><div class="ci"><div class="ci-name">Futsal — Šiška</div><div class="ci-meta">480m · 9/12 mest</div></div><div class="cr"><div class="cr-time">zdaj</div><div class="badge b-live">● LIVE</div></div></div>
-      <div class="act-card" onclick="openDetail('cycling')"><div class="sport-icon-box">🚴</div><div class="ci"><div class="ci-name">Kolesarjenje — Rožnik</div><div class="ci-meta">1.1km · 4/8 mest</div></div><div class="cr"><div class="cr-time">čez 45 min</div><div class="badge b-soon">kmalu</div></div></div>
-      <div class="act-card" onclick="openDetail('volley')"><div class="sport-icon-box">🏐</div><div class="ci"><div class="ci-name">Odbojka — Golovec</div><div class="ci-meta">1.4km · 6/8 mest</div></div><div class="cr"><div class="cr-time">17:00</div><div class="badge b-open">odprto</div></div></div>
-      <div class="act-card" onclick="openDetail('run')"><div class="sport-icon-box">🏃</div><div class="ci"><div class="ci-name">Jutarnji tek — Tivoli</div><div class="ci-meta">1.2km · 3/8 mest</div></div><div class="cr"><div class="cr-time">jutri 7:00</div><div class="badge b-soon">kmalu</div></div></div>
-    </div>
+    <div id="sheetList"><div style="padding:20px;text-align:center;color:rgba(255,255,255,0.4);font-size:14px;">Nalagam aktivnosti...</div></div>
   </div>
 
   <div class="tab-bar">
@@ -244,57 +227,44 @@ body{background:#0f1420;max-width:390px;margin:0 auto;min-height:100vh;font-fami
 
 </div>
 <script>
-const acts={
-  bball:{name:'Pickup Basketball',sub:'Tivoli · zdaj',sport:'🏀 Košarka',status:'live',lat:46.0527,lon:14.4953,attending:8,total:10,desc:'Sproščena pickup košarka. Ni potrebna izkušnja, vsi dobrodošli. Ponavadi 5v5.',chat:[{init:'MJ',col:'avc-a',name:'Miha J.',msg:'Gremo 10min, kdor zamudi pride naslednjič 😅',time:'9:28'},{init:'LK',col:'avc-b',name:'Luka K.',msg:'Pridem takoj! Parkiram 🏎️',time:'9:31'},{init:'NK',col:'avc-c',name:'Nina K.',msg:'Prinesem rezervno žogo 🏀',time:'9:35'}]},
-  futsal:{name:'Futsal — Šiška',sub:'Šiška · zdaj',sport:'⚽ Futsal',status:'live',lat:46.0611,lon:14.4957,attending:9,total:12,desc:'Tekmovalna igra futsala na zakupljenem igrišču. Zaprta ekipa.',chat:[{init:'GM',col:'avc-b',name:'Gašper M.',msg:'Igrišče rezervirano do 11h',time:'9:15'},{init:'AL',col:'avc-a',name:'Andrej L.',msg:'Super! Pridem s Petrom',time:'9:18'}]},
-  cycling:{name:'Kolesarjenje Rožnik',sub:'Rožnik · 10:30',sport:'🚴 Kolesarjenje',status:'soon',lat:46.0489,lon:14.4801,attending:4,total:8,desc:'Jutranjo kolesarjenje po Rožniku. ~25km, vsi nivoji.',chat:[{init:'PV',col:'avc-c',name:'Petra V.',msg:'Start ob 10:30 pri parkirišču 🌲',time:'8:45'},{init:'MS',col:'avc-a',name:'Matej S.',msg:'Koliko km planiramo?',time:'8:52'}]},
-  volley:{name:'Odbojka Golovec',sub:'Golovec · 17:00',sport:'🏐 Odbojka',status:'open',lat:46.0444,lon:14.5112,attending:6,total:8,desc:'Rekreativna odbojka na pesku. Izkušnje dobrodošle.',chat:[{init:'EB',col:'avc-e',name:'Eva B.',msg:'Dobimo se pri vhodu ob 16:55 ✌️',time:'14:10'}]},
-  run:{name:'Jutarnji tek',sub:'Tivoli · jutri 7:00',sport:'🏃 Tek',status:'soon',lat:46.0551,lon:14.4907,attending:3,total:8,desc:'Sproščen 5km jutarnji tek po parku. Tempo prilagodimo.',chat:[{init:'SK',col:'avc-h',name:'Sara K.',msg:'Lahkoten 5km, za vsakogar 🏃‍♀️',time:'včeraj'}]}
-};
+// MAP init
+const map = L.map('map', {center:[46.0569,14.5058], zoom:13, zoomControl:false, attributionControl:false});
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {maxZoom:19}).addTo(map);
 
-// MAP
-const map=L.map('map',{center:[46.0569,14.5058],zoom:6,zoomControl:false,attributionControl:false});
-L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{maxZoom:19}).addTo(map);
-
-// Me dot
-L.circleMarker([46.0569,14.5058],{radius:8,fillColor:'#007AFF',color:'#fff',weight:3,fillOpacity:1}).addTo(map);
+// User dot (Ljubljana default)
+let userLat = 46.0569, userLon = 14.5058;
+const userDot = L.circleMarker([userLat, userLon], {radius:8, fillColor:'#007AFF', color:'#fff', weight:3, fillOpacity:1}).addTo(map);
 
 // Firebase markers
 let firebaseMarkers = [];
 let allFirebaseActs = [];
 let activeSportFilter = 'vse';
 
+function distKm(lat1,lon1,lat2,lon2) {
+  const R=6371, dLat=(lat2-lat1)*Math.PI/180, dLon=(lon2-lon1)*Math.PI/180;
+  const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+
 function isLiveAct(act) {
   const dateStr = act.date || '';
   if (!dateStr.includes('Danes') && !dateStr.includes('danes')) return false;
-  const timeStr = act.time || '00:00';
-  const durationStr = act.duration || '1 ura';
-  const now = new Date();
-  const [h, m] = timeStr.split(':').map(Number);
-  const start = new Date(now); start.setHours(h, m, 0, 0);
-  let durMin = 60;
-  if (durationStr.includes('30 min')) durMin = 30;
-  else if (durationStr.includes('2 uri')) durMin = 120;
-  else if (durationStr.includes('3 ure')) durMin = 180;
-  const end = new Date(start.getTime() + durMin * 60000);
-  return now >= start && now <= end;
+  const [h,m] = (act.time||'00:00').split(':').map(Number);
+  const now = new Date(), start = new Date(now); start.setHours(h,m,0,0);
+  let dur = 60;
+  if ((act.duration||'').includes('2 uri')) dur=120;
+  if ((act.duration||'').includes('3 ure')) dur=180;
+  return now>=start && now<=new Date(start.getTime()+dur*60000);
 }
 
-function timeAgo(ts) {
-  if (!ts) return '';
-  const ms = ts.toMillis ? ts.toMillis() : ts;
-  const diff = Math.floor((Date.now() - ms) / 60000);
-  if (diff < 1) return 'pravkar';
-  if (diff < 60) return diff + ' min nazaj';
-  if (diff < 1440) return Math.floor(diff/60) + 'h nazaj';
-  return Math.floor(diff/1440) + ' dni nazaj';
+function timeStr(act) {
+  if (isLiveAct(act)) return 'zdaj';
+  return act.time || '';
 }
 
 function addFirebaseMarkers(acts) {
-  // Počisti stare
   firebaseMarkers.forEach(m => m.remove());
   firebaseMarkers = [];
-
   acts.forEach(act => {
     if (!act.lat || !act.lon) return;
     const live = isLiveAct(act);
@@ -302,26 +272,19 @@ function addFirebaseMarkers(acts) {
     const html = `<div class="junto-pin${live?' live':''}" style="position:relative;">
       ${live?'<div class="junto-live-dot"></div>':''}
       <span style="font-size:14px;">${act.sportIcon||'🏃'}</span>
-      <span class="junto-pin-label">${act.location?act.location.split(' ')[0]:act.sport}</span>
+      <span class="junto-pin-label">${(act.location||act.sport).split(' ')[0]}</span>
       <span class="junto-pin-count">${spotsUsed}/${act.players||10}</span>
       ${live?'<div class="junto-live-badge">LIVE</div>':''}
     </div>`;
     const marker = L.marker([parseFloat(act.lat), parseFloat(act.lon)], {
       icon: L.divIcon({html, className:'', iconAnchor:[0,0]})
     }).addTo(map);
-    marker.on('click', () => openFirebaseDetail(act));
-    marker._actData = act;
+    const actId = act.id || act.sport+act.location;
+    window._mapActs = window._mapActs || {};
+    window._mapActs[actId] = act;
+    marker.on('click', () => openFirebaseDetail(actId));
     firebaseMarkers.push(marker);
   });
-}
-
-function filterSport(sport, el) {
-  document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
-  el.classList.add('active');
-  activeSportFilter = sport;
-  const filtered = sport === 'vse' ? allFirebaseActs : allFirebaseActs.filter(a => a.sport === sport);
-  addFirebaseMarkers(filtered);
-  renderSheetList(filtered);
 }
 
 function renderSheetList(acts) {
@@ -331,189 +294,95 @@ function renderSheetList(acts) {
     document.getElementById('peekSub').textContent = 'Ni aktivnosti';
     return;
   }
-  const live = acts.filter(a => isLiveAct(a));
-  const rest = acts.filter(a => !isLiveAct(a));
-  document.getElementById('peekSub').textContent = 'Ljubljana · ' + acts.length + ' aktivnosti';
-  list.innerHTML = [...live, ...rest].map(act => {
-    const isLive = isLiveAct(act);
+  window._mapActs = window._mapActs || {};
+  const withDist = acts.map(act => {
+    const dist = (act.lat && act.lon) ? distKm(userLat,userLon,parseFloat(act.lat),parseFloat(act.lon)) : 999;
+    return {...act, _dist: dist};
+  }).sort((a,b) => a._dist - b._dist);
+
+  const city = (userLat===46.0569 && userLon===14.5058) ? 'Ljubljana' : 'V bližini';
+  document.getElementById('peekSub').textContent = city + ' · ' + acts.length + ' aktivnosti';
+
+  list.innerHTML = withDist.slice(0,10).map(act => {
+    const live = isLiveAct(act);
     const spotsUsed = act.udelezenci ? act.udelezenci.length : 1;
-    const ago = timeAgo(act.createdAt);
-    return `<div class="act-card" onclick="openFirebaseDetail(${JSON.stringify(act).replace(/"/g,'&quot;')})">
-      <div class="sport-icon-box${isLive?' live-ic':''}">
+    const dist = act._dist < 999 ? (act._dist<1 ? Math.round(act._dist*1000)+'m' : act._dist.toFixed(1)+'km') : '';
+    const actId = act.id || act.sport+act.location;
+    window._mapActs[actId] = act;
+    return `<div class="act-card" onclick="openFirebaseDetail('${actId}')">
+      <div class="sport-icon-box${live?' live-ic':''}">
         ${act.sportIcon||'🏃'}
       </div>
       <div class="ci">
         <div class="ci-name">${act.sport} — ${act.location}</div>
-        <div class="ci-meta">${act.date} ${act.time} · ${spotsUsed}/${act.players||10} mest</div>
+        <div class="ci-meta">${dist?dist+' · ':''}${spotsUsed}/${act.players||10} mest</div>
       </div>
       <div class="cr">
-        <div class="cr-time">${ago}</div>
-        ${isLive ? '<div class="badge b-live">● LIVE</div>' : '<div class="badge b-open">odprto</div>'}
+        <div class="cr-time">${timeStr(act)}</div>
+        ${live?'<div class="badge b-live">● LIVE</div>':'<div class="badge b-open">odprto</div>'}
       </div>
     </div>`;
   }).join('');
 }
 
-function openFirebaseDetail(act) {
-  if (typeof act === 'string') act = JSON.parse(act);
-  // Shrani aktivnost za activity screen
+function filterSport(sport, el) {
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  activeSportFilter = sport;
+  const filtered = sport==='vse' ? allFirebaseActs : allFirebaseActs.filter(a => a.sport===sport);
+  addFirebaseMarkers(filtered);
+  renderSheetList(filtered);
+}
+
+function openFirebaseDetail(actId) {
+  const act = window._mapActs && window._mapActs[actId];
+  if (!act) return;
   try { sessionStorage.setItem('junto_current_act', JSON.stringify(act)); } catch(e) {}
   location.href = 'screen_activity.html';
 }
 
-// Naloži iz Firebasa
+// Geolocation
+function initGeolocation() {
+  if (!navigator.geolocation) return;
+  navigator.geolocation.getCurrentPosition(pos => {
+    userLat = pos.coords.latitude;
+    userLon = pos.coords.longitude;
+    map.setView([userLat, userLon], 13);
+    userDot.setLatLng([userLat, userLon]);
+    if (allFirebaseActs.length) {
+      const filtered = activeSportFilter==='vse' ? allFirebaseActs : allFirebaseActs.filter(a=>a.sport===activeSportFilter);
+      renderSheetList(filtered);
+    }
+  }, () => {});
+}
+
+// Firebase
 async function loadFirebaseActs() {
   try {
     const { listenAktivnosti } = await import('./firebase-config.js');
     listenAktivnosti(acts => {
       allFirebaseActs = acts;
-      const filtered = activeSportFilter === 'vse' ? acts : acts.filter(a => a.sport === activeSportFilter);
+      const filtered = activeSportFilter==='vse' ? acts : acts.filter(a=>a.sport===activeSportFilter);
       addFirebaseMarkers(filtered);
       renderSheetList(filtered);
-      // Zoom na aktivnosti če jih je
-      if (acts.length > 0 && acts[0].lat) {
-        const lats = acts.filter(a=>a.lat).map(a=>parseFloat(a.lat));
-        const lons = acts.filter(a=>a.lon).map(a=>parseFloat(a.lon));
-        if (lats.length === 1) {
-          map.setView([lats[0], lons[0]], 13);
-        } else if (lats.length > 1) {
-          map.fitBounds([[Math.min(...lats),Math.min(...lons)],[Math.max(...lats),Math.max(...lons)]], {padding:[60,60]});
-        }
+      if (acts.length>0 && acts[0].lat) {
+        const lats=acts.filter(a=>a.lat).map(a=>parseFloat(a.lat));
+        const lons=acts.filter(a=>a.lon).map(a=>parseFloat(a.lon));
+        if (lats.length===1) map.setView([lats[0],lons[0]],13);
+        else if (lats.length>1) map.fitBounds([[Math.min(...lats),Math.min(...lons)],[Math.max(...lats),Math.max(...lons)]],{padding:[80,80]});
       }
     });
-  } catch(e) { console.error('Firebase error:', e); }
+  } catch(e) { console.error('Firebase:', e); }
 }
-loadFirebaseActs();
 
 // Sheet
 let sheetOpen=false;
 function toggleSheet(){sheetOpen=!sheetOpen;const s=document.getElementById('bottom-sheet');sheetOpen?s.classList.remove('collapsed'):s.classList.add('collapsed');document.getElementById('peek-arrow').style.transform=sheetOpen?'rotate(0deg)':'rotate(180deg)';}
-
-// Filter panel
 function toggleFilter(){document.getElementById('filterPanel').classList.toggle('open');}
 function selectOne(el){el.parentElement.querySelectorAll('.fchip').forEach(c=>c.classList.remove('sel'));el.classList.add('sel');}
 
-// Search
-let st=null;
-document.getElementById('searchInput').addEventListener('input',function(){
-  const q=this.value.trim();clearTimeout(st);const res=document.getElementById('searchResults');
-  if(q.length<2){res.style.display='none';return;}
-  st=setTimeout(async()=>{
-    try{
-      const data=await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=8&countrycodes=si,it,hr&accept-language=sl,hr,it,en`).then(r=>r.json());
-      if(!data.length){res.style.display='none';return;}
-      res.innerHTML=data.map(r=>{const name=r.display_name.split(',')[0];const sub=r.display_name.split(',').slice(1,3).join(',').trim();return`<div class="sri" onclick="flyTo(${r.lat},${r.lon},'${name.replace(/'/g,"\'")}')"><div class="sri-icon">📍</div><div><div class="sri-name">${name}</div><div class="sri-sub">${sub}</div></div></div>`;}).join('');
-      res.style.display='block';
-    }catch(e){res.style.display='none';}
-  },400);
-});
-document.addEventListener('click',e=>{if(!e.target.closest('.top-ui')&&!e.target.closest('.search-results'))document.getElementById('searchResults').style.display='none';});
-function flyTo(lat,lon,name){map.flyTo([lat,lon],13,{duration:1.5});document.getElementById('searchInput').value=name;document.getElementById('searchResults').style.display='none';}
-
-let currentDetailId = null;
-let chatMsgs = {};
-
-function openDetail(id){
-  const a=acts[id];
-  currentDetailId = id;
-  if (!chatMsgs[id]) chatMsgs[id] = [...a.chat];
-
-  document.getElementById('d-title').textContent=a.name;
-  document.getElementById('d-sub').textContent=a.sub;
-
-  // "Več" gumb → activity screen
-  document.querySelector('.detail-sheet .sh-nav span') && null;
-
-  const sb=a.status==='live'
-    ?'<span style="background:#ffebee;color:#c62828;font-size:12px;font-weight:600;padding:4px 10px;border-radius:10px;">● LIVE</span>'
-    :a.status==='soon'
-    ?'<span style="background:#fff3e0;color:#e65100;font-size:12px;padding:4px 10px;border-radius:10px;">Kmalu</span>'
-    :'<span style="background:#e8f5e9;color:#2e7d32;font-size:12px;padding:4px 10px;border-radius:10px;">Odprto</span>';
-
-  const roster = rosterData[id]||[];
-  const rosterPreview = roster.slice(0,4).map(p=>`<div style="width:32px;height:32px;border-radius:50%;background:${p.col};display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;margin-right:-8px;border:2px solid #fff;">${p.init}</div>`).join('');
-
-  renderDetailChat(id);
-
-  document.getElementById('detail-scroll').innerHTML=`
-    <div class="sport-band">
-      <div class="sport-name-big">${a.sport} ${sb}</div>
-      <div class="meta-item"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>${a.sub}</div>
-    </div>
-    <div class="iou-row">
-      <div class="iou-cell" onclick="openRoster('${id}')" style="cursor:pointer;">
-        <div style="display:flex;justify-content:center;margin-bottom:6px;">${rosterPreview}</div>
-        <span class="iou-num">${a.attending}</span>
-        <div class="iou-label">Pridruženih ›</div>
-      </div>
-      <div class="iou-cell">
-        <span class="iou-num iou-free">${a.total-a.attending}</span>
-        <div class="iou-label">Prostih mest</div>
-      </div>
-    </div>
-    <div class="desc-block"><div style="font-size:12px;color:#888;margin-bottom:4px;">O aktivnosti</div><div class="desc-text">${a.desc}</div></div>
-    <div style="background:#fff;margin-top:10px;">
-      <div class="chat-sec-hdr">Skupinski chat</div>
-      <div id="map-chat-msgs"></div>
-      <div class="chat-input-wrap">
-        <input class="chat-input" id="map-chat-input" placeholder="Sporoči skupini..." onkeydown="if(event.key==='Enter')sendMapChat('${id}')">
-        <button class="chat-send" onclick="sendMapChat('${id}')">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-        </button>
-      </div>
-    </div>
-    <div style="height:10px;background:#f2f2f7;"></div>`;
-
-  // render chat after DOM update
-  setTimeout(()=>renderDetailChat(id), 10);
-
-  document.getElementById('detail-cta').innerHTML=`<button class="btn-in" onclick="joinAct('${id}')">✓ Pridruži se · ${a.attending}/${a.total}</button><button class="btn-close" onclick="closeDetail()">Zapri</button>`;
-  document.getElementById('detail-overlay').classList.add('open');
-  map.flyTo([a.lat,a.lon],16,{duration:0.8});
-}
-
-function renderDetailChat(id) {
-  const msgs = chatMsgs[id]||[];
-  const wrap = document.getElementById('map-chat-msgs');
-  if (!wrap) return;
-  wrap.innerHTML = msgs.map(c=>`<div class="chat-msg"><div class="chat-av ${c.col||''}" style="${c.col&&!c.col.startsWith('avc')?'background:'+c.col:''}">${c.init}</div><div><div class="chat-bubble"><div class="chat-name">${c.name}</div><div class="chat-text">${c.msg}</div></div><div style="font-size:10px;color:#bbb;margin-top:3px;">${c.time}</div></div></div>`).join('');
-  wrap.scrollTop = wrap.scrollHeight;
-}
-
-function sendMapChat(id) {
-  const input = document.getElementById('map-chat-input');
-  const text = input.value.trim();
-  if (!text) return;
-  if (!chatMsgs[id]) chatMsgs[id] = [];
-  chatMsgs[id].push({init:'Ti',col:'#FF385C',name:'Ti',msg:text,time:'zdaj'});
-  renderDetailChat(id);
-  input.value = '';
-}
-
-// Roster overlay
-function openRoster(id) {
-  const roster = rosterData[id]||[];
-  const rows = roster.map(p=>`
-    <div onclick="location.href='screen_profil.html'" style="display:flex;align-items:center;padding:12px 16px;border-bottom:0.5px solid #f5f5f5;cursor:pointer;background:#fff;gap:12px;">
-      <div style="width:44px;height:44px;border-radius:50%;background:${p.col};display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:#fff;flex-shrink:0;">${p.init}</div>
-      <div style="flex:1;"><div style="font-size:15px;color:#000;font-weight:500;">${p.name}</div><div style="font-size:12px;color:#8e8e93;margin-top:1px;">${p.tag}</div></div>
-      <svg width="8" height="14" viewBox="0 0 8 14" fill="none" stroke="#c7c7cc" stroke-width="2" stroke-linecap="round"><path d="M1 1l6 6-6 6"/></svg>
-    </div>`).join('');
-
-  document.getElementById('detail-scroll').innerHTML=`
-    <div style="background:#fff;display:flex;align-items:center;padding:14px 16px;border-bottom:0.5px solid #e5e5ea;">
-      <div onclick="openDetail('${id}')" style="color:#007AFF;font-size:15px;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:4px;">
-        <svg width="10" height="16" viewBox="0 0 10 18" fill="none" stroke="#007AFF" stroke-width="2.5" stroke-linecap="round"><path d="M9 1L1 9l8 8"/></svg> Nazaj
-      </div>
-      <div style="flex:1;text-align:center;font-size:16px;font-weight:700;">Udeleženci</div>
-      <div style="width:60px;text-align:right;font-size:13px;color:#8e8e93;">${roster.length} oseb</div>
-    </div>
-    ${rows}
-    <div style="height:10px;background:#f2f2f7;"></div>`;
-}
-
-function closeDetail(){document.getElementById('detail-overlay').classList.remove('open'); currentDetailId=null;}
-function joinAct(id){const a=acts[id];if(a.attending<a.total){a.attending++;document.getElementById('detail-cta').innerHTML=`<button class="btn-in" style="background:#007AFF;">✓ Pridružen! ${a.attending}/${a.total}</button><button class="btn-close" onclick="closeDetail()">Zapri</button>`;}}
+initGeolocation();
+loadFirebaseActs();
 </script>
 </body>
 </html>
