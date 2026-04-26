@@ -174,7 +174,7 @@ body{background:#f2f2f7;max-width:390px;margin:0 auto;min-height:100vh;font-fami
           <div><div class="org-name">Miha Kovač</div><div class="org-label">Organizator · 124 sledilcev</div></div>
         </div>
         <div style="display:flex;align-items:center;gap:8px;">
-          <div class="org-badge">🏀 BALLER</div>
+          
           <svg width="8" height="14" viewBox="0 0 8 14" fill="none" stroke="#c7c7cc" stroke-width="2" stroke-linecap="round"><path d="M1 1l6 6-6 6"/></svg>
         </div>
       </div>
@@ -314,7 +314,7 @@ body{background:#f2f2f7;max-width:390px;margin:0 auto;min-height:100vh;font-fami
 </div>
 
 <script type="module">
-import { onAuth, loginWithGoogle, sendChatMessage, deleteChatMessage, listenChat, setTyping, listenTyping } from './firebase-config.js';
+import { onAuth, loginWithGoogle, sendChatMessage, deleteChatMessage, listenChat, setTyping, listenTyping, joinActivity, leaveActivity, listenActivity, uploadActivityPhoto as uploadPhoto, listenPhotos } from './firebase-config.js';
 
 let currentAct = null;
 let currentUser = null;
@@ -455,16 +455,99 @@ if (actRaw) {
   } catch(e) { console.error('Activity load error:', e); }
 }
 
-// Auth
+// Auth + join status
 onAuth(user => {
   currentUser = user;
-  // Re-render chat da se pokaže "Ti" pravilno
-  if (currentAct?.id && user) {
-    console.log('Prijavljen:', user.displayName);
+  if (user && currentAct?.id) {
+    // Preveri ali je že pridružen
+    const isJoined = currentAct.udelezenci && currentAct.udelezenci.includes(user.uid);
+    updateJoinBtn(isJoined);
   }
 });
 
+// Poslušaj spremembe aktivnosti (udeleženci, fotke)
+if (actRaw) {
+  try {
+    const act = JSON.parse(actRaw);
+    if (act.id) {
+      // Live updates za udeležence
+      listenActivity(act.id, updatedAct => {
+        currentAct = updatedAct;
+        sessionStorage.setItem('junto_current_act', JSON.stringify(updatedAct));
+        
+        // Posodobi udeležence
+        const spotsUsed = updatedAct.udelezenci ? updatedAct.udelezenci.length : 1;
+        const spotsTotal = updatedAct.players || 10;
+        const spotsFree = spotsTotal - spotsUsed;
+        const spotsInfo = document.querySelector('.spots-info');
+        if (spotsInfo) spotsInfo.innerHTML = `<strong>${spotsFree} mest</strong> prostih od ${spotsTotal}`;
+        const spotsBar = document.querySelector('.spots-bar-fill');
+        if (spotsBar) spotsBar.style.width = Math.round(spotsUsed/spotsTotal*100) + '%';
+        
+        // Avatarji
+        const avatarStack = document.querySelector('.avatars-stack');
+        if (avatarStack && updatedAct.udelezenecIme) {
+          const colors = ['#FF6B35','#4CAF50','#2196F3','#9C27B0','#FF385C'];
+          avatarStack.innerHTML = updatedAct.udelezenecIme.slice(0,4).map((name,i) =>
+            `<div class="p-av" style="background:${colors[i%colors.length]};" onclick="openRoster()">${name[0].toUpperCase()}</div>`
+          ).join('') + `<div class="p-av" style="background:#f0f0f0;color:#bbb;font-size:18px;" onclick="openRoster()">+</div>`;
+        }
+        
+        // Join gumb
+        if (currentUser) updateJoinBtn(updatedAct.udelezenci && updatedAct.udelezenci.includes(currentUser.uid));
+      });
+
+      // Live fotke
+      listenPhotos(act.id, photos => {
+        const row = document.getElementById('photosRow');
+        if (!row) return;
+        // Shrani upload gumb
+        const uploadBtn = row.querySelector('[onclick*="photoUploadInput"]');
+        // Nastavi fotke + upload gumb
+        const photoHtml = photos.map(p => {
+          const time = p.createdAt ? new Date(p.createdAt.toMillis()).toLocaleTimeString('sl-SI',{hour:'2-digit',minute:'2-digit'}) : '';
+          return `<div class="photo-thumb" style="flex-shrink:0;overflow:hidden;">
+            <img src="${p.url}" style="width:100%;height:100%;object-fit:cover;">
+            <div class="photo-poster">${p.uploaderName||'?'} · ${time}</div>
+          </div>`;
+        }).join('');
+        row.innerHTML = (uploadBtn ? uploadBtn.outerHTML : '') + photoHtml;
+      });
+    }
+  } catch(e) {}
+}
+
+function updateJoinBtn(isJoined) {
+  const btn = document.getElementById('bottom-join');
+  if (!btn) return;
+  if (isJoined) {
+    btn.textContent = '✓ Pridružen — tapni za odjavo';
+    btn.classList.add('joined');
+  } else {
+    btn.textContent = 'Pridruži se zdaj →';
+    btn.classList.remove('joined');
+  }
+}
+
 // Globalne chat funkcije
+window._joinOrLeave = async function() {
+  if (!currentUser) {
+    const user = await loginWithGoogle();
+    if (!user) return;
+  }
+  if (!currentAct?.id) return;
+  const isJoined = currentAct.udelezenci && currentAct.udelezenci.includes(currentUser.uid);
+  try {
+    if (isJoined) {
+      await leaveActivity(currentAct.id);
+      showToast('Odjavljen iz aktivnosti');
+    } else {
+      await joinActivity(currentAct.id);
+      showToast('🙌 Pridružen!');
+    }
+  } catch(e) { showToast('❌ ' + e.message); }
+};
+
 window._sendChatMsg = async function() {
   const inp = document.getElementById('chat-input');
   const text = inp.value.trim();
@@ -509,12 +592,7 @@ L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{ma
 
 // JOIN
 let joined=false;
-function handleJoin(){
-  joined=!joined;
-  const bjb=document.getElementById('bottom-join');
-  if(joined){bjb.textContent='✓ Pridružen — tapni za odjavo';bjb.classList.add('joined');showToast('🙌 Pridružen!');}
-  else{bjb.textContent='Pridruži se zdaj →';bjb.classList.remove('joined');}
-}
+function handleJoin(){ window._joinOrLeave && window._joinOrLeave(); }
 
 // WATCH / BELL
 let watching=false,belled=false;
@@ -548,17 +626,12 @@ function goToMapFromActivity(){
 // Photo upload
 function uploadActivityPhoto(input){
   const file=input.files[0]; if(!file) return;
-  const reader=new FileReader();
-  reader.onload=e=>{
-    const row=document.getElementById('photosRow');
-    const thumb=document.createElement('div');
-    thumb.className='photo-thumb';
-    thumb.style.cssText='flex-shrink:0;overflow:hidden;';
-    thumb.innerHTML=`<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover;"><div class="photo-poster">${new Date().toLocaleTimeString('sl-SI',{hour:'2-digit',minute:'2-digit'})}</div>`;
-    row.insertBefore(thumb,row.firstChild);
-    showToast('📸 Fotka dodana!');
-  };
-  reader.readAsDataURL(file);
+  if (!currentAct?.id) { showToast('❌ Ni aktivnosti'); return; }
+  if (!currentUser) { showToast('❌ Najprej se prijavi'); return; }
+  showToast('📤 Nalagam sliko...');
+  uploadPhoto(currentAct.id, file, currentUser.displayName)
+    .then(() => showToast('📸 Fotka shranjena!'))
+    .catch(e => showToast('❌ Napaka: ' + e.message));
   input.value='';
 }
 

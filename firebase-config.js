@@ -1,6 +1,6 @@
 // firebase-config.js — Junto Firebase konfiguracija
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, collection, addDoc, getDocs, onSnapshot, query, orderBy, serverTimestamp, deleteDoc, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getFirestore, collection, addDoc, getDocs, onSnapshot, query, orderBy, serverTimestamp, deleteDoc, doc, setDoc, updateDoc, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut, browserLocalPersistence, setPersistence } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
@@ -136,9 +136,58 @@ function listenTyping(activityId, callback) {
   });
 }
 
+// ── Join / Leave aktivnost ───────────────────────────────────
+async function joinActivity(activityId) {
+  const user = auth.currentUser;
+  if (!user) throw new Error("Nisi prijavljen");
+  await updateDoc(doc(db, "aktivnosti", activityId), {
+    udelezenci: arrayUnion(user.uid),
+    udelezenecIme: arrayUnion(user.displayName),
+  });
+}
+
+async function leaveActivity(activityId) {
+  const user = auth.currentUser;
+  if (!user) return;
+  await updateDoc(doc(db, "aktivnosti", activityId), {
+    udelezenci: arrayRemove(user.uid),
+    udelezenecIme: arrayRemove(user.displayName),
+  });
+}
+
+function listenActivity(activityId, callback) {
+  return onSnapshot(doc(db, "aktivnosti", activityId), snap => {
+    if (snap.exists()) callback({ id: snap.id, ...snap.data() });
+  });
+}
+
+// ── Slike aktivnosti ──────────────────────────────────────────
+async function uploadActivityPhoto(activityId, file, uploaderName) {
+  const user = auth.currentUser;
+  if (!user) throw new Error("Nisi prijavljen");
+  const storageRef = ref(storage, `activity-photos/${activityId}/${Date.now()}_${file.name}`);
+  await uploadBytes(storageRef, file);
+  const url = await getDownloadURL(storageRef);
+  await addDoc(collection(db, "aktivnosti", activityId, "photos"), {
+    url,
+    uploaderName: user.displayName,
+    uploaderId: user.uid,
+    createdAt: serverTimestamp(),
+  });
+  return url;
+}
+
+function listenPhotos(activityId, callback) {
+  const q = query(collection(db, "aktivnosti", activityId, "photos"), orderBy("createdAt", "asc"));
+  return onSnapshot(q, snap => {
+    callback(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+  });
+}
+
 export {
   db, storage, auth,
   loginWithGoogle, logout, getCurrentUser, onAuth,
   objavljiAktivnost, getAktivnosti, listenAktivnosti,
-  sendChatMessage, deleteChatMessage, listenChat, setTyping, listenTyping
+  sendChatMessage, deleteChatMessage, listenChat, setTyping, listenTyping,
+  joinActivity, leaveActivity, listenActivity, uploadActivityPhoto, listenPhotos
 };
