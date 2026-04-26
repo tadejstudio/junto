@@ -422,6 +422,12 @@
       </div>
     </div>
 
+    <!-- FIREBASE AKTIVNOSTI -->
+    <div id="firebase-feed" style="display:none;">
+      <div class="section-label" id="firebase-label">Objavljene aktivnosti</div>
+      <div id="firebase-cards"></div>
+    </div>
+
     <!-- LIVE card — bigger, urgent -->
     <div class="card live-card">
       <img class="card-cover" src="basketball.jpg" alt="Basketball"
@@ -637,6 +643,76 @@ function openNotifications(){document.getElementById('notifOverlay').style.displ
 function closeNotifications(){document.getElementById('notifOverlay').style.display='none';}
 document.querySelectorAll('.card').forEach(c=>c.addEventListener('click',()=>location.href='screen_activity.html'));
 document.querySelectorAll('.moment-bubble').forEach(b=>b.addEventListener('click',()=>location.href='screen_story.html'));
+</script>
+
+<script type="module">
+import { listenAktivnosti } from './firebase-config.js';
+
+function timeAgo(ts) {
+  if (!ts) return '';
+  const d = ts.toDate ? ts.toDate() : new Date(ts);
+  const diff = Math.floor((Date.now() - d) / 1000);
+  if (diff < 60) return 'pravkar';
+  if (diff < 3600) return Math.floor(diff/60) + ' min nazaj';
+  if (diff < 86400) return Math.floor(diff/3600) + ' ur nazaj';
+  return d.toLocaleDateString('sl');
+}
+
+function renderCard(act) {
+  const spots = act.players || 10;
+  const joined = act.udelezenci ? act.udelezenci.length : 1;
+  const pct = Math.round((joined / spots) * 100);
+  const isFull = joined >= spots;
+  const isLive = act.date && act.date.includes('Danes');
+  
+  return \`<div class="card \${isLive ? 'live-card' : ''}" onclick="location.href='screen_activity.html'" style="cursor:pointer;">
+    \${act.photoURL ? \`<img class="card-cover" src="\${act.photoURL}" alt="" onerror="this.style.display='none'">\` : 
+      \`<div class="card-cover-placeholder" style="display:flex;font-size:48px;">\${act.sportIcon || '🏃'}</div>\`}
+    <div class="card-body">
+      <div class="card-top">
+        <div class="card-sport">
+          <div class="sport-icon basketball">\${act.sportIcon || '🏃'}</div>
+          <div class="sport-info">
+            <h3>\${act.sport || 'Aktivnost'}</h3>
+            <div class="location">📍 \${act.location || ''}</div>
+          </div>
+        </div>
+        \${isLive ? '<div class="badge live-badge"><div class="live-dot"></div> LIVE</div>' : 
+          '<div class="badge public">🌍 Javno</div>'}
+      </div>
+      <div class="card-meta">
+        <div class="meta-item">🕐 \${act.time || ''}</div>
+        <div class="meta-item">📅 \${act.date || ''}</div>
+        <div class="meta-item">👤 \${act.organizerName || 'Uporabnik'}</div>
+      </div>
+      <div class="card-action">
+        <div class="spots-counter">
+          <div class="spots-fraction \${isFull ? 'style="color:#FF3B30"' : ''}">\${joined}<span class="total">/\${spots}</span></div>
+          <div class="spots-label">mest</div>
+        </div>
+        <div class="spots-bar-wrap">
+          <div class="spots-bar-bg">
+            <div class="spots-bar-fill \${isFull ? 'full' : isLive ? 'live-fill' : ''}" style="width:\${pct}%"></div>
+          </div>
+        </div>
+        <button class="cta-btn \${isFull ? 'cta-full' : isLive ? 'cta-live' : 'cta-join'}">\${isFull ? 'FULL' : isLive ? 'Pridruži se →' : 'JOIN'}</button>
+      </div>
+    </div>
+  </div>\`;
+}
+
+listenAktivnosti(aktivnosti => {
+  const feed = document.getElementById('firebase-feed');
+  const cards = document.getElementById('firebase-cards');
+  
+  if (aktivnosti.length === 0) {
+    feed.style.display = 'none';
+    return;
+  }
+  
+  feed.style.display = 'block';
+  cards.innerHTML = aktivnosti.map(renderCard).join('');
+});
 </script>
 </body>
 </html>
