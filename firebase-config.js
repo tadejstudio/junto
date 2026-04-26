@@ -2,7 +2,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getFirestore, collection, addDoc, getDocs, onSnapshot, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
-import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getAuth, signInWithPopup, signInWithRedirect, getRedirectResult, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCS5io8l-qFIMEV11-2DJvScB5TaoFLbZI",
@@ -21,6 +21,11 @@ const provider = new GoogleAuthProvider();
 
 // ── Auth ──────────────────────────────────────────────────────
 async function loginWithGoogle() {
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  if (isMobile) {
+    await signInWithRedirect(auth, provider);
+    return null; // stran se bo osvežila po redirectu
+  }
   try {
     const result = await signInWithPopup(auth, provider);
     return result.user;
@@ -28,6 +33,13 @@ async function loginWithGoogle() {
     console.error("Login napaka:", e);
     return null;
   }
+}
+
+async function checkRedirectResult() {
+  try {
+    const result = await getRedirectResult(auth);
+    return result ? result.user : null;
+  } catch(e) { return null; }
 }
 
 function logout() {
@@ -83,6 +95,6 @@ function listenAktivnosti(callback) {
 
 export {
   db, storage, auth,
-  loginWithGoogle, logout, getCurrentUser, onAuth,
+  loginWithGoogle, checkRedirectResult, logout, getCurrentUser, onAuth,
   objavljiAktivnost, getAktivnosti, listenAktivnosti
 };

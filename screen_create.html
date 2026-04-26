@@ -318,21 +318,15 @@
     <div class="section-label">Izberite šport</div>
     <div class="sport-grid">
       <div class="sport-pill active" data-sport="Košarka" data-strava="0" onclick="selectSport(this)"><span class="s-icon">🏀</span><span class="s-name">Košarka</span></div>
-      <div class="sport-pill" data-sport="Futsal" data-strava="0" onclick="selectSport(this)"><span class="s-icon">⚽</span><span class="s-name">Futsal</span></div>
+      <div class="sport-pill" data-sport="Nogomet" data-strava="0" onclick="selectSport(this)"><span class="s-icon">⚽</span><span class="s-name">Nogomet</span></div>
       <div class="sport-pill" data-sport="Odbojka" data-strava="0" onclick="selectSport(this)"><span class="s-icon">🏐</span><span class="s-name">Odbojka</span></div>
       <div class="sport-pill" data-sport="Tenis" data-strava="1" onclick="selectSport(this)"><span class="s-icon">🎾</span><span class="s-name">Tenis</span></div>
       <div class="sport-pill" data-sport="Kolesarjenje" data-strava="1" onclick="selectSport(this)"><span class="s-icon">🚴</span><span class="s-name">Kolesarstvo</span></div>
       <div class="sport-pill" data-sport="Tek" data-strava="1" onclick="selectSport(this)"><span class="s-icon">🏃</span><span class="s-name">Tek</span></div>
       <div class="sport-pill" data-sport="Pohodništvo" data-strava="1" onclick="selectSport(this)"><span class="s-icon">🥾</span><span class="s-name">Pohod</span></div>
       <div class="sport-pill" data-sport="Smučanje" data-strava="1" onclick="selectSport(this)"><span class="s-icon">⛷️</span><span class="s-name">Smučanje</span></div>
-      <div class="sport-pill" data-sport="Kajtanje" data-strava="0" onclick="selectSport(this)"><span class="s-icon">🪁</span><span class="s-name">Kajtanje</span></div>
-      <div class="sport-pill" id="drugoPill" data-sport="" data-strava="0" onclick="openDrugo()"><span class="s-icon">✏️</span><span class="s-name">Drugo</span></div>
-    </div>
-    <div id="drugoInput" style="display:none;margin-top:10px;position:relative;">
-      <input id="drugoText" type="text" placeholder="Vpiši šport..." autocomplete="off"
-        style="width:100%;background:#1c1c1e;border:1.5px solid #FF385C;border-radius:12px;padding:12px 16px;color:#fff;font-size:16px;outline:none;font-family:inherit;"
-        oninput="filterDrugo(this.value)" onkeydown="if(event.key==='Enter')confirmDrugo()"/>
-      <div id="drugoSuggestions" style="display:none;position:absolute;top:48px;left:0;right:0;background:#2c2c2e;border-radius:12px;overflow:hidden;z-index:50;border:1px solid #3a3a3c;"></div>
+      <div class="sport-pill" data-sport="Plezanje" data-strava="0" onclick="selectSport(this)"><span class="s-icon">🧗</span><span class="s-name">Plezanje</span></div>
+      <div class="sport-pill" data-sport="Kajtanje" data-strava="0" onclick="selectSport(this)"><span class="s-icon">🏄</span><span class="s-name">Kajtanje</span></div>
     </div>
   </div>
 
@@ -935,7 +929,15 @@ function showToast(msg){const t=document.getElementById('toast');t.textContent=m
 </script>
 <script src="junto.js"></script>
 <script type="module">
-  import { onAuth, loginWithGoogle } from './firebase-config.js';
+  import { onAuth, loginWithGoogle, checkRedirectResult } from './firebase-config.js';
+  // Preveri redirect rezultat (mobilni login)
+  checkRedirectResult().then(user => {
+    if (user) {
+      window._juntoUser = user;
+      console.log('Prijavljen po redirectu:', user.displayName);
+    }
+  });
+
   onAuth(user => {
     window._juntoUser = user;
     const btn = document.querySelector('.publish-btn-inline') || document.querySelector('.publish-btn');
