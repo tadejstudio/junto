@@ -877,9 +877,10 @@ async function handlePublish(){
 async function loginAndPublish() {
   try {
     const { loginWithGoogle } = await import('./firebase-config.js');
+    showToast('🔑 Prijavujem...');
     const user = await loginWithGoogle();
     if (user) { window._juntoUser = user; await doPublish(); }
-  } catch(e) { showToast('❌ Napaka pri prijavi'); }
+  } catch(e) { showToast('❌ Napaka pri prijavi: '+e.message); }
 }
 
 async function doPublish(){
@@ -929,15 +930,7 @@ function showToast(msg){const t=document.getElementById('toast');t.textContent=m
 </script>
 <script src="junto.js"></script>
 <script type="module">
-  import { onAuth, loginWithGoogle, checkRedirectResult } from './firebase-config.js';
-  // Preveri redirect rezultat (mobilni login)
-  checkRedirectResult().then(user => {
-    if (user) {
-      window._juntoUser = user;
-      console.log('Prijavljen po redirectu:', user.displayName);
-    }
-  });
-
+  import { onAuth, loginWithGoogle } from './firebase-config.js';
   onAuth(user => {
     window._juntoUser = user;
     const btn = document.querySelector('.publish-btn-inline') || document.querySelector('.publish-btn');
