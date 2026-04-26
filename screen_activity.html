@@ -310,6 +310,89 @@ body{background:#f2f2f7;max-width:390px;margin:0 auto;min-height:100vh;font-fami
   </div>
 </div>
 
+<script type="module">
+// Naloži aktivnost iz sessionStorage (poslana iz mape ali feeda)
+const actRaw = sessionStorage.getItem('junto_current_act');
+if (actRaw) {
+  try {
+    const act = JSON.parse(actRaw);
+    
+    // Cover
+    const coverBg = document.querySelector('.cover-bg');
+    if (coverBg) coverBg.textContent = act.sportIcon || '🏃';
+    
+    const coverSportIcon = document.querySelector('.cover-sport-icon');
+    if (coverSportIcon) coverSportIcon.textContent = act.sportIcon || '🏃';
+    
+    const coverSportName = document.querySelector('.cover-sport-name');
+    if (coverSportName) coverSportName.textContent = act.sport || '';
+
+    // LIVE badge
+    const liveBadge = document.querySelector('.cover-title .live-badge');
+    function isLiveNow(a) {
+      const dateStr = a.date || '';
+      if (!dateStr.includes('Danes') && !dateStr.includes('danes')) return false;
+      const [h,m] = (a.time||'00:00').split(':').map(Number);
+      const now = new Date(); const start = new Date(now); start.setHours(h,m,0,0);
+      let dur = 60;
+      if ((a.duration||'').includes('2 uri')) dur=120;
+      if ((a.duration||'').includes('3 ure')) dur=180;
+      return now>=start && now<=new Date(start.getTime()+dur*60000);
+    }
+    if (liveBadge) liveBadge.style.display = isLiveNow(act) ? 'flex' : 'none';
+
+    const coverLoc = document.querySelector('.cover-location');
+    if (coverLoc) coverLoc.textContent = '📍 ' + (act.location || '') + (act.locationSub ? ' · ' + act.locationSub : '');
+
+    // Meta pills
+    const metaPills = document.querySelectorAll('.meta-pill');
+    if (metaPills[0]) metaPills[0].innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>${act.time||''} · ${act.date||''}`;
+    if (metaPills[1]) metaPills[1].innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>${act.skill||'Vsi nivoji'}`;
+    if (metaPills[2]) metaPills[2].innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>${act.isPrivate?'Zasebno':'Javno'}`;
+
+    // Organizator
+    const orgAv = document.querySelector('.org-av');
+    if (orgAv) orgAv.textContent = (act.organizerName||'?')[0].toUpperCase();
+    const orgName = document.querySelector('.org-name');
+    if (orgName) orgName.textContent = act.organizerName || 'Organizator';
+
+    // Udeleženci
+    const spotsUsed = act.udelezenci ? act.udelezenci.length : 1;
+    const spotsTotal = act.players || 10;
+    const spotsFree = spotsTotal - spotsUsed;
+    const spotsInfo = document.querySelector('.spots-info');
+    if (spotsInfo) spotsInfo.innerHTML = `<strong>${spotsFree} mest</strong> prostih od ${spotsTotal}`;
+    const spotsBar = document.querySelector('.spots-bar-fill');
+    if (spotsBar) spotsBar.style.width = Math.round(spotsUsed/spotsTotal*100) + '%';
+
+    // Avatar stack
+    const avatarStack = document.querySelector('.avatars-stack');
+    if (avatarStack && act.udelezenecIme) {
+      const colors = ['#FF6B35','#4CAF50','#2196F3','#9C27B0','#FF385C'];
+      avatarStack.innerHTML = act.udelezenecIme.slice(0,4).map((name,i) => 
+        `<div class="p-av" style="background:${colors[i%colors.length]};" onclick="openRoster()">${name[0].toUpperCase()}</div>`
+      ).join('') + `<div class="p-av" style="background:#f0f0f0;color:#bbb;font-size:18px;" onclick="openRoster()">+</div>`;
+    }
+
+    // Opis
+    const descEl = document.querySelector('.desc-text');
+    if (descEl && act.description) descEl.textContent = act.description;
+
+    // Mapa lokacije
+    if (act.lat && act.lon) {
+      const lat = parseFloat(act.lat), lon = parseFloat(act.lon);
+      amap.setView([lat, lon], 15);
+      document.querySelectorAll('.leaflet-marker-pane .leaflet-marker-icon').forEach(m=>m.remove());
+      L.circleMarker([lat, lon], {radius:10, fillColor:'#FF385C', color:'#fff', weight:3, fillOpacity:1}).addTo(amap);
+    }
+
+    // Naslov strani
+    document.title = 'Junto — ' + act.sport + ' · ' + act.location;
+
+  } catch(e) { console.error('Activity load error:', e); }
+}
+</script>
+
 <script>
 // MAP
 const amap=L.map('activity-map',{center:[46.0540,14.5120],zoom:16,zoomControl:false,attributionControl:false});

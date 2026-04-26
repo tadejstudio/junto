@@ -578,7 +578,10 @@ function renderCard(act) {
   const full = spotsUsed >= spotsTotal;
   const ago = timeAgo(act.createdAt);
 
-  return `<div class="card ${live ? 'live-card' : ''}" onclick="location.href='screen_activity.html'" style="cursor:pointer;">
+  const actStr = JSON.stringify(act).replace(/`/g,''); window._acts = window._acts || {};
+  const actId = act.id || (act.sport + act.location + act.time);
+  window._acts[actId] = act;
+  return `<div class="card ${live ? 'live-card' : ''}" onclick="sessionStorage.setItem('junto_current_act',JSON.stringify(window._acts['${actId}']));location.href='screen_activity.html'" style="cursor:pointer;">
     ${act.photoURL ? `<img class="card-cover" src="${act.photoURL}" alt="">` : `<div class="card-cover-placeholder" style="background:linear-gradient(135deg,${color}22,${color}44);display:flex;font-size:48px;align-items:center;justify-content:center;">${act.sportIcon || '🏃'}</div>`}
     <div class="card-body">
       <div class="card-top">
@@ -613,6 +616,11 @@ function renderCard(act) {
       </div>
     </div>
   </div>`;
+}
+
+function openActivity(act) {
+  try { sessionStorage.setItem('junto_current_act', JSON.stringify(act)); } catch(e) {}
+  location.href = 'screen_activity.html';
 }
 
 // Listen za real-time updates

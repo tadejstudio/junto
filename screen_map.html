@@ -136,12 +136,17 @@ body{background:#0f1420;max-width:390px;margin:0 auto;min-height:100vh;font-fami
   <div class="search-results" id="searchResults"></div>
 
   <div class="filter-strip">
-    <div class="chip active" onclick="filterPins('vse',this)">Vse</div>
-    <div class="chip" onclick="filterPins('bball',this)">🏀 Košarka</div>
-    <div class="chip" onclick="filterPins('futsal',this)">⚽ Futsal</div>
-    <div class="chip" onclick="filterPins('cycling',this)">🚴 Kolesarstvo</div>
-    <div class="chip" onclick="filterPins('volley',this)">🏐 Odbojka</div>
-    <div class="chip" onclick="filterPins('run',this)">🏃 Tek</div>
+    <div class="chip active" onclick="filterSport('vse',this)">Vse</div>
+    <div class="chip" onclick="filterSport('Košarka',this)">🏀 Košarka</div>
+    <div class="chip" onclick="filterSport('Nogomet',this)">⚽ Nogomet</div>
+    <div class="chip" onclick="filterSport('Kolesarjenje',this)">🚴 Kolesarstvo</div>
+    <div class="chip" onclick="filterSport('Odbojka',this)">🏐 Odbojka</div>
+    <div class="chip" onclick="filterSport('Tek',this)">🏃 Tek</div>
+    <div class="chip" onclick="filterSport('Tenis',this)">🎾 Tenis</div>
+    <div class="chip" onclick="filterSport('Kajtanje',this)">🏄 Kajtanje</div>
+    <div class="chip" onclick="filterSport('Plezanje',this)">🧗 Plezanje</div>
+    <div class="chip" onclick="filterSport('Pohodništvo',this)">🥾 Pohod</div>
+    <div class="chip" onclick="filterSport('Smučanje',this)">⛷️ Smučanje</div>
   </div>
 
   <div class="map-ctrl">
@@ -248,28 +253,145 @@ const acts={
 };
 
 // MAP
-const map=L.map('map',{center:[46.0569,14.5058],zoom:14,zoomControl:false,attributionControl:false});
+const map=L.map('map',{center:[46.0569,14.5058],zoom:6,zoomControl:false,attributionControl:false});
 L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{maxZoom:19}).addTo(map);
 
 // Me dot
 L.circleMarker([46.0569,14.5058],{radius:8,fillColor:'#007AFF',color:'#fff',weight:3,fillOpacity:1}).addTo(map);
 
-// Pins
-const markers={};
-Object.entries(acts).forEach(([id,a])=>{
-  const isLive=a.status==='live';
-  const html=`<div class="junto-pin${isLive?' live':''}" style="position:relative;">${isLive?'<div class="junto-live-dot"></div>':''}<span style="font-size:14px;">${a.sport.split(' ')[0]}</span><span class="junto-pin-label">${a.name.split(' ')[0]}</span><span class="junto-pin-count">${a.attending}/${a.total}</span>${isLive?'<div class="junto-live-badge">LIVE</div>':''}</div>`;
-  markers[id]=L.marker([a.lat,a.lon],{icon:L.divIcon({html,className:'',iconAnchor:[0,0]})}).addTo(map).on('click',()=>openDetail(id));
-});
+// Firebase markers
+let firebaseMarkers = [];
+let allFirebaseActs = [];
+let activeSportFilter = 'vse';
+
+function isLiveAct(act) {
+  const dateStr = act.date || '';
+  if (!dateStr.includes('Danes') && !dateStr.includes('danes')) return false;
+  const timeStr = act.time || '00:00';
+  const durationStr = act.duration || '1 ura';
+  const now = new Date();
+  const [h, m] = timeStr.split(':').map(Number);
+  const start = new Date(now); start.setHours(h, m, 0, 0);
+  let durMin = 60;
+  if (durationStr.includes('30 min')) durMin = 30;
+  else if (durationStr.includes('2 uri')) durMin = 120;
+  else if (durationStr.includes('3 ure')) durMin = 180;
+  const end = new Date(start.getTime() + durMin * 60000);
+  return now >= start && now <= end;
+}
+
+function timeAgo(ts) {
+  if (!ts) return '';
+  const ms = ts.toMillis ? ts.toMillis() : ts;
+  const diff = Math.floor((Date.now() - ms) / 60000);
+  if (diff < 1) return 'pravkar';
+  if (diff < 60) return diff + ' min nazaj';
+  if (diff < 1440) return Math.floor(diff/60) + 'h nazaj';
+  return Math.floor(diff/1440) + ' dni nazaj';
+}
+
+function addFirebaseMarkers(acts) {
+  // Počisti stare
+  firebaseMarkers.forEach(m => m.remove());
+  firebaseMarkers = [];
+
+  acts.forEach(act => {
+    if (!act.lat || !act.lon) return;
+    const live = isLiveAct(act);
+    const spotsUsed = act.udelezenci ? act.udelezenci.length : 1;
+    const html = `<div class="junto-pin${live?' live':''}" style="position:relative;">
+      ${live?'<div class="junto-live-dot"></div>':''}
+      <span style="font-size:14px;">${act.sportIcon||'🏃'}</span>
+      <span class="junto-pin-label">${act.location?act.location.split(' ')[0]:act.sport}</span>
+      <span class="junto-pin-count">${spotsUsed}/${act.players||10}</span>
+      ${live?'<div class="junto-live-badge">LIVE</div>':''}
+    </div>`;
+    const marker = L.marker([parseFloat(act.lat), parseFloat(act.lon)], {
+      icon: L.divIcon({html, className:'', iconAnchor:[0,0]})
+    }).addTo(map);
+    marker.on('click', () => openFirebaseDetail(act));
+    marker._actData = act;
+    firebaseMarkers.push(marker);
+  });
+}
+
+function filterSport(sport, el) {
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  activeSportFilter = sport;
+  const filtered = sport === 'vse' ? allFirebaseActs : allFirebaseActs.filter(a => a.sport === sport);
+  addFirebaseMarkers(filtered);
+  renderSheetList(filtered);
+}
+
+function renderSheetList(acts) {
+  const list = document.getElementById('sheetList');
+  if (!acts.length) {
+    list.innerHTML = '<div style="padding:20px;text-align:center;color:rgba(255,255,255,0.4);font-size:14px;">Ni aktivnosti za ta filter</div>';
+    document.getElementById('peekSub').textContent = 'Ni aktivnosti';
+    return;
+  }
+  const live = acts.filter(a => isLiveAct(a));
+  const rest = acts.filter(a => !isLiveAct(a));
+  document.getElementById('peekSub').textContent = 'Ljubljana · ' + acts.length + ' aktivnosti';
+  list.innerHTML = [...live, ...rest].map(act => {
+    const isLive = isLiveAct(act);
+    const spotsUsed = act.udelezenci ? act.udelezenci.length : 1;
+    const ago = timeAgo(act.createdAt);
+    return `<div class="act-card" onclick="openFirebaseDetail(${JSON.stringify(act).replace(/"/g,'&quot;')})">
+      <div class="sport-icon-box${isLive?' live-ic':''}">
+        ${act.sportIcon||'🏃'}
+      </div>
+      <div class="ci">
+        <div class="ci-name">${act.sport} — ${act.location}</div>
+        <div class="ci-meta">${act.date} ${act.time} · ${spotsUsed}/${act.players||10} mest</div>
+      </div>
+      <div class="cr">
+        <div class="cr-time">${ago}</div>
+        ${isLive ? '<div class="badge b-live">● LIVE</div>' : '<div class="badge b-open">odprto</div>'}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openFirebaseDetail(act) {
+  if (typeof act === 'string') act = JSON.parse(act);
+  // Shrani aktivnost za activity screen
+  try { sessionStorage.setItem('junto_current_act', JSON.stringify(act)); } catch(e) {}
+  location.href = 'screen_activity.html';
+}
+
+// Naloži iz Firebasa
+async function loadFirebaseActs() {
+  try {
+    const { listenAktivnosti } = await import('./firebase-config.js');
+    listenAktivnosti(acts => {
+      allFirebaseActs = acts;
+      const filtered = activeSportFilter === 'vse' ? acts : acts.filter(a => a.sport === activeSportFilter);
+      addFirebaseMarkers(filtered);
+      renderSheetList(filtered);
+      // Zoom na aktivnosti če jih je
+      if (acts.length > 0 && acts[0].lat) {
+        const lats = acts.filter(a=>a.lat).map(a=>parseFloat(a.lat));
+        const lons = acts.filter(a=>a.lon).map(a=>parseFloat(a.lon));
+        if (lats.length === 1) {
+          map.setView([lats[0], lons[0]], 13);
+        } else if (lats.length > 1) {
+          map.fitBounds([[Math.min(...lats),Math.min(...lons)],[Math.max(...lats),Math.max(...lons)]], {padding:[60,60]});
+        }
+      }
+    });
+  } catch(e) { console.error('Firebase error:', e); }
+}
+loadFirebaseActs();
 
 // Sheet
 let sheetOpen=false;
 function toggleSheet(){sheetOpen=!sheetOpen;const s=document.getElementById('bottom-sheet');sheetOpen?s.classList.remove('collapsed'):s.classList.add('collapsed');document.getElementById('peek-arrow').style.transform=sheetOpen?'rotate(0deg)':'rotate(180deg)';}
 
-// Filter
+// Filter panel
 function toggleFilter(){document.getElementById('filterPanel').classList.toggle('open');}
 function selectOne(el){el.parentElement.querySelectorAll('.fchip').forEach(c=>c.classList.remove('sel'));el.classList.add('sel');}
-function filterPins(type,el){document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));el.classList.add('active');Object.entries(markers).forEach(([id,m])=>{const e=m.getElement();if(e)e.style.opacity=(type==='vse'||id===type)?'1':'0.2';});}
 
 // Search
 let st=null;
@@ -278,24 +400,15 @@ document.getElementById('searchInput').addEventListener('input',function(){
   if(q.length<2){res.style.display='none';return;}
   st=setTimeout(async()=>{
     try{
-      const data=await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q+' Slovenija')}&format=json&limit=5&countrycodes=si&accept-language=sl`).then(r=>r.json());
+      const data=await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=8&countrycodes=si,it,hr&accept-language=sl,hr,it,en`).then(r=>r.json());
       if(!data.length){res.style.display='none';return;}
-      res.innerHTML=data.map(r=>{const name=r.display_name.split(',')[0];const sub=r.display_name.split(',').slice(1,3).join(',').trim();return`<div class="sri" onclick="flyTo(${r.lat},${r.lon},'${name.replace(/'/g,"\\'")}')"><div class="sri-icon">📍</div><div><div class="sri-name">${name}</div><div class="sri-sub">${sub}</div></div></div>`;}).join('');
+      res.innerHTML=data.map(r=>{const name=r.display_name.split(',')[0];const sub=r.display_name.split(',').slice(1,3).join(',').trim();return`<div class="sri" onclick="flyTo(${r.lat},${r.lon},'${name.replace(/'/g,"\'")}')"><div class="sri-icon">📍</div><div><div class="sri-name">${name}</div><div class="sri-sub">${sub}</div></div></div>`;}).join('');
       res.style.display='block';
     }catch(e){res.style.display='none';}
   },400);
 });
 document.addEventListener('click',e=>{if(!e.target.closest('.top-ui')&&!e.target.closest('.search-results'))document.getElementById('searchResults').style.display='none';});
-function flyTo(lat,lon,name){map.flyTo([lat,lon],15,{duration:1});document.getElementById('searchInput').value=name;document.getElementById('searchResults').style.display='none';}
-
-// roster data per activity
-const rosterData = {
-  bball:[{init:'MJ',col:'#4a90d9',name:'Miha Janežič',tag:'Organizator 👑'},{init:'LK',col:'#7b68ee',name:'Luka Kovač',tag:'Član'},{init:'NK',col:'#3cb371',name:'Nina Kovač',tag:'Članica'},{init:'AV',col:'#e0872a',name:'Anja Vidmar',tag:'Članica'},{init:'TM',col:'#9b59b6',name:'Tine Mlakar',tag:'Član'},{init:'BP',col:'#1abc9c',name:'Blaž Potočnik',tag:'Član'},{init:'KZ',col:'#c0a020',name:'Katja Zupan',tag:'Članica'},{init:'RP',col:'#c0608a',name:'Rok Pirnat',tag:'Član'}],
-  futsal:[{init:'GM',col:'#7b68ee',name:'Gašper Mlakar',tag:'Organizator 👑'},{init:'AL',col:'#4a90d9',name:'Andrej Leban',tag:'Član'},{init:'SF',col:'#3cb371',name:'Sara Fatur',tag:'Članica'},{init:'NP',col:'#9b59b6',name:'Nejc Podgoršek',tag:'Član'},{init:'VK',col:'#e0872a',name:'Vid Kos',tag:'Član'},{init:'MH',col:'#c0a020',name:'Maja Horvat',tag:'Članica'},{init:'BK',col:'#1abc9c',name:'Bojan Kranjc',tag:'Član'},{init:'TP',col:'#c0608a',name:'Teja Petric',tag:'Članica'},{init:'RM',col:'#e05050',name:'Rok Mlakar',tag:'Član'}],
-  cycling:[{init:'PV',col:'#3cb371',name:'Petra Vidmar',tag:'Organizatorka 👑'},{init:'MS',col:'#4a90d9',name:'Matej Sitar',tag:'Član'},{init:'JK',col:'#c0a020',name:'Jana Kranjc',tag:'Članica'},{init:'FB',col:'#e0872a',name:'Filip Bizjak',tag:'Član'}],
-  volley:[{init:'EB',col:'#9b59b6',name:'Eva Bajc',tag:'Organizatorka 👑'},{init:'KM',col:'#c0a020',name:'Kaja Murn',tag:'Članica'},{init:'JH',col:'#4a90d9',name:'Jan Hribar',tag:'Član'},{init:'ZB',col:'#e0872a',name:'Žiga Bogataj',tag:'Član'},{init:'MC',col:'#c0608a',name:'Maja Černe',tag:'Članica'},{init:'IL',col:'#3cb371',name:'Ines Lavrič',tag:'Članica'}],
-  run:[{init:'SK',col:'#c0608a',name:'Sara Kos',tag:'Organizatorka 👑'},{init:'LD',col:'#3cb371',name:'Lana Dolenc',tag:'Članica'},{init:'MP',col:'#4a90d9',name:'Matija Pirnat',tag:'Član'}]
-};
+function flyTo(lat,lon,name){map.flyTo([lat,lon],13,{duration:1.5});document.getElementById('searchInput').value=name;document.getElementById('searchResults').style.display='none';}
 
 let currentDetailId = null;
 let chatMsgs = {};
