@@ -372,205 +372,50 @@
 
     <!-- PRIMARY: Time filter -->
     <div class="time-filter">
-      <div class="time-chip live-chip active">
-        <span class="live-dot-inline"></span>LIVE
-      </div>
-      <div class="time-chip">Danes</div>
-      <div class="time-chip">Jutri</div>
-      <div class="time-chip">Ta teden</div>
+      <div class="time-chip live-chip active" onclick="setTimeFilter('live',this)"><span class="live-dot-inline"></span>LIVE</div>
+      <div class="time-chip" onclick="setTimeFilter('danes',this)">Danes</div>
+      <div class="time-chip" onclick="setTimeFilter('jutri',this)">Jutri</div>
+      <div class="time-chip" onclick="setTimeFilter('teden',this)">Ta teden</div>
     </div>
   </div>
 
   <!-- SECONDARY: Sport filter -->
   <div class="sport-filter-wrap">
     <div class="sport-filters">
-      <div class="chip active">🏃 Vse</div>
-      <div class="chip">🏀 Košarka</div>
-      <div class="chip">🚴 Kolesarstvo</div>
-      <div class="chip">🥾 Pohod</div>
-      <div class="chip">💪 Gym</div>
-      <div class="chip">⚽ Futsal</div>
+      <div class="chip active" onclick="setSportFilter('vse',this)">🏃 Vse</div>
+      <div class="chip" onclick="setSportFilter('Košarka',this)">🏀 Košarka</div>
+      <div class="chip" onclick="setSportFilter('Kolesarjenje',this)">🚴 Kolesarstvo</div>
+      <div class="chip" onclick="setSportFilter('Pohod',this)">🥾 Pohod</div>
+      <div class="chip" onclick="setSportFilter('Gym',this)">💪 Gym</div>
+      <div class="chip" onclick="setSportFilter('Futsal',this)">⚽ Futsal</div>
+      <div class="chip" onclick="setSportFilter('Tek',this)">🏃 Tek</div>
+      <div class="chip" onclick="setSportFilter('Tenis',this)">🎾 Tenis</div>
     </div>
   </div>
 
   <!-- Feed -->
   <div class="feed">
 
-    <!-- LIVE MOMENTS mini strip — bonus, pod filtri -->
+    <!-- LIVE MOMENTS -->
     <div class="live-moments">
       <div class="live-moments-label">
         <span style="width:6px;height:6px;background:#FF3B30;border-radius:50%;display:inline-block;animation:pulse 1.2s infinite"></span>
         Live moments
       </div>
-      <div class="live-moments-row">
-        <div class="moment-bubble">
-          <div class="moment-ring">🏀</div>
-          <div class="moment-name">BTC</div>
-        </div>
-        <div class="moment-bubble">
-          <div class="moment-ring">🚴</div>
-          <div class="moment-name">Šmarna</div>
-        </div>
-        <div class="moment-bubble">
-          <div class="moment-ring">💪</div>
-          <div class="moment-name">Fitinn</div>
-        </div>
-        <div class="moment-bubble">
-          <div class="moment-ring">⚽</div>
-          <div class="moment-name">Kodeljevo</div>
-        </div>
+      <div class="live-moments-row" id="liveMomentsRow">
+        <div class="moment-bubble"><div class="moment-ring">🏀</div><div class="moment-name">BTC</div></div>
+        <div class="moment-bubble"><div class="moment-ring">🚴</div><div class="moment-name">Šmarna</div></div>
+        <div class="moment-bubble"><div class="moment-ring">💪</div><div class="moment-name">Fitinn</div></div>
+        <div class="moment-bubble"><div class="moment-ring">⚽</div><div class="moment-name">Kodeljevo</div></div>
       </div>
     </div>
 
-    <!-- FIREBASE AKTIVNOSTI -->
-    <div id="firebase-feed" style="display:none;">
-      <div class="section-label" id="firebase-label">Objavljene aktivnosti</div>
-      <div id="firebase-cards"></div>
-    </div>
+    <!-- FIREBASE FEED -->
+    <div id="firebaseFeed"></div>
 
-    <!-- LIVE card — bigger, urgent -->
-    <div class="card live-card">
-      <img class="card-cover" src="basketball.jpg" alt="Basketball"
-           onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
-      <div class="card-cover-placeholder cover-basket" style="display:none">🏀</div>
-      <div class="card-body">
-        <div class="card-top">
-          <div class="card-sport">
-            <div class="sport-icon basketball">🏀</div>
-            <div class="sport-info">
-              <h3>Košarka</h3>
-              <div class="location">📍 BTC igrišče</div>
-            </div>
-          </div>
-          <div class="badge live-badge"><div class="live-dot"></div> LIVE</div>
-        </div>
-        <div class="card-meta">
-          <div class="meta-item">⏱ Začetek 17:04</div>
-          <div class="meta-item">📍 0.4 km</div>
-          <div class="meta-item">🌍 Javno</div>
-        </div>
-        <div class="card-action">
-          <div class="spots-counter">
-            <div class="spots-fraction">3<span class="total">/5</span></div>
-            <div class="spots-label">igrajo</div>
-          </div>
-          <div class="spots-bar-wrap">
-            <div class="spots-bar-bg">
-              <div class="spots-bar-fill live-fill" style="width:60%"></div>
-            </div>
-          </div>
-          <button class="cta-btn cta-live">Pridruži se →</button>
-        </div>
-      </div>
-    </div>
-
-    <div class="section-label" style="margin-top:4px">Danes</div>
-
-    <!-- Girls hiking -->
-    <div class="card">
-      <img class="card-cover" src="hiking.jpg" alt="Hiking"
-           onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
-      <div class="card-cover-placeholder cover-girls" style="display:none">🥾</div>
-      <div class="card-body">
-        <div class="card-top">
-          <div class="card-sport">
-            <div class="sport-icon hiking">🥾</div>
-            <div class="sport-info">
-              <h3>Pohod – Rožnik</h3>
-              <div class="location">📍 Rožnik, Ljubljana</div>
-            </div>
-          </div>
-          <div class="badge girls">👩 Only girls</div>
-        </div>
-        <div class="card-meta">
-          <div class="meta-item">🕖 19:00</div>
-          <div class="meta-item">🔒 Zasebno</div>
-          <div class="meta-item">📍 2.8 km</div>
-        </div>
-        <div class="card-action">
-          <div class="spots-counter">
-            <div class="spots-fraction" style="color:#E91E7A">?<span class="total" style="color:#f8a8c8">/4</span></div>
-            <div class="spots-label">anonimno</div>
-          </div>
-          <div class="spots-bar-wrap">
-            <div class="spots-bar-bg">
-              <div class="spots-bar-fill" style="width:0%;background:#E91E7A"></div>
-            </div>
-          </div>
-          <button class="cta-btn cta-request">REQUEST →</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Cycling -->
-    <div class="card">
-      <img class="card-cover" src="cycling.jpg" alt="Cycling"
-           onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
-      <div class="card-cover-placeholder cover-cycling" style="display:none">🚴</div>
-      <div class="card-body">
-        <div class="card-top">
-          <div class="card-sport">
-            <div class="sport-icon cycling">🚴</div>
-            <div class="sport-info">
-              <h3>Kolesarjenje</h3>
-              <div class="location">📍 Šmarna gora loop</div>
-            </div>
-          </div>
-          <div class="badge public">🌍 Javno</div>
-        </div>
-        <div class="card-meta">
-          <div class="meta-item">🕕 18:30</div>
-          <div class="meta-item">📊 Začetnik</div>
-          <div class="meta-item">📍 1.2 km</div>
-        </div>
-        <div class="card-action">
-          <div class="spots-counter">
-            <div class="spots-fraction">2<span class="total">/4</span></div>
-            <div class="spots-label">mest</div>
-          </div>
-          <div class="spots-bar-wrap">
-            <div class="spots-bar-bg">
-              <div class="spots-bar-fill" style="width:50%"></div>
-            </div>
-          </div>
-          <button class="cta-btn cta-join">JOIN</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Gym FULL -->
-    <div class="card">
-      <img class="card-cover" src="gym.jpg" alt="Gym"
-           onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
-      <div class="card-cover-placeholder cover-gym" style="display:none">💪</div>
-      <div class="card-body">
-        <div class="card-top">
-          <div class="card-sport">
-            <div class="sport-icon gym-icon">💪</div>
-            <div class="sport-info">
-              <h3>Gym</h3>
-              <div class="location">📍 Fitinn Center</div>
-            </div>
-          </div>
-          <div class="badge public">🌍 Javno</div>
-        </div>
-        <div class="card-meta">
-          <div class="meta-item">🕖 19:30</div>
-          <div class="meta-item">📍 0.8 km</div>
-        </div>
-        <div class="card-action">
-          <div class="spots-counter">
-            <div class="spots-fraction" style="color:#FF3B30">2<span class="total" style="color:#ffaaaa">/2</span></div>
-            <div class="spots-label">zasedeno</div>
-          </div>
-          <div class="spots-bar-wrap">
-            <div class="spots-bar-bg">
-              <div class="spots-bar-fill full" style="width:100%"></div>
-            </div>
-          </div>
-          <button class="cta-btn cta-full">FULL</button>
-        </div>
-      </div>
+    <!-- LOADING -->
+    <div id="feedLoading" style="padding:40px 20px;text-align:center;color:#8e8e93;font-size:14px;">
+      Nalagam aktivnosti...
     </div>
 
   </div><!-- /feed -->
@@ -638,81 +483,158 @@
 
 </div>
 
+<script type="module">
+import { listenAktivnosti, onAuth } from './firebase-config.js';
+
+const sportColors = {
+  'Košarka': '#FF6B35', 'Futsal': '#4CAF50', 'Odbojka': '#2196F3',
+  'Tenis': '#9C27B0', 'Kolesarjenje': '#00BCD4', 'Tek': '#FF9800',
+  'Pohodništvo': '#795548', 'Smučanje': '#607D8B'
+};
+
+function timeAgo(ts) {
+  if (!ts) return '';
+  const now = Date.now();
+  const ms = ts.toMillis ? ts.toMillis() : ts;
+  const diff = Math.floor((now - ms) / 60000);
+  if (diff < 1) return 'pravkar';
+  if (diff < 60) return diff + ' min nazaj';
+  if (diff < 1440) return Math.floor(diff/60) + ' ura nazaj';
+  return Math.floor(diff/1440) + ' dni nazaj';
+}
+
+function isLive(act) {
+  if (!act.createdAt) return false;
+  const ms = act.createdAt.toMillis ? act.createdAt.toMillis() : Date.now();
+  return (Date.now() - ms) < 3 * 60 * 60 * 1000; // 3 ure
+}
+
+function renderCard(act) {
+  const color = sportColors[act.sport] || '#FF385C';
+  const live = isLive(act);
+  const spotsUsed = act.udelezenci ? act.udelezenci.length : 1;
+  const spotsTotal = act.players || 10;
+  const pct = Math.min(100, Math.round(spotsUsed / spotsTotal * 100));
+  const full = spotsUsed >= spotsTotal;
+  const ago = timeAgo(act.createdAt);
+
+  return `<div class="card ${live ? 'live-card' : ''}" onclick="location.href='screen_activity.html'" style="cursor:pointer;">
+    ${act.photoURL ? `<img class="card-cover" src="${act.photoURL}" alt="">` : `<div class="card-cover-placeholder" style="background:linear-gradient(135deg,${color}22,${color}44);display:flex;font-size:48px;align-items:center;justify-content:center;">${act.sportIcon || '🏃'}</div>`}
+    <div class="card-body">
+      <div class="card-top">
+        <div class="card-sport">
+          <div class="sport-icon" style="background:${color}22">${act.sportIcon || '🏃'}</div>
+          <div class="sport-info">
+            <h3>${act.sport} — ${act.location}</h3>
+            <div class="location">📍 ${act.locationSub || act.location}</div>
+          </div>
+        </div>
+        ${live ? '<div class="badge live-badge"><div class="live-dot"></div> LIVE</div>' : `<div class="badge public">🕐 ${act.time}</div>`}
+      </div>
+      <div class="card-meta">
+        <div class="meta-item">📅 ${act.date}</div>
+        <div class="meta-item">⏱ ${act.duration}</div>
+        <div class="meta-item">${act.isPrivate ? '🔒 Zasebno' : '🌍 Javno'}</div>
+      </div>
+      <div style="font-size:11px;color:#8e8e93;margin:4px 0 8px;">
+        👤 ${act.organizerName || 'Neznan'} · ${ago}
+      </div>
+      <div class="card-action">
+        <div class="spots-counter">
+          <div class="spots-fraction" style="color:${full?'#FF3B30':color}">${spotsUsed}<span class="total">/${spotsTotal}</span></div>
+          <div class="spots-label">${full ? 'zasedeno' : 'mest'}</div>
+        </div>
+        <div class="spots-bar-wrap">
+          <div class="spots-bar-bg">
+            <div class="spots-bar-fill ${full?'full':live?'live-fill':''}" style="width:${pct}%;background:${full?'#FF3B30':color}"></div>
+          </div>
+        </div>
+        <button class="cta-btn ${full?'cta-full':live?'cta-live':'cta-join'}">${full ? 'FULL' : live ? 'Pridruži se →' : 'JOIN'}</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+// Listen za real-time updates
+// Filter state
+let activeTimeFilter = 'live';
+let activeSportFilter = 'vse';
+let allActivities = [];
+
+function setTimeFilter(filter, el) {
+  activeTimeFilter = filter;
+  document.querySelectorAll('.time-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  renderFeed();
+}
+
+function setSportFilter(filter, el) {
+  activeSportFilter = filter;
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  renderFeed();
+}
+
+function matchesTimeFilter(act) {
+  if (activeTimeFilter === 'live') return isLive(act);
+  const today = new Date();
+  const todayStr = today.toLocaleDateString('sl-SI', {day:'numeric', month:'short'});
+  const tomorrow = new Date(today); tomorrow.setDate(today.getDate()+1);
+  const tomorrowStr = tomorrow.toLocaleDateString('sl-SI', {day:'numeric', month:'short'});
+  const dateStr = act.date || '';
+  if (activeTimeFilter === 'danes') return dateStr.includes('Danes') || dateStr.includes(todayStr);
+  if (activeTimeFilter === 'jutri') return dateStr.includes('Jutri') || dateStr.includes(tomorrowStr);
+  if (activeTimeFilter === 'teden') return true; // pokaži vse
+  return true;
+}
+
+function renderFeed() {
+  const feed = document.getElementById('firebaseFeed');
+  let filtered = allActivities;
+  
+  if (activeSportFilter !== 'vse') {
+    filtered = filtered.filter(a => a.sport === activeSportFilter);
+  }
+  
+  if (activeTimeFilter !== 'teden') {
+    filtered = filtered.filter(matchesTimeFilter);
+  }
+
+  if (!filtered.length) {
+    feed.innerHTML = '<div style="padding:40px 20px;text-align:center;color:#8e8e93;font-size:15px;">Ni aktivnosti za izbrani filter.<br><span style="font-size:13px;margin-top:8px;display:block;">Bodi prvi in ustvari novo! 🏃</span></div>';
+    return;
+  }
+
+  const live = filtered.filter(a => isLive(a));
+  const rest = filtered.filter(a => !isLive(a));
+  let html = '';
+  if (live.length) {
+    html += live.map(renderCard).join('');
+    if (rest.length) html += '<div class="section-label" style="margin-top:4px">Vse aktivnosti</div>';
+  }
+  html += rest.map(renderCard).join('');
+  feed.innerHTML = html;
+}
+
+listenAktivnosti(activities => {
+  allActivities = activities;
+  document.getElementById('feedLoading').style.display = 'none';
+  renderFeed();
+});
+
+// Auth state
+onAuth(user => {
+  if (user) {
+    console.log('Prijavljen kot:', user.displayName);
+  }
+});
+</script>
+
 <script>
 function openNotifications(){document.getElementById('notifOverlay').style.display='flex';document.getElementById('notif-dot').style.display='none';}
 function closeNotifications(){document.getElementById('notifOverlay').style.display='none';}
 document.querySelectorAll('.card').forEach(c=>c.addEventListener('click',()=>location.href='screen_activity.html'));
 document.querySelectorAll('.moment-bubble').forEach(b=>b.addEventListener('click',()=>location.href='screen_story.html'));
-</script>
-
-<script type="module">
-import { listenAktivnosti } from './firebase-config.js';
-
-function timeAgo(ts) {
-  if (!ts) return '';
-  const d = ts.toDate ? ts.toDate() : new Date(ts);
-  const diff = Math.floor((Date.now() - d) / 1000);
-  if (diff < 60) return 'pravkar';
-  if (diff < 3600) return Math.floor(diff/60) + ' min nazaj';
-  if (diff < 86400) return Math.floor(diff/3600) + ' ur nazaj';
-  return d.toLocaleDateString('sl');
-}
-
-function renderCard(act) {
-  const spots = act.players || 10;
-  const joined = act.udelezenci ? act.udelezenci.length : 1;
-  const pct = Math.round((joined / spots) * 100);
-  const isFull = joined >= spots;
-  const isLive = act.date && act.date.includes('Danes');
-  
-  return \`<div class="card \${isLive ? 'live-card' : ''}" onclick="location.href='screen_activity.html'" style="cursor:pointer;">
-    \${act.photoURL ? \`<img class="card-cover" src="\${act.photoURL}" alt="" onerror="this.style.display='none'">\` : 
-      \`<div class="card-cover-placeholder" style="display:flex;font-size:48px;">\${act.sportIcon || '🏃'}</div>\`}
-    <div class="card-body">
-      <div class="card-top">
-        <div class="card-sport">
-          <div class="sport-icon basketball">\${act.sportIcon || '🏃'}</div>
-          <div class="sport-info">
-            <h3>\${act.sport || 'Aktivnost'}</h3>
-            <div class="location">📍 \${act.location || ''}</div>
-          </div>
-        </div>
-        \${isLive ? '<div class="badge live-badge"><div class="live-dot"></div> LIVE</div>' : 
-          '<div class="badge public">🌍 Javno</div>'}
-      </div>
-      <div class="card-meta">
-        <div class="meta-item">🕐 \${act.time || ''}</div>
-        <div class="meta-item">📅 \${act.date || ''}</div>
-        <div class="meta-item">👤 \${act.organizerName || 'Uporabnik'}</div>
-      </div>
-      <div class="card-action">
-        <div class="spots-counter">
-          <div class="spots-fraction \${isFull ? 'style="color:#FF3B30"' : ''}">\${joined}<span class="total">/\${spots}</span></div>
-          <div class="spots-label">mest</div>
-        </div>
-        <div class="spots-bar-wrap">
-          <div class="spots-bar-bg">
-            <div class="spots-bar-fill \${isFull ? 'full' : isLive ? 'live-fill' : ''}" style="width:\${pct}%"></div>
-          </div>
-        </div>
-        <button class="cta-btn \${isFull ? 'cta-full' : isLive ? 'cta-live' : 'cta-join'}">\${isFull ? 'FULL' : isLive ? 'Pridruži se →' : 'JOIN'}</button>
-      </div>
-    </div>
-  </div>\`;
-}
-
-listenAktivnosti(aktivnosti => {
-  const feed = document.getElementById('firebase-feed');
-  const cards = document.getElementById('firebase-cards');
-  
-  if (aktivnosti.length === 0) {
-    feed.style.display = 'none';
-    return;
-  }
-  
-  feed.style.display = 'block';
-  cards.innerHTML = aktivnosti.map(renderCard).join('');
-});
 </script>
 </body>
 </html>
