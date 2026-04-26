@@ -325,6 +325,14 @@
       <div class="sport-pill" data-sport="Tek" data-strava="1" onclick="selectSport(this)"><span class="s-icon">🏃</span><span class="s-name">Tek</span></div>
       <div class="sport-pill" data-sport="Pohodništvo" data-strava="1" onclick="selectSport(this)"><span class="s-icon">🥾</span><span class="s-name">Pohod</span></div>
       <div class="sport-pill" data-sport="Smučanje" data-strava="1" onclick="selectSport(this)"><span class="s-icon">⛷️</span><span class="s-name">Smučanje</span></div>
+      <div class="sport-pill" data-sport="Kajtanje" data-strava="0" onclick="selectSport(this)"><span class="s-icon">🪁</span><span class="s-name">Kajtanje</span></div>
+      <div class="sport-pill" id="drugoPill" data-sport="" data-strava="0" onclick="openDrugo()"><span class="s-icon">✏️</span><span class="s-name">Drugo</span></div>
+    </div>
+    <div id="drugoInput" style="display:none;margin-top:10px;position:relative;">
+      <input id="drugoText" type="text" placeholder="Vpiši šport..." autocomplete="off"
+        style="width:100%;background:#1c1c1e;border:1.5px solid #FF385C;border-radius:12px;padding:12px 16px;color:#fff;font-size:16px;outline:none;font-family:inherit;"
+        oninput="filterDrugo(this.value)" onkeydown="if(event.key==='Enter')confirmDrugo()"/>
+      <div id="drugoSuggestions" style="display:none;position:absolute;top:48px;left:0;right:0;background:#2c2c2e;border-radius:12px;overflow:hidden;z-index:50;border:1px solid #3a3a3c;"></div>
     </div>
   </div>
 
@@ -380,7 +388,7 @@
     <div class="section-label">Ekipa</div>
     <div class="stepper-row">
       <span class="stepper-icon">👥</span>
-      <div style="flex:1"><div class="stepper-label">Maks. število igralcev</div><div class="stepper-sub" id="playersSub">10 mest skupaj</div></div>
+      <div style="flex:1"><div class="stepper-label">Maks. število prijav</div><div class="stepper-sub" id="playersSub">10 prijav skupaj</div></div>
       <div class="stepper-controls">
         <button class="step-btn" id="minusBtn" onclick="changeCount(-1)">−</button>
         <span class="step-val" id="playerCount">10</span>
@@ -653,6 +661,42 @@ function removePhoto(e){
 }
 
 // SPORT
+const SPORTS_SUGGESTIONS = ['Badminton','Baseball','Boks','Golf','Hokej','Joga','Kajak','Kajtanje','Karting','Kegljanje','Kickboks','Košarka','Kolesarjenje','Fitnes','Plavanje','Pohodništvo','Rokomet','Smučanje','Squash','Surf','Tek','Tenis','Vaterpolo','Odbojka','Futsal'];
+
+function openDrugo() {
+  document.querySelectorAll('.sport-pill').forEach(p => p.classList.remove('active'));
+  document.getElementById('drugoPill').classList.add('active');
+  const inp = document.getElementById('drugoInput');
+  inp.style.display = 'block';
+  document.getElementById('drugoText').focus();
+}
+
+function filterDrugo(val) {
+  const box = document.getElementById('drugoSuggestions');
+  if (!val.trim()) { box.style.display='none'; return; }
+  const matches = SPORTS_SUGGESTIONS.filter(s => s.toLowerCase().startsWith(val.toLowerCase())).slice(0,5);
+  if (!matches.length) { box.style.display='none'; return; }
+  box.innerHTML = matches.map(s => `<div onclick="pickDrugo('${s}')" style="padding:12px 16px;font-size:15px;color:#fff;cursor:pointer;border-bottom:0.5px solid #3a3a3c;">${s}</div>`).join('');
+  box.style.display='block';
+}
+
+function pickDrugo(sport) {
+  document.getElementById('drugoText').value = sport;
+  document.getElementById('drugoSuggestions').style.display='none';
+  confirmDrugo();
+}
+
+function confirmDrugo() {
+  const val = document.getElementById('drugoText').value.trim();
+  if (!val) return;
+  state.sport = val;
+  state.sportIcon = '🏅';
+  document.getElementById('drugoPill').querySelector('.s-name').textContent = val;
+  document.getElementById('drugoSuggestions').style.display='none';
+  updatePreview();
+  showToast('✓ Šport: '+val);
+}
+
 function selectSport(el){
   document.querySelectorAll('.sport-pill').forEach(p=>p.classList.remove('active'));
   el.classList.add('active');
@@ -778,7 +822,7 @@ function selectDuration(d){selDuration=d;state.duration=d;document.getElementByI
 function changeCount(dir){
   const n=state.players+dir; if(n<2||n>30)return;
   state.players=n; document.getElementById('playerCount').textContent=n;
-  document.getElementById('playersSub').textContent=n+' mest skupaj';
+  document.getElementById('playersSub').textContent=n+' prijav skupaj';
   document.getElementById('minusBtn').disabled=n<=2;
   document.getElementById('plusBtn').disabled=n>=30;
   updatePreview();
@@ -799,7 +843,7 @@ function updateChar(){document.getElementById('charCount').textContent=document.
 function updatePreview(){
   const loc=state.location.length>16?state.location.substring(0,14)+'…':state.location;
   const dateShort=state.date?state.date.split(',')[0]:'Danes';
-  document.getElementById('previewText').textContent=state.sportIcon+' '+state.sport+' · '+loc+' · '+dateShort+' '+state.time+' · '+state.players+' mest';
+  document.getElementById('previewText').textContent=state.sportIcon+' '+state.sport+' · '+loc+' · '+dateShort+' '+state.time+' · '+state.players+' prijav';
 }
 
 // MODALS
@@ -871,7 +915,7 @@ async function doPublish(){
     document.getElementById('s-loc').textContent=state.location;
     document.getElementById('s-date').textContent=state.date;
     document.getElementById('s-time').textContent=state.time+' · '+state.duration;
-    document.getElementById('s-players').textContent='Maks. '+state.players+' igralcev';
+    document.getElementById('s-players').textContent='1/'+state.players+' prijav (ti si prvi 🙌)';
     document.getElementById('s-privacy').textContent=state.isPrivate?'Zasebna aktivnost 🔒':'Javna aktivnost 🌍';
     document.getElementById('successIcon').textContent=state.sportIcon;
     document.getElementById('successScreen').classList.add('open');
