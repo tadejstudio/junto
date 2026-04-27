@@ -574,6 +574,15 @@ onAuth(user => {
     const btn = document.getElementById('cover-menu-btn');
     if (btn) btn.style.display = 'flex';
   }
+  // Posodobi join gumb ko se user prijavi
+  if (user && window._currentAct) {
+    const isJoined = window._currentAct.udelezenci && window._currentAct.udelezenci.includes(user.uid);
+    const btn = document.getElementById('bottom-join');
+    if (btn) {
+      if (isJoined) { btn.textContent='✓ Pridružen — tapni za odjavo'; btn.classList.add('joined'); }
+      else { btn.textContent='Pridruži se zdaj →'; btn.classList.remove('joined'); }
+    }
+  }
   // Re-render chat da se pokaže "Ti" pravilno
   if (currentAct?.id && user) {
     console.log('Prijavljen:', user.displayName);
@@ -626,12 +635,13 @@ window._onChatInput = function() {
 // JOIN - Firebase
 function handleJoin(){
   if (!currentUser) { loginWithGoogle().then(u => { if(u) handleJoin(); }); return; }
-  if (!currentAct?.id) return;
-  const isJoined = currentAct.udelezenci && currentAct.udelezenci.includes(currentUser.uid);
+  const act = currentAct || window._currentAct;
+  if (!act?.id) { showToast('❌ Napaka — poskusi znova'); return; }
+  const isJoined = act.udelezenci && act.udelezenci.includes(currentUser.uid);
   if (isJoined) {
-    leaveActivity(currentAct.id).then(()=>showToast('Odjavljen iz aktivnosti')).catch(e=>showToast('❌ '+e.message));
+    leaveActivity(act.id).then(()=>showToast('Odjavljen iz aktivnosti')).catch(e=>showToast('❌ '+e.message));
   } else {
-    joinActivity(currentAct.id).then(()=>showToast('🙌 Pridružen!')).catch(e=>showToast('❌ '+e.message));
+    joinActivity(act.id).then(()=>showToast('🙌 Pridružen!')).catch(e=>showToast('❌ '+e.message));
   }
 }
 
