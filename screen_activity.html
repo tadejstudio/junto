@@ -118,6 +118,7 @@ body{background:#f2f2f7;max-width:390px;margin:0 auto;min-height:100vh;font-fami
 .ext-name{font-size:11px;color:#aaa;}
 .share-send-btn{margin:4px 16px 0;width:calc(100% - 32px);background:#0095f6;border:none;border-radius:14px;padding:14px;font-size:15px;font-weight:700;color:#fff;cursor:pointer;}
 
+@keyframes typingDot{0%,60%,100%{opacity:0.2;transform:scale(1);}30%{opacity:1;transform:scale(1.3);}}
 .toast{position:fixed;bottom:170px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.85);color:#fff;padding:12px 20px;border-radius:14px;font-size:14px;font-weight:500;z-index:999;display:none;white-space:nowrap;backdrop-filter:blur(10px);text-align:center;}
 .toast.show{display:block;}
 
@@ -253,11 +254,7 @@ body{background:#f2f2f7;max-width:390px;margin:0 auto;min-height:100vh;font-fami
     </div>
     <div class="roster-scroll">
       <div style="background:#f2f2f7;padding:8px 16px 6px;font-size:12px;font-weight:600;color:#8e8e93;text-transform:uppercase;letter-spacing:0.6px;">Prijavljeni · 5</div>
-      <div class="roster-row" onclick="location.href='screen_profil.html'"><div class="roster-av" style="background:#FF6B35;">M</div><div class="roster-info"><div class="roster-name">Miha Kovač</div><div class="roster-tag">Organizator 👑</div></div><svg width="8" height="14" viewBox="0 0 8 14" fill="none" stroke="#c7c7cc" stroke-width="2" stroke-linecap="round"><path d="M1 1l6 6-6 6"/></svg></div>
-      <div class="roster-row" onclick="location.href='screen_profil.html'"><div class="roster-av" style="background:#4CAF50;">J</div><div class="roster-info"><div class="roster-name">Jan Novak</div><div class="roster-tag">Član</div></div><svg width="8" height="14" viewBox="0 0 8 14" fill="none" stroke="#c7c7cc" stroke-width="2" stroke-linecap="round"><path d="M1 1l6 6-6 6"/></svg></div>
-      <div class="roster-row" onclick="location.href='screen_profil.html'"><div class="roster-av" style="background:#2196F3;">T</div><div class="roster-info"><div class="roster-name">Tomaž Kranjc</div><div class="roster-tag">Član</div></div><svg width="8" height="14" viewBox="0 0 8 14" fill="none" stroke="#c7c7cc" stroke-width="2" stroke-linecap="round"><path d="M1 1l6 6-6 6"/></svg></div>
-      <div class="roster-row" onclick="location.href='screen_profil.html'"><div class="roster-av" style="background:#9C27B0;">A</div><div class="roster-info"><div class="roster-name">Anja Vidmar</div><div class="roster-tag">Članica</div></div><svg width="8" height="14" viewBox="0 0 8 14" fill="none" stroke="#c7c7cc" stroke-width="2" stroke-linecap="round"><path d="M1 1l6 6-6 6"/></svg></div>
-      <div class="roster-row" onclick="location.href='screen_profil.html'"><div class="roster-av" style="background:#FF9500;">L</div><div class="roster-info"><div class="roster-name">Luka Petric</div><div class="roster-tag">Član</div></div><svg width="8" height="14" viewBox="0 0 8 14" fill="none" stroke="#c7c7cc" stroke-width="2" stroke-linecap="round"><path d="M1 1l6 6-6 6"/></svg></div>
+      <div id="rosterList"></div>
     </div>
   </div>
 
@@ -447,8 +444,16 @@ if (actRaw) {
       typingUnsub = listenTyping(act.id, typingUsers => {
         const el = document.getElementById('typing-indicator');
         if (el) {
-          el.textContent = typingUsers.length > 0 ? typingUsers.join(', ') + ' piše...' : '';
-          el.style.display = typingUsers.length > 0 ? 'block' : 'none';
+          if (typingUsers.length > 0) {
+            el.innerHTML = `<span style="font-style:normal;">${typingUsers.join(', ')}</span> <span style="display:inline-flex;gap:2px;align-items:center;">
+              <span style="width:5px;height:5px;background:#8e8e93;border-radius:50%;display:inline-block;animation:typingDot 1.2s infinite 0s;"></span>
+              <span style="width:5px;height:5px;background:#8e8e93;border-radius:50%;display:inline-block;animation:typingDot 1.2s infinite 0.2s;"></span>
+              <span style="width:5px;height:5px;background:#8e8e93;border-radius:50%;display:inline-block;animation:typingDot 1.2s infinite 0.4s;"></span>
+            </span>`;
+            el.style.display = 'block';
+          } else {
+            el.style.display = 'none';
+          }
         }
       });
 
@@ -469,6 +474,22 @@ if (actRaw) {
             `<div class="p-av" style="background:${colors[i%colors.length]};" onclick="openRoster()">${n[0].toUpperCase()}</div>`
           ).join('') + `<div class="p-av" style="background:#f0f0f0;color:#bbb;font-size:18px;" onclick="openRoster()">+</div>`;
         }
+        // Posodobi roster overlay
+        const rosterList = document.getElementById('rosterList');
+        if (rosterList && updatedAct.udelezenecIme) {
+          const colors = ['#FF6B35','#4CAF50','#2196F3','#9C27B0','#FF385C','#FF9500'];
+          rosterList.innerHTML = updatedAct.udelezenecIme.map((name, i) => {
+            const isOrg = updatedAct.organizerId && updatedAct.udelezenci && updatedAct.udelezenci[i] === updatedAct.organizerId;
+            return `<div class="roster-row">
+              <div class="roster-av" style="background:${colors[i%colors.length]};">${name[0].toUpperCase()}</div>
+              <div class="roster-info">
+                <div class="roster-name">${name}</div>
+                <div class="roster-tag">${isOrg ? 'Organizator 👑' : 'Član'}</div>
+              </div>
+            </div>`;
+          }).join('');
+        }
+
         // Join gumb
         if (currentUser) {
           const isJoined = updatedAct.udelezenci && updatedAct.udelezenci.includes(currentUser.uid);
