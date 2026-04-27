@@ -617,7 +617,9 @@ let filteredLocs=[];
 window.onload=()=>{
   const now=new Date();
   selDate={y:now.getFullYear(),m:now.getMonth(),d:now.getDate()};
-  state.date=formatDate(now.getFullYear(),now.getMonth(),now.getDate());
+  const _nd = now;
+  state.date=formatDate(_nd.getFullYear(),_nd.getMonth(),_nd.getDate());
+  state.dateISO=_nd.getFullYear()+'-'+String(_nd.getMonth()+1).padStart(2,'0')+'-'+String(_nd.getDate()).padStart(2,'0');
   document.getElementById('dateDisplay').textContent=state.date;
   updateStatusTime();
   setInterval(updateStatusTime,10000);
@@ -800,6 +802,7 @@ function nextMonth(){calMonth++;if(calMonth>11){calMonth=0;calYear++;}renderCal(
 function selectDay(d){
   selDate={y:calYear,m:calMonth,d};
   state.date=formatDate(calYear,calMonth,d);
+  state.dateISO=calYear+'-'+String(calMonth+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
   document.getElementById('dateDisplay').textContent=state.date;
   renderCal(); updatePreview(); setTimeout(()=>closeModal('dateModal'),280);
 }
@@ -900,7 +903,7 @@ async function doPublish(){
     const actData = {
       sport: state.sport, sportIcon: state.sportIcon,
       location: state.location, locationSub: state.locationSub,
-      date: state.date, time: state.time, duration: state.duration,
+      date: state.date, dateISO: state.dateISO || '', time: state.time, duration: state.duration,
       players: state.players, isPrivate: state.isPrivate,
       isRecurring: state.isRecurring, recurType: state.recurType,
       skill, description: document.getElementById('descArea').value,
