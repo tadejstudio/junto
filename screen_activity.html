@@ -514,19 +514,43 @@ if (actRaw) {
       listenPhotos(act.id, photos => {
         const row = document.getElementById('photosRow');
         if (!row) return;
-        const uploadBtn = row.querySelector('.photo-upload-btn');
+
+        // Upload gumb - vedno ohrani
+        const uploadBtnHtml = `<div style="flex-shrink:0;width:140px;height:168px;background:#f2f2f7;border:2px dashed #ddd;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;cursor:pointer;" onclick="document.getElementById('photoUploadInput').click()">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#8e8e93" stroke-width="1.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          <span style="font-size:11px;color:#8e8e93;">Dodaj foto</span>
+        </div>`;
+
         const photoHtml = photos.map(p => {
           const time = p.createdAt ? new Date(p.createdAt.toMillis()).toLocaleTimeString('sl-SI',{hour:'2-digit',minute:'2-digit'}) : '';
-          return `<div class="photo-thumb" style="flex-shrink:0;overflow:hidden;">
-            <img src="${p.url}" style="width:100%;height:100%;object-fit:cover;">
-            <div class="photo-poster">${p.uploaderName||'?'} · ${time}</div>
+          const likes = p.likes || 0;
+          return `<div style="flex-shrink:0;width:140px;display:flex;flex-direction:column;border-radius:12px;overflow:hidden;border:1px solid #f0f0f0;">
+            <div id="pthumb-${p.id}" style="width:140px;height:140px;position:relative;cursor:pointer;" data-liked="0" data-last-tap="0"
+              onclick="handleDoubleTap(event,'${p.id}',this)">
+              <img src="${p.url}" style="width:100%;height:100%;object-fit:cover;" draggable="false">
+              <div id="heart-anim-${p.id}" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);font-size:52px;pointer-events:none;opacity:0;transition:all 0.15s;">❤️</div>
+            </div>
+            <div style="padding:6px 8px;background:#fff;">
+              <div style="font-size:10px;color:#8e8e93;margin-bottom:4px;">${p.uploaderName||'?'} · ${time}</div>
+              <div style="display:flex;align-items:center;justify-content:space-between;">
+                <div style="display:flex;align-items:center;gap:10px;">
+                  <div onclick="handleDoubleTap(event,'${p.id}',document.getElementById('pthumb-${p.id}'))" style="display:flex;align-items:center;gap:3px;cursor:pointer;">
+                    <svg id="like-svg-${p.id}" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#262626" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                    <span id="likes-${p.id}" style="font-size:12px;color:#262626;">${likes||''}</span>
+                  </div>
+                  <div onclick="document.getElementById('chat-input').focus()" style="cursor:pointer;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#262626" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                  </div>
+                </div>
+                <div onclick="openShare()" style="cursor:pointer;">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#262626" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                </div>
+              </div>
+            </div>
           </div>`;
         }).join('');
-        if (uploadBtn) {
-          row.innerHTML = uploadBtn.outerHTML + photoHtml;
-        } else {
-          row.innerHTML = row.querySelector('[onclick*="photoUploadInput"]')?.outerHTML || '' + photoHtml;
-        }
+
+        row.innerHTML = uploadBtnHtml + photoHtml;
       });
     }
   } catch(e) { console.error('Activity load error:', e); }
