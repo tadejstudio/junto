@@ -253,7 +253,7 @@ body{background:#f2f2f7;max-width:390px;margin:0 auto;min-height:100vh;font-fami
       <div style="width:60px;text-align:right;font-size:13px;color:#8e8e93;" id="rosterCount">0 oseb</div>
     </div>
     <div class="roster-scroll">
-      <div style="background:#f2f2f7;padding:8px 16px 6px;font-size:12px;font-weight:600;color:#8e8e93;text-transform:uppercase;letter-spacing:0.6px;">Prijavljeni · 5</div>
+      <div style="background:#f2f2f7;padding:8px 16px 6px;font-size:12px;font-weight:600;color:#8e8e93;text-transform:uppercase;letter-spacing:0.6px;" id="rosterLabel">Prijavljeni · 0</div>
       <div id="rosterList"></div>
     </div>
   </div>
@@ -299,6 +299,21 @@ body{background:#f2f2f7;max-width:390px;margin:0 auto;min-height:100vh;font-fami
   </div>
 
   <div class="toast" id="toast"></div>
+
+  <!-- PHOTO FULLSCREEN -->
+  <div id="photoFSOverlay" style="display:none;position:fixed;top:0;left:50%;transform:translateX(-50%);width:390px;height:100vh;background:#000;z-index:800;flex-direction:column;align-items:center;justify-content:center;">
+    <div style="position:absolute;top:52px;left:0;right:0;display:flex;justify-content:space-between;padding:0 16px;z-index:10;">
+      <div onclick="closeFullPhoto()" style="width:36px;height:36px;background:rgba(0,0,0,0.5);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </div>
+      <div id="fsLikeBtn" data-liked="0" onclick="likeFullPhoto()" style="width:36px;height:36px;background:rgba(0,0,0,0.5);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#fff;font-size:18px;">❤️</div>
+    </div>
+    <img id="fsImg" src="" style="max-width:100%;max-height:80vh;object-fit:contain;">
+    <div style="position:absolute;bottom:60px;left:0;right:0;text-align:center;">
+      <div id="fsCaption" style="color:#fff;font-size:13px;margin-bottom:6px;"></div>
+      <div style="color:rgba(255,255,255,0.7);font-size:13px;">❤️ <span id="fsLikes">0</span></div>
+    </div>
+  </div>
 
   <!-- NAV BAR -->
   <div class="nav-bar">
@@ -479,8 +494,11 @@ if (actRaw) {
           ).join('') + `<div class="p-av" style="background:#f0f0f0;color:#bbb;font-size:18px;" onclick="openRoster()">+</div>`;
         }
         // Posodobi roster count
+        const count = updatedAct.udelezenecIme ? updatedAct.udelezenecIme.length : 0;
         const rosterCount = document.getElementById('rosterCount');
-        if (rosterCount) rosterCount.textContent = (updatedAct.udelezenecIme ? updatedAct.udelezenecIme.length : 0) + ' oseb';
+        if (rosterCount) rosterCount.textContent = count + ' oseb';
+        const rosterLabel = document.getElementById('rosterLabel');
+        if (rosterLabel) rosterLabel.textContent = 'Prijavljeni · ' + count;
 
         // Posodobi roster overlay
         const rosterList = document.getElementById('rosterList');
@@ -633,11 +651,46 @@ function uploadActivityPhoto(input){
   if(!window._currentAct?.id){showToast('❌ Ni aktivnosti');return;}
   if(!window._currentUser){showToast('❌ Najprej se prijavi');return;}
   if(!window._fbUploadPhoto){showToast('❌ Nalagam...');return;}
+  // Max 3 slike na osebo na dan
+  if (window._photoCount && window._photoCount >= 3) {
+    showToast('❌ Max 3 slike na dan');
+    return;
+  }
   showToast('📤 Nalagam sliko...');
   window._fbUploadPhoto(window._currentAct.id, file, window._currentUser.displayName)
     .then(()=>showToast('📸 Fotka shranjena!'))
     .catch(e=>showToast('❌ '+e.message));
   input.value='';
+}
+
+// FULLSCREEN PHOTO
+function openFullPhoto(url, name, time, photoId, likes) {
+  const overlay = document.getElementById('photoFSOverlay');
+  if (!overlay) return;
+  overlay.querySelector('#fsImg').src = url;
+  overlay.querySelector('#fsCaption').textContent = name + ' · ' + time;
+  overlay.querySelector('#fsLikes').textContent = likes;
+  overlay.setAttribute('data-photo-id', photoId);
+  overlay.style.display = 'flex';
+}
+function closeFullPhoto() {
+  document.getElementById('photoFSOverlay').style.display = 'none';
+}
+function likeFullPhoto() {
+  const overlay = document.getElementById('photoFSOverlay');
+  const likeBtn = document.getElementById('fsLikeBtn');
+  const likesEl = overlay.querySelector('#fsLikes');
+  const isLiked = likeBtn.dataset.liked === '1';
+  const current = parseInt(likesEl.textContent) || 0;
+  if (isLiked) {
+    likesEl.textContent = current - 1;
+    likeBtn.dataset.liked = '0';
+    likeBtn.style.color = '#fff';
+  } else {
+    likesEl.textContent = current + 1;
+    likeBtn.dataset.liked = '1';
+    likeBtn.style.color = '#FF385C';
+  }
 }
 
 // TOAST
