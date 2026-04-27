@@ -639,13 +639,14 @@ window._onChatInput = function() {
 
 // JOIN - Firebase
 function handleJoin(){
-  if (!currentUser) {
+  const user = window._currentUser;
+  if (!user) {
     if (window._loginWithGoogle) window._loginWithGoogle().then(u => { if(u) handleJoin(); });
     return;
   }
-  const act = window._currentAct || currentAct;
+  const act = window._currentAct;
   if (!act?.id) { showToast('❌ Napaka — poskusi znova'); return; }
-  const isJoined = act.udelezenci && act.udelezenci.includes(currentUser.uid);
+  const isJoined = act.udelezenci && act.udelezenci.includes(user.uid);
   if (isJoined) {
     window._leaveActivity(act.id)
       .then(()=>showToast('Odjavljen iz aktivnosti'))
