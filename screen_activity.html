@@ -285,6 +285,11 @@ body{background:#f2f2f7;max-width:390px;margin:0 auto;min-height:100vh;font-fami
 <script type="module">
 import { onAuth, loginWithGoogle, sendChatMessage, deleteChatMessage, listenChat, setTyping, listenTyping, joinActivity, leaveActivity, listenActivity, uploadActivityPhoto as fbUploadPhoto, listenPhotos } from './firebase-config.js';
 
+// Izpostavi join/leave globalno za regularni script
+window._joinActivity = joinActivity;
+window._leaveActivity = leaveActivity;
+window._loginWithGoogle = loginWithGoogle;
+
 let currentAct = null;
 let currentUser = null;
 window._currentAct = null;
@@ -634,14 +639,21 @@ window._onChatInput = function() {
 
 // JOIN - Firebase
 function handleJoin(){
-  if (!currentUser) { loginWithGoogle().then(u => { if(u) handleJoin(); }); return; }
-  const act = currentAct || window._currentAct;
+  if (!currentUser) {
+    if (window._loginWithGoogle) window._loginWithGoogle().then(u => { if(u) handleJoin(); });
+    return;
+  }
+  const act = window._currentAct || currentAct;
   if (!act?.id) { showToast('❌ Napaka — poskusi znova'); return; }
   const isJoined = act.udelezenci && act.udelezenci.includes(currentUser.uid);
   if (isJoined) {
-    leaveActivity(act.id).then(()=>showToast('Odjavljen iz aktivnosti')).catch(e=>showToast('❌ '+e.message));
+    window._leaveActivity(act.id)
+      .then(()=>showToast('Odjavljen iz aktivnosti'))
+      .catch(e=>showToast('❌ '+e.message));
   } else {
-    joinActivity(act.id).then(()=>showToast('🙌 Pridružen!')).catch(e=>showToast('❌ '+e.message));
+    window._joinActivity(act.id)
+      .then(()=>showToast('🙌 Pridružen!'))
+      .catch(e=>showToast('❌ '+e.message));
   }
 }
 
