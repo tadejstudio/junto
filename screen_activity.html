@@ -250,7 +250,7 @@ body{background:#f2f2f7;max-width:390px;margin:0 auto;min-height:100vh;font-fami
     <div class="roster-nav">
       <div class="roster-back" onclick="closeRoster()"><svg width="10" height="16" viewBox="0 0 10 18" fill="none" stroke="#007AFF" stroke-width="2.5" stroke-linecap="round"><path d="M9 1L1 9l8 8"/></svg> Nazaj</div>
       <div class="roster-title">Udeleženci</div>
-      <div style="width:60px;text-align:right;font-size:13px;color:#8e8e93;">5 oseb</div>
+      <div style="width:60px;text-align:right;font-size:13px;color:#8e8e93;" id="rosterCount">0 oseb</div>
     </div>
     <div class="roster-scroll">
       <div style="background:#f2f2f7;padding:8px 16px 6px;font-size:12px;font-weight:600;color:#8e8e93;text-transform:uppercase;letter-spacing:0.6px;">Prijavljeni · 5</div>
@@ -315,6 +315,8 @@ import { onAuth, loginWithGoogle, sendChatMessage, deleteChatMessage, listenChat
 
 let currentAct = null;
 let currentUser = null;
+window._currentAct = null;
+window._currentUser = null;
 let typingTimer = null;
 let chatUnsub = null;
 let typingUnsub = null;
@@ -336,6 +338,7 @@ if (actRaw) {
   try {
     const act = JSON.parse(actRaw);
     currentAct = act;
+    window._currentAct = act;
 
     // Cover
     document.querySelector('.cover-bg').textContent = act.sportIcon || '🏃';
@@ -460,6 +463,7 @@ if (actRaw) {
       // Live udeleženci + join status
       listenActivity(act.id, updatedAct => {
         currentAct = updatedAct;
+        window._currentAct = updatedAct;
         const spotsUsed = updatedAct.udelezenci ? updatedAct.udelezenci.length : 1;
         const spotsTotal = updatedAct.players || 10;
         const spotsFree = spotsTotal - spotsUsed;
@@ -474,6 +478,10 @@ if (actRaw) {
             `<div class="p-av" style="background:${colors[i%colors.length]};" onclick="openRoster()">${n[0].toUpperCase()}</div>`
           ).join('') + `<div class="p-av" style="background:#f0f0f0;color:#bbb;font-size:18px;" onclick="openRoster()">+</div>`;
         }
+        // Posodobi roster count
+        const rosterCount = document.getElementById('rosterCount');
+        if (rosterCount) rosterCount.textContent = (updatedAct.udelezenecIme ? updatedAct.udelezenecIme.length : 0) + ' oseb';
+
         // Posodobi roster overlay
         const rosterList = document.getElementById('rosterList');
         if (rosterList && updatedAct.udelezenecIme) {
@@ -526,6 +534,7 @@ if (actRaw) {
 // Auth
 onAuth(user => {
   currentUser = user;
+  window._currentUser = user;
   // Re-render chat da se pokaže "Ti" pravilno
   if (currentAct?.id && user) {
     console.log('Prijavljen:', user.displayName);
@@ -559,6 +568,8 @@ window._deleteMsg = async function(msgId) {
     try { await deleteChatMessage(currentAct.id, msgId); } catch(e) {}
   }
 };
+
+window._fbUploadPhoto = fbUploadPhoto;
 
 window._onChatInput = function() {
   if (!currentAct?.id || !currentUser) return;
@@ -619,10 +630,11 @@ function goToMapFromActivity(){
 // Photo upload
 function uploadActivityPhoto(input){
   const file=input.files[0]; if(!file) return;
-  if(!currentAct?.id){showToast('❌ Ni aktivnosti');return;}
-  if(!currentUser){showToast('❌ Najprej se prijavi');return;}
-  showToast('📤 Nalagam...');
-  fbUploadPhoto(currentAct.id, file, currentUser.displayName)
+  if(!window._currentAct?.id){showToast('❌ Ni aktivnosti');return;}
+  if(!window._currentUser){showToast('❌ Najprej se prijavi');return;}
+  if(!window._fbUploadPhoto){showToast('❌ Nalagam...');return;}
+  showToast('📤 Nalagam sliko...');
+  window._fbUploadPhoto(window._currentAct.id, file, window._currentUser.displayName)
     .then(()=>showToast('📸 Fotka shranjena!'))
     .catch(e=>showToast('❌ '+e.message));
   input.value='';
