@@ -146,6 +146,10 @@ body{background:#f2f2f7;max-width:390px;margin:0 auto;min-height:100vh;font-fami
           <div class="nav-circle" onclick="openShare()">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
           </div>
+          <div class="nav-circle" id="cover-menu-btn" onclick="openCoverMenu()" style="display:none;">
+            <svg width="4" height="16" viewBox="0 0 4 20" fill="white"><circle cx="2" cy="2" r="2"/><circle cx="2" cy="10" r="2"/><circle cx="2" cy="18" r="2"/></svg>
+          </div>
+          <input type="file" id="coverPhotoInput" accept="image/*" style="display:none" onchange="uploadCoverPhoto(this)">
         </div>
       </div>
       <div class="cover-title">
@@ -566,6 +570,10 @@ if (actRaw) {
 onAuth(user => {
   currentUser = user;
   window._currentUser = user;
+  if (user && window._currentAct && window._currentAct.organizerId === user.uid) {
+    const btn = document.getElementById('cover-menu-btn');
+    if (btn) btn.style.display = 'flex';
+  }
   // Re-render chat da se pokaže "Ti" pravilno
   if (currentAct?.id && user) {
     console.log('Prijavljen:', user.displayName);
@@ -776,6 +784,60 @@ function handlePhotoClick(photoId) {
 }
 
 // TOAST
+function openCoverMenu() {
+  // Action sheet s 3 opcijami
+  const sheet = document.createElement('div');
+  sheet.id = 'coverActionSheet';
+  sheet.style.cssText = 'position:fixed;top:0;left:50%;transform:translateX(-50%);width:390px;height:100vh;background:rgba(0,0,0,0.5);z-index:999;display:flex;flex-direction:column;justify-content:flex-end;';
+  const hasPhoto = window._currentAct?.photoURL;
+  sheet.innerHTML = `
+    <div style="background:#f2f2f7;border-radius:16px 16px 0 0;padding:8px 0 34px;font-family:-apple-system,sans-serif;">
+      <div style="text-align:center;padding:12px;font-size:13px;color:#8e8e93;">Naslovna slika</div>
+      <div onclick="document.getElementById('coverPhotoInput').click();closeCoverMenu()" style="padding:16px 20px;font-size:17px;color:#007AFF;border-top:0.5px solid #c7c7cc;cursor:pointer;text-align:center;">${hasPhoto ? 'Zamenjaj sliko' : 'Dodaj sliko'}</div>
+      ${hasPhoto ? `<div onclick="removeCoverPhoto();closeCoverMenu()" style="padding:16px 20px;font-size:17px;color:#FF3B30;border-top:0.5px solid #c7c7cc;cursor:pointer;text-align:center;">Odstrani sliko</div>` : ''}
+      <div onclick="closeCoverMenu()" style="padding:16px 20px;font-size:17px;color:#8e8e93;border-top:0.5px solid #c7c7cc;cursor:pointer;text-align:center;">Prekliči</div>
+    </div>`;
+  sheet.onclick = e => { if (e.target === sheet) closeCoverMenu(); };
+  document.body.appendChild(sheet);
+}
+
+function closeCoverMenu() {
+  const s = document.getElementById('coverActionSheet');
+  if (s) s.remove();
+}
+
+async function uploadCoverPhoto(input) {
+  const file = input.files[0]; if (!file) return;
+  if (!window._currentAct?.id || !window._currentUser) { showToast('❌ Najprej se prijavi'); return; }
+  showToast('📤 Nalagam...');
+  try {
+    const { getStorage, ref, uploadBytes, getDownloadURL } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js');
+    const { getFirestore, doc, updateDoc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+    const st = getStorage(); const db = getFirestore();
+    const r = ref(st, 'covers/' + window._currentAct.id + '_' + Date.now());
+    await uploadBytes(r, file);
+    const url = await getDownloadURL(r);
+    await updateDoc(doc(db, 'aktivnosti', window._currentAct.id), { photoURL: url });
+    const coverBg = document.querySelector('.cover-bg');
+    if (coverBg) { coverBg.style.fontSize='0'; coverBg.innerHTML='<img src="'+url+'" style="width:100%;height:100%;object-fit:cover;">'; }
+    window._currentAct.photoURL = url;
+    showToast('✓ Slika posodobljena!');
+  } catch(e) { showToast('❌ ' + e.message); }
+  input.value = '';
+}
+
+async function removeCoverPhoto() {
+  if (!window._currentAct?.id) return;
+  try {
+    const { getFirestore, doc, updateDoc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+    await updateDoc(doc(getFirestore(), 'aktivnosti', window._currentAct.id), { photoURL: null });
+    const coverBg = document.querySelector('.cover-bg');
+    if (coverBg) { coverBg.innerHTML=''; coverBg.style.fontSize='80px'; coverBg.textContent = window._currentAct.sportIcon||'🏃'; }
+    window._currentAct.photoURL = null;
+    showToast('✓ Slika odstranjena');
+  } catch(e) { showToast('❌ ' + e.message); }
+}
+
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
 </script>
 </body>
