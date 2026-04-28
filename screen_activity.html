@@ -123,28 +123,15 @@ body{background:#f2f2f7;max-width:390px;margin:0 auto;min-height:100vh;font-fami
 .n-lbl{font-size:10px;font-weight:500;color:#8e8e93;}
 .add-btn-nav{width:48px;height:32px;background:#111;border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:2px;}
 
-  /* EDIT */
-  .editable { cursor: pointer; }
-  .editable:active { opacity: 0.7; }
-  .edit-overlay { position:fixed;top:0;left:50%;transform:translateX(-50%);width:390px;height:100vh;background:rgba(0,0,0,0.5);z-index:800;display:none;align-items:flex-end; }
-  .edit-overlay.open { display:flex; }
-  .edit-sheet { background:#fff;border-radius:20px 20px 0 0;width:100%;padding:20px 20px 40px;max-height:85vh;overflow-y:auto; }
-  .edit-handle { width:36px;height:4px;background:#e0e0e0;border-radius:2px;margin:0 auto 16px; }
-  .edit-title { font-size:17px;font-weight:700;margin-bottom:16px;color:#000; }
-  .edit-textarea { width:100%;border:1.5px solid #e0e0e0;border-radius:12px;padding:12px;font-size:15px;font-family:inherit;resize:none;outline:none;min-height:100px; }
-  .edit-textarea:focus { border-color:#FF385C; }
-  .edit-save { width:100%;background:#FF385C;color:#fff;border:none;border-radius:14px;padding:14px;font-size:16px;font-weight:700;cursor:pointer;margin-top:12px; }
-  .cal-nav-e { background:none;border:none;font-size:22px;cursor:pointer;padding:0 12px;color:#000; }
-  .cal-month-e { font-size:16px;font-weight:700;flex:1;text-align:center; }
-  .date-grid-e { display:grid;grid-template-columns:repeat(7,1fr);gap:2px;padding:0 8px; }
-  .day-cell-e { aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:14px;border-radius:50%;cursor:pointer; }
-  .day-cell-e:hover:not(.past-e) { background:#ffe0e6; }
-  .day-cell-e.sel-e { background:#FF385C;color:#fff; }
-  .day-cell-e.past-e { color:#ccc;cursor:default; }
-  .day-cell-e.today-e { font-weight:700; }
-  .skill-opt { padding:14px 20px;font-size:16px;border-bottom:0.5px solid #f0f0f0;cursor:pointer; }
-  .skill-opt:active { background:#f9f9f9; }
-  .skill-opt.sel-e { color:#FF385C;font-weight:700; }
+  .edit-overlay{position:fixed;top:0;left:50%;transform:translateX(-50%);width:390px;height:100vh;background:rgba(0,0,0,0.5);z-index:800;display:none;align-items:flex-end;}
+  .edit-overlay.open{display:flex;}
+  .edit-sheet{background:#fff;border-radius:20px 20px 0 0;width:100%;padding:20px 20px 40px;}
+  .edit-handle{width:36px;height:4px;background:#e0e0e0;border-radius:2px;margin:0 auto 16px;}
+  .edit-title{font-size:17px;font-weight:700;margin-bottom:16px;}
+  .edit-textarea{width:100%;border:1.5px solid #e0e0e0;border-radius:12px;padding:12px;font-size:15px;font-family:inherit;resize:none;outline:none;min-height:100px;box-sizing:border-box;}
+  .edit-textarea:focus{border-color:#FF385C;}
+  .edit-save{width:100%;background:#FF385C;color:#fff;border:none;border-radius:14px;padding:14px;font-size:16px;font-weight:700;cursor:pointer;margin-top:12px;}
+  .editable{cursor:pointer;border-bottom:1px dashed #ccc;}
 </style>
 </head>
 <body>
@@ -220,6 +207,12 @@ body{background:#f2f2f7;max-width:390px;margin:0 auto;min-height:100vh;font-fami
       <div class="spots-bar-bg"><div class="spots-bar-fill" style="width:60%;"></div></div>
     </div>
 
+    <!-- OPIS -->
+    <div class="section" id="descSection" style="display:none;">
+      <div class="section-title">Opis</div>
+      <div class="desc-text" id="descText" style="font-size:15px;color:#3a3a3c;line-height:1.5;"></div>
+    </div>
+
     <!-- PHOTOS -->
     <div class="section">
       <div class="section-title">Fotke</div>
@@ -292,9 +285,7 @@ body{background:#f2f2f7;max-width:390px;margin:0 auto;min-height:100vh;font-fami
     </div>
   </div>
 
-  
-  <!-- EDIT OPIS -->
-  <div class="edit-overlay" id="editDescOverlay" onclick="if(event.target===this)closeEditOverlay('editDescOverlay')">
+  <div class="edit-overlay" id="editDescOverlay" onclick="if(event.target===this)document.getElementById('editDescOverlay').classList.remove('open')">
     <div class="edit-sheet">
       <div class="edit-handle"></div>
       <div class="edit-title">Uredi opis</div>
@@ -302,46 +293,6 @@ body{background:#f2f2f7;max-width:390px;margin:0 auto;min-height:100vh;font-fami
       <button class="edit-save" onclick="saveEditDesc()">Shrani</button>
     </div>
   </div>
-
-  <!-- EDIT DATUM -->
-  <div class="edit-overlay" id="editDateOverlay" onclick="if(event.target===this)closeEditOverlay('editDateOverlay')">
-    <div class="edit-sheet">
-      <div class="edit-handle"></div>
-      <div class="edit-title">Uredi datum in čas</div>
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-        <button class="cal-nav-e" onclick="editPrevMonth()">‹</button>
-        <span class="cal-month-e" id="editCalLabel"></span>
-        <button class="cal-nav-e" onclick="editNextMonth()">›</button>
-      </div>
-      <div class="date-grid-e" id="editDayLabels"></div>
-      <div class="date-grid-e" id="editCalGrid" style="margin-top:4px;"></div>
-      <div style="margin:16px 0 8px;font-weight:600;font-size:15px;">Ura začetka</div>
-      <div style="display:flex;align-items:center;justify-content:center;gap:16px;margin-bottom:16px;">
-        <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
-          <button onclick="editChangeHour(1)" style="background:none;border:none;font-size:20px;cursor:pointer;">▲</button>
-          <span id="editHourDisplay" style="font-size:28px;font-weight:700;min-width:40px;text-align:center;">18</span>
-          <button onclick="editChangeHour(-1)" style="background:none;border:none;font-size:20px;cursor:pointer;">▼</button>
-        </div>
-        <span style="font-size:28px;font-weight:700;">:</span>
-        <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
-          <button onclick="editChangeMin(1)" style="background:none;border:none;font-size:20px;cursor:pointer;">▲</button>
-          <span id="editMinDisplay" style="font-size:28px;font-weight:700;min-width:40px;text-align:center;">00</span>
-          <button onclick="editChangeMin(-1)" style="background:none;border:none;font-size:20px;cursor:pointer;">▼</button>
-        </div>
-      </div>
-      <button class="edit-save" onclick="saveEditDate()">Shrani</button>
-    </div>
-  </div>
-
-  <!-- EDIT SKILL -->
-  <div class="edit-overlay" id="editSkillOverlay" onclick="if(event.target===this)closeEditOverlay('editSkillOverlay')">
-    <div class="edit-sheet">
-      <div class="edit-handle"></div>
-      <div class="edit-title">Raven igre</div>
-      <div id="editSkillList"></div>
-    </div>
-  </div>
-
   <div class="toast" id="toast"></div>
     </div>
 
@@ -432,9 +383,9 @@ if (actRaw) {
 
     // Meta pills
     const pills = document.querySelectorAll('.meta-pill');
-    if (pills[0]) { pills[0].innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>${act.time||''} · ${act.date||''}` + (isOrganizer ? ' ✏️' : ''); if(isOrganizer) { pills[0].classList.add('editable'); pills[0].onclick = () => openEditDate(); } }
-    if (pills[1]) { pills[1].innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>${act.skill||'Vsi nivoji'}` + (isOrganizer ? ' ✏️' : ''); if(isOrganizer) { pills[1].classList.add('editable'); pills[1].onclick = () => openEditSkill(); } }
-    if (pills[2]) { pills[2].innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>${act.isPrivate?'Zasebno':'Javno'}` + (isOrganizer ? ' ✏️' : ''); if(isOrganizer) { pills[2].classList.add('editable'); pills[2].onclick = () => togglePrivacy(); } }
+    if (pills[0]) pills[0].innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>${act.time||''} · ${act.date||''}`;
+    if (pills[1]) pills[1].innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>${act.skill||'Vsi nivoji'}`;
+    if (pills[2]) pills[2].innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>${act.isPrivate?'Zasebno':'Javno'}`;
 
     // Organizator
     const orgAv = document.querySelector('.org-av');
@@ -465,7 +416,11 @@ if (actRaw) {
 
     // Opis
     const descEl = document.querySelector('.desc-text');
-    if (descEl) descEl.textContent = act.description || '';
+    const descSection = document.getElementById('descSection');
+    if (act.description && act.description.trim()) {
+      if (descEl) descEl.textContent = act.description;
+      if (descSection) descSection.style.display = 'block';
+    }
 
     // Lokacija label
     const locText = document.getElementById('actLocText');
@@ -964,22 +919,18 @@ async function removeCoverPhoto() {
 }
 
 
-// ── EDIT FUNKCIJE ────────────────────────────────────────────
-function closeEditOverlay(id) { document.getElementById(id).classList.remove('open'); }
-
-// Opis
 function openEditDesc() {
-  const inp = document.getElementById('editDescInput');
   const act = window._currentAct;
-  inp.value = (act?.description && act.description !== 'Tapni za dodaj opis...') ? act.description : '';
+  document.getElementById('editDescInput').value = (act?.description && act.description.trim()) ? act.description : '';
   document.getElementById('editDescOverlay').classList.add('open');
-  setTimeout(() => inp.focus(), 300);
+  setTimeout(() => document.getElementById('editDescInput').focus(), 300);
 }
+
 async function saveEditDesc() {
   const text = document.getElementById('editDescInput').value.trim();
   const act = window._currentAct;
   if (!act?.id) return;
-  closeEditOverlay('editDescOverlay');
+  document.getElementById('editDescOverlay').classList.remove('open');
   try {
     const { getFirestore, doc, updateDoc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
     await updateDoc(doc(getFirestore(), 'aktivnosti', act.id), { description: text });
@@ -987,103 +938,6 @@ async function saveEditDesc() {
     if (descEl) { descEl.textContent = text || 'Tapni za dodaj opis...'; descEl.style.color = text ? '#3a3a3c' : '#bbb'; }
     window._currentAct.description = text;
     showToast('✓ Opis posodobljen');
-  } catch(e) { showToast('❌ ' + e.message); }
-}
-
-// Datum/čas
-let _editCalY, _editCalM, _editSelDate, _editH=18, _editMin=0;
-const _editMonthNames=['Januar','Februar','Marec','April','Maj','Junij','Julij','Avgust','September','Oktober','November','December'];
-const _editMnShort=['jan','feb','mar','apr','maj','jun','jul','avg','sep','okt','nov','dec'];
-
-function openEditDate() {
-  const act = window._currentAct;
-  const d = act ? (act.dateISO ? new Date(act.dateISO) : new Date()) : new Date();
-  _editCalY = d.getFullYear(); _editCalM = d.getMonth();
-  _editSelDate = { y:d.getFullYear(), m:d.getMonth(), d:d.getDate() };
-  if (act?.time) { const [h,m] = act.time.split(':').map(Number); _editH=h; _editMin=m; }
-  _editRenderCal(); _editUpdateTime();
-  // Day labels
-  const dl = document.getElementById('editDayLabels');
-  dl.innerHTML = ['Ned','Pon','Tor','Sre','Čet','Pet','Sob'].map(d=>`<div style="font-size:11px;color:#8e8e93;text-align:center;">${d}</div>`).join('');
-  document.getElementById('editDateOverlay').classList.add('open');
-}
-
-function _editRenderCal() {
-  document.getElementById('editCalLabel').textContent = _editMonthNames[_editCalM] + ' ' + _editCalY;
-  const today = new Date(); const first = new Date(_editCalY,_editCalM,1).getDay(); const days = new Date(_editCalY,_editCalM+1,0).getDate();
-  let html = '';
-  for (let i=0;i<first;i++) html += '<div></div>';
-  for (let d=1;d<=days;d++) {
-    const isPast = new Date(_editCalY,_editCalM,d) < new Date(today.getFullYear(),today.getMonth(),today.getDate());
-    const isSel = _editSelDate && _editCalY===_editSelDate.y && _editCalM===_editSelDate.m && d===_editSelDate.d;
-    const isToday = _editCalY===today.getFullYear() && _editCalM===today.getMonth() && d===today.getDate();
-    html += `<div class="day-cell-e${isPast?' past-e':''}${isSel?' sel-e':''}${isToday&&!isSel?' today-e':''}" onclick="${isPast?'':'_editSelDay('+d+')'}">${d}</div>`;
-  }
-  document.getElementById('editCalGrid').innerHTML = html;
-}
-function editPrevMonth() { _editCalM--; if(_editCalM<0){_editCalM=11;_editCalY--;} _editRenderCal(); }
-function editNextMonth() { _editCalM++; if(_editCalM>11){_editCalM=0;_editCalY++;} _editRenderCal(); }
-function _editSelDay(d) { _editSelDate={y:_editCalY,m:_editCalM,d}; _editRenderCal(); }
-function _editUpdateTime() { document.getElementById('editHourDisplay').textContent=String(_editH).padStart(2,'0'); document.getElementById('editMinDisplay').textContent=String(_editMin).padStart(2,'0'); }
-function editChangeHour(n) { _editH=(_editH+n+24)%24; _editUpdateTime(); }
-function editChangeMin(n) { _editMin=(_editMin+n+60)%60; _editUpdateTime(); }
-
-async function saveEditDate() {
-  if (!_editSelDate || !window._currentAct?.id) return;
-  const {y,m,d} = _editSelDate;
-  const today = new Date();
-  const isToday = y===today.getFullYear()&&m===today.getMonth()&&d===today.getDate();
-  const tom = new Date(today); tom.setDate(today.getDate()+1);
-  const isTom = y===tom.getFullYear()&&m===tom.getMonth()&&d===tom.getDate();
-  const mn = _editMnShort[m];
-  const dateStr = isToday ? `Danes, ${d}. ${mn}` : isTom ? `Jutri, ${d}. ${mn}` : `${d}. ${mn}`;
-  const dateISO = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-  const timeStr = `${String(_editH).padStart(2,'0')}:${String(_editMin).padStart(2,'0')}`;
-  closeEditOverlay('editDateOverlay');
-  try {
-    const { getFirestore, doc, updateDoc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
-    await updateDoc(doc(getFirestore(), 'aktivnosti', window._currentAct.id), { date: dateStr, dateISO, time: timeStr });
-    // Posodobi UI
-    const pills = document.querySelectorAll('.meta-pill');
-    if (pills[0]) pills[0].innerHTML = pills[0].innerHTML.replace(/[\d:]+.*?✏️/, `${timeStr} · ${dateStr} ✏️`);
-    window._currentAct.date = dateStr; window._currentAct.dateISO = dateISO; window._currentAct.time = timeStr;
-    showToast('✓ Datum posodobljen');
-  } catch(e) { showToast('❌ ' + e.message); }
-}
-
-// Skill
-const _skills = ['🌱 Začetnik','🎯 Rekreativno','🔥 Kompetitivno','⭐ Vsi nivoji'];
-function openEditSkill() {
-  const act = window._currentAct;
-  const list = document.getElementById('editSkillList');
-  list.innerHTML = _skills.map(s => `<div class="skill-opt${act?.skill===s?' sel-e':''}" onclick="saveEditSkill('${s}')">${s}</div>`).join('');
-  document.getElementById('editSkillOverlay').classList.add('open');
-}
-async function saveEditSkill(skill) {
-  closeEditOverlay('editSkillOverlay');
-  if (!window._currentAct?.id) return;
-  try {
-    const { getFirestore, doc, updateDoc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
-    await updateDoc(doc(getFirestore(), 'aktivnosti', window._currentAct.id), { skill });
-    const pills = document.querySelectorAll('.meta-pill');
-    if (pills[1]) pills[1].innerHTML = pills[1].innerHTML.replace(/svg>.*/, 'svg>' + skill + ' ✏️');
-    window._currentAct.skill = skill;
-    showToast('✓ Raven posodobljena');
-  } catch(e) { showToast('❌ ' + e.message); }
-}
-
-// Privacy toggle
-async function togglePrivacy() {
-  const act = window._currentAct;
-  if (!act?.id) return;
-  const newVal = !act.isPrivate;
-  try {
-    const { getFirestore, doc, updateDoc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
-    await updateDoc(doc(getFirestore(), 'aktivnosti', act.id), { isPrivate: newVal });
-    const pills = document.querySelectorAll('.meta-pill');
-    if (pills[2]) pills[2].innerHTML = pills[2].innerHTML.replace(/Zasebno|Javno/, newVal ? 'Zasebno' : 'Javno');
-    window._currentAct.isPrivate = newVal;
-    showToast(newVal ? '🔒 Zasebna aktivnost' : '🌍 Javna aktivnost');
   } catch(e) { showToast('❌ ' + e.message); }
 }
 
