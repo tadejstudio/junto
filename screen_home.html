@@ -636,10 +636,10 @@ function renderCard(act) {
   const full = spotsUsed >= spotsTotal;
   const ago = timeAgo(act.createdAt);
 
-  const actStr = JSON.stringify(act).replace(/`/g,''); window._acts = window._acts || {};
   const actId = act.id || (act.sport + act.location + act.time);
+  window._acts = window._acts || {};
   window._acts[actId] = act;
-  return `<div class="card ${live ? 'live-card' : ''}" onclick="sessionStorage.setItem('junto_current_act',JSON.stringify(window._acts['${actId}']));location.href='screen_activity.html'" style="cursor:pointer;">
+  return `<div class="card ${live ? 'live-card' : ''}" onclick="window._openActivity(window._acts['${actId}'])" style="cursor:pointer;">
     ${act.photoURL ? `<img class="card-cover" src="${act.photoURL}" alt="">` : `<div class="card-cover-placeholder" style="background:linear-gradient(135deg,${color}22,${color}44);display:flex;font-size:48px;align-items:center;justify-content:center;">${act.sportIcon || '🏃'}</div>`}
     <div class="card-body">
       <div class="card-top">
@@ -680,6 +680,7 @@ function openActivity(act) {
   try { sessionStorage.setItem('junto_current_act', JSON.stringify(act)); } catch(e) {}
   location.href = 'screen_activity.html';
 }
+window._openActivity = openActivity;
 
 // Listen za real-time updates
 listenAktivnosti(activities => {
