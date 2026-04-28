@@ -200,6 +200,13 @@ body{background:#0f1420;max-width:390px;margin:0 auto;min-height:100vh;font-fami
         <div class="fchip" id="tf-teden" onclick="setMapTimeFilter('teden',this)">Ta teden</div>
         <div class="fchip" id="tf-mesec" onclick="setMapTimeFilter('mesec',this)">Ta mesec</div>
       </div>
+      <div class="flbl" style="margin-top:16px;">Razdalja</div>
+      <div class="fchips">
+        <div class="fchip" id="rd-1" onclick="setMapDist(1,this)">1km</div>
+        <div class="fchip sel" id="rd-10" onclick="setMapDist(10,this)">10km</div>
+        <div class="fchip" id="rd-50" onclick="setMapDist(50,this)">50km</div>
+        <div class="fchip" id="rd-999" onclick="setMapDist(999,this)">Vse</div>
+      </div>
       <button class="fapply" onclick="applyAllFilters();toggleFilter()">Uporabi filtre</button>
     </div>
   </div>
@@ -337,7 +344,8 @@ function renderSheetList(acts) {
       </div>
       <div class="cr">
         <div class="cr-time">${timeStr(act)}</div>
-        ${live?'<div class="badge b-live">● LIVE</div>':'<div class="badge b-open">odprto</div>'}
+${live ? '<div class="badge b-live">● LIVE</div>' : 
+              (spotsUsed >= parseInt(act.players||10) ? '<div class="badge b-soon">FULL</div>' : '<div class="badge b-open">odprto</div>')}
       </div>
     </div>`;
   }).join('');
@@ -345,6 +353,13 @@ function renderSheetList(acts) {
 
 // Časovni filter
 let activeMapTimeFilter = 'vse';
+let maxDistKm = 10; // default 10km
+
+function setMapDist(km, el) {
+  maxDistKm = km;
+  document.querySelectorAll('.fchip[id^="rd-"]').forEach(c=>c.classList.remove('sel'));
+  el.classList.add('sel');
+}
 
 function setMapTimeFilter(filter, el) {
   activeMapTimeFilter = filter;
@@ -374,6 +389,13 @@ function applyAllFilters() {
   else {
     // "vse" - samo prihodnje in danes
     filtered = filtered.filter(a => isActFuture(a));
+  }
+  // Razdalja filter
+  if (maxDistKm < 999) {
+    filtered = filtered.filter(a => {
+      if (!a.lat || !a.lon) return true;
+      return distKm(userLat, userLon, parseFloat(a.lat), parseFloat(a.lon)) <= maxDistKm;
+    });
   }
   // Sport filter
   if (activeSportFilter !== 'vse') filtered = filtered.filter(a => a.sport === activeSportFilter);

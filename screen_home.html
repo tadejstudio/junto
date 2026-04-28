@@ -615,6 +615,18 @@ function renderFeed() {
   feed.innerHTML = html;
 }
 
+function getDisplayDate(act) {
+  const d = getActDate(act);
+  if (!d) return act.date || '';
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const tomorrow = new Date(today); tomorrow.setDate(today.getDate()+1);
+  const monthNames = ['jan','feb','mar','apr','maj','jun','jul','avg','sep','okt','nov','dec'];
+  if (d.getTime() === today.getTime()) return 'Danes, ' + d.getDate() + '. ' + monthNames[d.getMonth()];
+  if (d.getTime() === tomorrow.getTime()) return 'Jutri, ' + d.getDate() + '. ' + monthNames[d.getMonth()];
+  return d.getDate() + '. ' + monthNames[d.getMonth()];
+}
+
 function renderCard(act) {
   const color = sportColors[act.sport] || '#FF385C';
   const live = isLive(act);
@@ -641,7 +653,7 @@ function renderCard(act) {
         ${live ? '<div class="badge live-badge"><div class="live-dot"></div> LIVE</div>' : `<div class="badge public">🕐 ${act.time}</div>`}
       </div>
       <div class="card-meta">
-        <div class="meta-item">📅 ${act.date}</div>
+        <div class="meta-item">📅 ${getDisplayDate(act)}</div>
         <div class="meta-item">⏱ ${act.duration}</div>
         <div class="meta-item">${act.isPrivate ? '🔒 Zasebno' : '🌍 Javno'}</div>
       </div>
