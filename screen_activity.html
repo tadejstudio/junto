@@ -31,6 +31,7 @@ body{background:#f2f2f7;max-width:390px;margin:0 auto;min-height:100vh;font-fami
 
 .meta-pills{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
 .meta-pill{display:flex;align-items:center;gap:6px;background:#f2f2f7;padding:7px 12px;border-radius:12px;font-size:13px;font-weight:500;color:#333;}
+  .meta-pill.editable{cursor:pointer;border:1.5px dashed #FF385C;background:#fff5f5;}
 
 .organizer-row{display:flex;align-items:center;justify-content:space-between;padding-top:14px;border-top:0.5px solid #f0f0f0;cursor:pointer;}
 .organizer-left{display:flex;align-items:center;gap:10px;}
@@ -292,6 +293,41 @@ body{background:#f2f2f7;max-width:390px;margin:0 auto;min-height:100vh;font-fami
       <div class="edit-title">Uredi opis</div>
       <textarea class="edit-textarea" id="editDescInput" placeholder="Opiši aktivnost..."></textarea>
       <button class="edit-save" onclick="saveEditDesc()">Shrani</button>
+    </div>
+  </div>
+  <div class="edit-overlay" id="editSkillOverlay" onclick="if(event.target===this)this.classList.remove('open')">
+    <div class="edit-sheet">
+      <div class="edit-handle"></div>
+      <div class="edit-title">Raven igre</div>
+      <div id="editSkillList"></div>
+    </div>
+  </div>
+  <div class="edit-overlay" id="editDateOverlay" onclick="if(event.target===this)this.classList.remove('open')">
+    <div class="edit-sheet" style="max-height:90vh;overflow-y:auto;">
+      <div class="edit-handle"></div>
+      <div class="edit-title">Datum in čas</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <button onclick="editPrevMonth()" style="background:none;border:none;font-size:24px;cursor:pointer;padding:0 12px;">‹</button>
+        <span id="editCalLabel" style="font-size:16px;font-weight:700;"></span>
+        <button onclick="editNextMonth()" style="background:none;border:none;font-size:24px;cursor:pointer;padding:0 12px;">›</button>
+      </div>
+      <div id="editDayLabels" style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;padding:0 4px;margin-bottom:4px;"></div>
+      <div id="editCalGrid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;padding:0 4px;"></div>
+      <div style="margin:16px 0 8px;font-weight:600;font-size:14px;color:#555;">Ura začetka</div>
+      <div style="display:flex;align-items:center;justify-content:center;gap:20px;margin-bottom:16px;">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
+          <button onclick="editChangeH(1)" style="background:none;border:none;font-size:22px;cursor:pointer;">▲</button>
+          <span id="editHH" style="font-size:32px;font-weight:700;width:44px;text-align:center;">18</span>
+          <button onclick="editChangeH(-1)" style="background:none;border:none;font-size:22px;cursor:pointer;">▼</button>
+        </div>
+        <span style="font-size:32px;font-weight:700;">:</span>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
+          <button onclick="editChangeM(1)" style="background:none;border:none;font-size:22px;cursor:pointer;">▲</button>
+          <span id="editMM" style="font-size:32px;font-weight:700;width:44px;text-align:center;">00</span>
+          <button onclick="editChangeM(-1)" style="background:none;border:none;font-size:22px;cursor:pointer;">▼</button>
+        </div>
+      </div>
+      <button class="edit-save" onclick="saveEditDate()">Shrani</button>
     </div>
   </div>
   <div class="edit-overlay" id="editGenderOverlay" onclick="if(event.target===this)this.classList.remove('open')">
@@ -616,6 +652,14 @@ onAuth(user => {
   if (user && window._currentAct && window._currentAct.organizerId === user.uid) {
     const btn = document.getElementById('cover-menu-btn');
     if (btn) btn.style.display = 'flex';
+    // Naredi pills editable
+    makePillsEditable();
+    // Naredi gender pill editable
+    const gp = document.getElementById('genderPill');
+    if (gp) { gp.classList.add('editable'); gp.onclick = openEditGender; }
+    // Naredi opis editable
+    const descEl = document.querySelector('.desc-text');
+    if (descEl) { descEl.style.cursor='pointer'; descEl.classList.add('editable'); descEl.onclick = openEditDesc; }
   }
   // Posodobi join gumb ko se user prijavi
   if (user && window._currentAct) {
@@ -970,6 +1014,110 @@ async function saveEditGender(gender) {
     if (gp) gp.textContent = gender;
     window._currentAct.gender = gender;
     showToast('✓ '+gender);
+  } catch(e) { showToast('❌ '+e.message); }
+}
+
+
+function makePillsEditable() {
+  const pills = document.querySelectorAll('.meta-pill');
+  if (pills[0]) { pills[0].classList.add('editable'); pills[0].onclick = openEditDate; pills[0].title='Uredi datum/čas'; }
+  if (pills[1]) { pills[1].classList.add('editable'); pills[1].onclick = openEditSkill; pills[1].title='Uredi raven'; }
+  if (pills[2]) { pills[2].classList.add('editable'); pills[2].onclick = togglePrivacy; pills[2].title='Preklopi javno/zasebno'; }
+}
+
+const _skills = ['🌱 Začetnik','🎯 Rekreativno','🔥 Kompetitivno','⭐ Vsi nivoji'];
+function openEditSkill() {
+  const act = window._currentAct;
+  const list = document.getElementById('editSkillList');
+  if (!list) return;
+  list.innerHTML = _skills.map(s => `<div onclick="saveEditSkill('${s}')" style="padding:15px 20px;font-size:16px;border-bottom:0.5px solid #f0f0f0;cursor:pointer;${(act?.skill||'')===s?'color:#FF385C;font-weight:700;':''}">${s}${(act?.skill||'')===s?' ✓':''}</div>`).join('');
+  document.getElementById('editSkillOverlay').classList.add('open');
+}
+async function saveEditSkill(skill) {
+  document.getElementById('editSkillOverlay').classList.remove('open');
+  if (!window._currentAct?.id) return;
+  try {
+    const {getFirestore,doc,updateDoc} = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+    await updateDoc(doc(getFirestore(),'aktivnosti',window._currentAct.id),{skill});
+    const pills = document.querySelectorAll('.meta-pill');
+    if (pills[1]) pills[1].innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>${skill}`;
+    window._currentAct.skill = skill;
+    showToast('✓ Raven posodobljena');
+  } catch(e) { showToast('❌ '+e.message); }
+}
+
+async function togglePrivacy() {
+  const act = window._currentAct;
+  if (!act?.id) return;
+  const newVal = !act.isPrivate;
+  try {
+    const {getFirestore,doc,updateDoc} = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+    await updateDoc(doc(getFirestore(),'aktivnosti',act.id),{isPrivate:newVal});
+    const pills = document.querySelectorAll('.meta-pill');
+    if (pills[2]) pills[2].innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>${newVal?'Zasebno':'Javno'}`;
+    window._currentAct.isPrivate = newVal;
+    showToast(newVal ? '🔒 Zasebna' : '🌍 Javna');
+  } catch(e) { showToast('❌ '+e.message); }
+}
+
+let _eCalY, _eCalM, _eSel, _eH=18, _eMin=0;
+const _eMn=['Januar','Februar','Marec','April','Maj','Junij','Julij','Avgust','September','Oktober','November','December'];
+const _eMs=['jan','feb','mar','apr','maj','jun','jul','avg','sep','okt','nov','dec'];
+
+function openEditDate() {
+  const act = window._currentAct;
+  const d = act?.dateISO ? new Date(act.dateISO) : new Date();
+  _eCalY=d.getFullYear(); _eCalM=d.getMonth();
+  _eSel={y:d.getFullYear(),m:d.getMonth(),d:d.getDate()};
+  if (act?.time) { const [h,m]=act.time.split(':').map(Number); _eH=h; _eMin=m; }
+  const dl = document.getElementById('editDayLabels');
+  if (dl) dl.innerHTML=['Ned','Pon','Tor','Sre','Čet','Pet','Sob'].map(x=>`<div style="font-size:11px;color:#8e8e93;text-align:center;">${x}</div>`).join('');
+  _eRenderCal(); _eUpdateTime();
+  document.getElementById('editDateOverlay').classList.add('open');
+}
+function _eRenderCal() {
+  const lbl = document.getElementById('editCalLabel');
+  if (lbl) lbl.textContent=_eMn[_eCalM]+' '+_eCalY;
+  const today=new Date(), first=new Date(_eCalY,_eCalM,1).getDay(), days=new Date(_eCalY,_eCalM+1,0).getDate();
+  let html='';
+  for(let i=0;i<first;i++) html+='<div></div>';
+  for(let d=1;d<=days;d++){
+    const past=new Date(_eCalY,_eCalM,d)<new Date(today.getFullYear(),today.getMonth(),today.getDate());
+    const sel=_eSel&&_eCalY===_eSel.y&&_eCalM===_eSel.m&&d===_eSel.d;
+    const tod=_eCalY===today.getFullYear()&&_eCalM===today.getMonth()&&d===today.getDate();
+    html+=`<div onclick="${past?'':'_eSel2('+d+')'}" style="aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:14px;border-radius:50%;cursor:${past?'default':'pointer'};background:${sel?'#FF385C':'none'};color:${sel?'#fff':past?'#ccc':tod?'#FF385C':'#000'};font-weight:${tod?700:400};">${d}</div>`;
+  }
+  const grid = document.getElementById('editCalGrid');
+  if (grid) grid.innerHTML=html;
+}
+function editPrevMonth(){_eCalM--;if(_eCalM<0){_eCalM=11;_eCalY--;}_eRenderCal();}
+function editNextMonth(){_eCalM++;if(_eCalM>11){_eCalM=0;_eCalY++;}_eRenderCal();}
+function _eSel2(d){_eSel={y:_eCalY,m:_eCalM,d};_eRenderCal();}
+function _eUpdateTime(){
+  const hh=document.getElementById('editHH'), mm=document.getElementById('editMM');
+  if(hh) hh.textContent=String(_eH).padStart(2,'0');
+  if(mm) mm.textContent=String(_eMin).padStart(2,'0');
+}
+function editChangeH(n){_eH=(_eH+n+24)%24;_eUpdateTime();}
+function editChangeM(n){_eMin=(_eMin+n+60)%60;_eUpdateTime();}
+async function saveEditDate() {
+  if (!_eSel||!window._currentAct?.id) return;
+  const {y,m,d}=_eSel;
+  const today=new Date();
+  const isToday=y===today.getFullYear()&&m===today.getMonth()&&d===today.getDate();
+  const tom=new Date(today); tom.setDate(today.getDate()+1);
+  const isTom=y===tom.getFullYear()&&m===tom.getMonth()&&d===tom.getDate();
+  const dateStr=isToday?`Danes, ${d}. ${_eMs[m]}`:isTom?`Jutri, ${d}. ${_eMs[m]}`:`${d}. ${_eMs[m]}`;
+  const dateISO=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+  const timeStr=`${String(_eH).padStart(2,'0')}:${String(_eMin).padStart(2,'0')}`;
+  document.getElementById('editDateOverlay').classList.remove('open');
+  try {
+    const {getFirestore,doc,updateDoc}=await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+    await updateDoc(doc(getFirestore(),'aktivnosti',window._currentAct.id),{date:dateStr,dateISO,time:timeStr});
+    const pills=document.querySelectorAll('.meta-pill');
+    if(pills[0]) pills[0].innerHTML=`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>${timeStr} · ${dateStr}`;
+    window._currentAct.date=dateStr; window._currentAct.dateISO=dateISO; window._currentAct.time=timeStr;
+    showToast('✓ Datum posodobljen');
   } catch(e) { showToast('❌ '+e.message); }
 }
 
