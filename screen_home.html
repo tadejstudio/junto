@@ -372,8 +372,8 @@
 
     <!-- PRIMARY: Time filter -->
     <div class="time-filter">
-      <div class="time-chip live-chip active" onclick="window._setTimeFilter('live',this)"><span class="live-dot-inline"></span>LIVE</div>
-      <div class="time-chip" onclick="window._setTimeFilter('danes',this)">Danes</div>
+      <div class="time-chip live-chip" onclick="window._setTimeFilter('live',this)"><span class="live-dot-inline"></span>LIVE</div>
+      <div class="time-chip active" onclick="window._setTimeFilter('danes',this)">Danes</div>
       <div class="time-chip" onclick="window._setTimeFilter('jutri',this)">Jutri</div>
       <div class="time-chip" onclick="window._setTimeFilter('teden',this)">Ta teden</div>
       <div class="time-chip" onclick="window._setTimeFilter('mesec',this)">Ta mesec</div>
@@ -507,7 +507,7 @@ function timeAgo(ts) {
 }
 
 // Filter state
-let activeTimeFilter = 'live';
+let activeTimeFilter = 'danes';
 let activeSportFilter = 'vse';
 let allActivities = [];
 
