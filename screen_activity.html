@@ -197,6 +197,12 @@ body{background:#f2f2f7;max-width:390px;margin:0 auto;min-height:100vh;font-fami
       <div class="spots-bar-bg"><div class="spots-bar-fill" style="width:60%;"></div></div>
     </div>
 
+    <!-- OPIS -->
+    <div class="section" id="descSection" style="display:none;">
+      <div class="section-title">Opis</div>
+      <div class="desc-text" style="font-size:15px;color:#3a3a3c;line-height:1.5;"></div>
+    </div>
+
     <!-- PHOTOS -->
     <div class="section">
       <div class="section-title">Fotke</div>
@@ -392,7 +398,11 @@ if (actRaw) {
 
     // Opis
     const descEl = document.querySelector('.desc-text');
-    if (descEl) descEl.textContent = act.description || '';
+    const descSection = document.getElementById('descSection');
+    if (act.description && act.description.trim()) {
+      if (descEl) descEl.textContent = act.description;
+      if (descSection) descSection.style.display = 'block';
+    }
 
     // Lokacija label
     const locText = document.getElementById('actLocText');
