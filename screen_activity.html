@@ -283,12 +283,12 @@ body{background:#f2f2f7;max-width:390px;margin:0 auto;min-height:100vh;font-fami
 </div>
 
 <script type="module">
-import { onAuth, loginWithGoogle, sendChatMessage, deleteChatMessage, listenChat, setTyping, listenTyping, joinActivity, leaveActivity, listenActivity, uploadActivityPhoto as fbUploadPhoto, listenPhotos } from './firebase-config.js';
+import { onAuth, loginWithGoogle, sendChatMessage, deleteChatMessage, listenChat, setTyping, listenTyping, joinActivity, leaveActivity, listenActivity, uploadActivityPhoto as fbUploadPhoto, listenPhotos, deleteActivity } from './firebase-config.js';
 
-// Izpostavi join/leave globalno za regularni script
 window._joinActivity = joinActivity;
 window._leaveActivity = leaveActivity;
 window._loginWithGoogle = loginWithGoogle;
+window._deleteActivity = deleteActivity;
 
 let currentAct = null;
 let currentUser = null;
@@ -808,20 +808,49 @@ function handlePhotoClick(photoId) {
 
 // TOAST
 function openCoverMenu() {
-  // Action sheet s 3 opcijami
+  const hasPhoto = window._currentAct?.photoURL;
   const sheet = document.createElement('div');
   sheet.id = 'coverActionSheet';
   sheet.style.cssText = 'position:fixed;top:0;left:50%;transform:translateX(-50%);width:390px;height:100vh;background:rgba(0,0,0,0.5);z-index:999;display:flex;flex-direction:column;justify-content:flex-end;';
-  const hasPhoto = window._currentAct?.photoURL;
   sheet.innerHTML = `
     <div style="background:#f2f2f7;border-radius:16px 16px 0 0;padding:8px 0 34px;font-family:-apple-system,sans-serif;">
-      <div style="text-align:center;padding:12px;font-size:13px;color:#8e8e93;">Naslovna slika</div>
-      <div onclick="document.getElementById('coverPhotoInput').click();closeCoverMenu()" style="padding:16px 20px;font-size:17px;color:#007AFF;border-top:0.5px solid #c7c7cc;cursor:pointer;text-align:center;">${hasPhoto ? 'Zamenjaj sliko' : 'Dodaj sliko'}</div>
-      ${hasPhoto ? `<div onclick="removeCoverPhoto();closeCoverMenu()" style="padding:16px 20px;font-size:17px;color:#FF3B30;border-top:0.5px solid #c7c7cc;cursor:pointer;text-align:center;">Odstrani sliko</div>` : ''}
+      <div style="text-align:center;padding:12px;font-size:13px;color:#8e8e93;">Upravljanje aktivnosti</div>
+      <div onclick="document.getElementById('coverPhotoInput').click();closeCoverMenu()" style="padding:16px 20px;font-size:17px;color:#007AFF;border-top:0.5px solid #c7c7cc;cursor:pointer;text-align:center;">${hasPhoto ? 'Zamenjaj naslovno sliko' : 'Dodaj naslovno sliko'}</div>
+      ${hasPhoto ? `<div onclick="removeCoverPhoto();closeCoverMenu()" style="padding:16px 20px;font-size:17px;color:#FF3B30;border-top:0.5px solid #c7c7cc;cursor:pointer;text-align:center;">Odstrani naslovno sliko</div>` : ''}
+      <div onclick="confirmDeleteActivity();closeCoverMenu()" style="padding:16px 20px;font-size:17px;color:#FF3B30;border-top:0.5px solid #c7c7cc;cursor:pointer;text-align:center;font-weight:600;">🗑 Zbriši event</div>
       <div onclick="closeCoverMenu()" style="padding:16px 20px;font-size:17px;color:#8e8e93;border-top:0.5px solid #c7c7cc;cursor:pointer;text-align:center;">Prekliči</div>
     </div>`;
   sheet.onclick = e => { if (e.target === sheet) closeCoverMenu(); };
   document.body.appendChild(sheet);
+}
+
+function confirmDeleteActivity() {
+  const sheet = document.createElement('div');
+  sheet.id = 'deleteActSheet';
+  sheet.style.cssText = 'position:fixed;top:0;left:50%;transform:translateX(-50%);width:390px;height:100vh;background:rgba(0,0,0,0.5);z-index:999;display:flex;flex-direction:column;justify-content:flex-end;';
+  sheet.innerHTML = `
+    <div style="background:#f2f2f7;border-radius:16px 16px 0 0;padding:8px 0 34px;font-family:-apple-system,sans-serif;">
+      <div style="text-align:center;padding:16px;font-size:16px;font-weight:600;">Zbriši event?</div>
+      <div style="text-align:center;padding:0 20px 16px;font-size:14px;color:#8e8e93;">Ta akcija je nepovratna. Vsi udeleženci bodo izgubili dostop.</div>
+      <div onclick="doDeleteActivity()" style="padding:16px 20px;font-size:17px;color:#FF3B30;border-top:0.5px solid #c7c7cc;cursor:pointer;text-align:center;font-weight:700;">Zbriši event</div>
+      <div onclick="document.getElementById('deleteActSheet').remove()" style="padding:16px 20px;font-size:17px;color:#007AFF;border-top:0.5px solid #c7c7cc;cursor:pointer;text-align:center;">Prekliči</div>
+    </div>`;
+  sheet.onclick = e => { if (e.target === sheet) sheet.remove(); };
+  document.body.appendChild(sheet);
+}
+
+async function doDeleteActivity() {
+  const act = window._currentAct;
+  if (!act?.id) return;
+  document.getElementById('deleteActSheet')?.remove();
+  showToast('🗑 Brišem event...');
+  try {
+    await window._deleteActivity(act.id);
+    showToast('✓ Event izbrisan');
+    setTimeout(() => { location.href = 'screen_home.html'; }, 1000);
+  } catch(e) {
+    showToast('❌ ' + e.message);
+  }
 }
 
 function closeCoverMenu() {

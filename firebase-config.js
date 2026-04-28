@@ -182,10 +182,17 @@ function listenPhotos(activityId, callback) {
   });
 }
 
+async function deleteActivity(activityId) {
+  const user = auth.currentUser;
+  if (!user) throw new Error("Nisi prijavljen");
+  await deleteDoc(doc(db, "aktivnosti", activityId));
+}
+
 export {
   db, storage, auth,
   loginWithGoogle, logout, getCurrentUser, onAuth,
   objavljiAktivnost, getAktivnosti, listenAktivnosti,
   sendChatMessage, deleteChatMessage, listenChat, setTyping, listenTyping,
-  joinActivity, leaveActivity, listenActivity, uploadActivityPhoto, listenPhotos
+  joinActivity, leaveActivity, listenActivity, uploadActivityPhoto, listenPhotos,
+  deleteActivity
 };
