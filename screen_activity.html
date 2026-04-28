@@ -302,11 +302,11 @@ function getActDate(a) {
   if (a.dateISO) return new Date(a.dateISO);
   const dateStr = a.date || '';
   const now = new Date();
-  if (dateStr.includes('Danes') || dateStr.includes('danes')) return new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  if (dateStr.includes('Jutri') || dateStr.includes('jutri')) { const t = new Date(now); t.setDate(t.getDate()+1); return new Date(t.getFullYear(), t.getMonth(), t.getDate()); }
   const monthMap = {jan:0,feb:1,mar:2,apr:3,maj:4,jun:5,jul:6,avg:7,sep:8,okt:9,nov:10,dec:11};
   const match = dateStr.match(/(\d+)\.\s*([a-z]+)/i);
   if (match) { const mo = monthMap[match[2].toLowerCase().substring(0,3)]; if (mo !== undefined) return new Date(now.getFullYear(), mo, parseInt(match[1])); }
+  if (dateStr.includes('Danes') || dateStr.includes('danes')) return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  if (dateStr.includes('Jutri') || dateStr.includes('jutri')) { const t = new Date(now); t.setDate(t.getDate()+1); return new Date(t.getFullYear(), t.getMonth(), t.getDate()); }
   return null;
 }
 

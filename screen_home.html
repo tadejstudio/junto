@@ -525,17 +525,16 @@ window._setSportFilter = function(filter, el) {
 };
 
 function getActDate(act) {
-  // Najprej poskusi ISO datum
   if (act.dateISO) return new Date(act.dateISO);
-  // Fallback - parse iz besedila (za stare aktivnosti)
   const dateStr = act.date || '';
   const now = new Date();
-  if (dateStr.includes('Danes') || dateStr.includes('danes')) return new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  if (dateStr.includes('Jutri') || dateStr.includes('jutri')) { const t = new Date(now); t.setDate(t.getDate()+1); return new Date(t.getFullYear(), t.getMonth(), t.getDate()); }
-  // Parse "27. apr" format
   const monthMap = {jan:0,feb:1,mar:2,apr:3,maj:4,jun:5,jul:6,avg:7,sep:8,okt:9,nov:10,dec:11};
+  // Poskusi parsati "27. apr" iz kateregakoli formata (tudi "Danes, 27. apr")
   const m = dateStr.match(/(\d+)\.\s*([a-z]+)/i);
   if (m) { const mo = monthMap[m[2].toLowerCase().substring(0,3)]; if (mo !== undefined) return new Date(now.getFullYear(), mo, parseInt(m[1])); }
+  // Fallback samo če ni datuma v besedilu
+  if (dateStr.includes('Danes') || dateStr.includes('danes')) return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  if (dateStr.includes('Jutri') || dateStr.includes('jutri')) { const t = new Date(now); t.setDate(t.getDate()+1); return new Date(t.getFullYear(), t.getMonth(), t.getDate()); }
   return null;
 }
 
@@ -588,11 +587,19 @@ function matchesTimeFilter(act) {
   return true;
 }
 
+function isFuture(act) {
+  const d = getActDate(act); if (!d) return true;
+  const today = new Date(); today.setHours(0,0,0,0);
+  return d >= today;
+}
+
 function renderFeed() {
   const feed = document.getElementById('firebaseFeed');
-  let filtered = allActivities;
+  let filtered = allActivities.filter(isFuture); // nikoli ne kaži preteklih
   if (activeSportFilter !== 'vse') filtered = filtered.filter(a => a.sport === activeSportFilter);
-  if (activeTimeFilter !== 'teden') filtered = filtered.filter(matchesTimeFilter);
+  if (activeTimeFilter !== 'teden' && activeTimeFilter !== 'mesec') filtered = filtered.filter(matchesTimeFilter);
+  else if (activeTimeFilter === 'teden') filtered = filtered.filter(isThisWeek);
+  else if (activeTimeFilter === 'mesec') filtered = filtered.filter(isThisMonth);
   if (!filtered.length) {
     feed.innerHTML = '<div style="padding:40px 20px;text-align:center;color:#8e8e93;font-size:15px;">Ni aktivnosti za ta filter.<br><small>Ustvari novo ali izberi drug filter.</small></div>';
     return;

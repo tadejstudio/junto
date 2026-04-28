@@ -191,25 +191,16 @@ body{background:#0f1420;max-width:390px;margin:0 auto;min-height:100vh;font-fami
     <div class="filter-sheet">
       <div class="filter-handle"></div>
       <div class="filter-title">Filtri</div>
-      <div class="flbl">Status</div>
+      <div class="flbl">Čas</div>
       <div class="fchips">
-        <div class="fchip sel" onclick="this.classList.toggle('sel')">● LIVE</div>
-        <div class="fchip sel" onclick="this.classList.toggle('sel')">Kmalu</div>
-        <div class="fchip" onclick="this.classList.toggle('sel')">Odprto</div>
+        <div class="fchip sel" id="tf-vse" onclick="setMapTimeFilter('vse',this)">Vse prihodnje</div>
+        <div class="fchip" id="tf-live" onclick="setMapTimeFilter('live',this)">● LIVE</div>
+        <div class="fchip" id="tf-danes" onclick="setMapTimeFilter('danes',this)">Danes</div>
+        <div class="fchip" id="tf-jutri" onclick="setMapTimeFilter('jutri',this)">Jutri</div>
+        <div class="fchip" id="tf-teden" onclick="setMapTimeFilter('teden',this)">Ta teden</div>
+        <div class="fchip" id="tf-mesec" onclick="setMapTimeFilter('mesec',this)">Ta mesec</div>
       </div>
-      <div class="flbl">Zasebnost</div>
-      <div class="fchips">
-        <div class="fchip sel" onclick="this.classList.toggle('sel')">🌍 Javno</div>
-        <div class="fchip" onclick="this.classList.toggle('sel')">🔒 Zasebno</div>
-      </div>
-      <div class="flbl">Razdalja</div>
-      <div class="fchips">
-        <div class="fchip sel" onclick="selectOne(this)">500m</div>
-        <div class="fchip" onclick="selectOne(this)">1km</div>
-        <div class="fchip" onclick="selectOne(this)">2km</div>
-        <div class="fchip" onclick="selectOne(this)">5km</div>
-      </div>
-      <button class="fapply" onclick="toggleFilter()">Uporabi filtre</button>
+      <button class="fapply" onclick="applyAllFilters();toggleFilter()">Uporabi filtre</button>
     </div>
   </div>
 
@@ -253,11 +244,12 @@ function getActDate(act) {
   if (act.dateISO) return new Date(act.dateISO);
   const dateStr = act.date || '';
   const now = new Date();
-  if (dateStr.includes('Danes') || dateStr.includes('danes')) return new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  if (dateStr.includes('Jutri') || dateStr.includes('jutri')) { const t=new Date(now); t.setDate(t.getDate()+1); return new Date(t.getFullYear(),t.getMonth(),t.getDate()); }
   const monthMap={jan:0,feb:1,mar:2,apr:3,maj:4,jun:5,jul:6,avg:7,sep:8,okt:9,nov:10,dec:11};
+  // Poskusi parsati "27. apr" iz kateregakoli formata (tudi "Danes, 27. apr")
   const m2=dateStr.match(/(\d+)\.\s*([a-z]+)/i);
   if (m2) { const mo=monthMap[m2[2].toLowerCase().substring(0,3)]; if(mo!==undefined) return new Date(now.getFullYear(),mo,parseInt(m2[1])); }
+  if (dateStr.includes('Danes') || dateStr.includes('danes')) return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  if (dateStr.includes('Jutri') || dateStr.includes('jutri')) { const t=new Date(now); t.setDate(t.getDate()+1); return new Date(t.getFullYear(),t.getMonth(),t.getDate()); }
   return null;
 }
 
