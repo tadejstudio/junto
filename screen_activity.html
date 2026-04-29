@@ -438,6 +438,11 @@ if (actRaw) {
     if (orgAv) orgAv.textContent = (act.organizerName||'?')[0].toUpperCase();
     const orgName = document.querySelector('.org-name');
     if (orgName) orgName.textContent = act.organizerName || 'Organizator';
+    // Klik na organizatorja → pravi profil
+    const orgRow = document.querySelector('.organizer-row');
+    if (orgRow && act.organizerId) {
+      orgRow.onclick = () => location.href = 'screen_profil.html?uid=' + act.organizerId;
+    }
 
     // Udeleženci
     const spotsUsed = act.udelezenci ? act.udelezenci.length : 1;

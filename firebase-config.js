@@ -196,3 +196,126 @@ export {
   joinActivity, leaveActivity, listenActivity, uploadActivityPhoto, listenPhotos,
   deleteActivity
 };
+
+// ── User profili ──────────────────────────────────────────────
+async function saveUserProfile(user) {
+  await setDoc(doc(db, "users", user.uid), {
+    uid: user.uid,
+    displayName: user.displayName,
+    photoURL: user.photoURL,
+    email: user.email,
+    updatedAt: serverTimestamp(),
+  }, { merge: true });
+}
+
+async function getUserProfile(uid) {
+  const snap = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js')
+    .then(m => m.getDoc(doc(db, "users", uid)));
+  return snap.exists() ? snap.data() : null;
+}
+
+function listenUserProfile(uid, callback) {
+  return onSnapshot(doc(db, "users", uid), snap => {
+    if (snap.exists()) callback(snap.data());
+  });
+}
+
+// ── Follow / Unfollow ─────────────────────────────────────────
+async function followUser(targetUid) {
+  const user = auth.currentUser;
+  if (!user || user.uid === targetUid) return;
+  const batch = [
+    setDoc(doc(db, "users", user.uid, "following", targetUid), { uid: targetUid, displayName: '', createdAt: serverTimestamp() }),
+    setDoc(doc(db, "users", targetUid, "followers", user.uid), { uid: user.uid, displayName: user.displayName, photoURL: user.photoURL, createdAt: serverTimestamp() })
+  ];
+  await Promise.all(batch);
+}
+
+async function unfollowUser(targetUid) {
+  const user = auth.currentUser;
+  if (!user) return;
+  await Promise.all([
+    deleteDoc(doc(db, "users", user.uid, "following", targetUid)),
+    deleteDoc(doc(db, "users", targetUid, "followers", user.uid))
+  ]);
+}
+
+async function isFollowing(targetUid) {
+  const user = auth.currentUser;
+  if (!user) return false;
+  const { getDoc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+  const snap = await getDoc(doc(db, "users", user.uid, "following", targetUid));
+  return snap.exists();
+}
+
+function listenFollowers(uid, callback) {
+  return onSnapshot(collection(db, "users", uid, "followers"), snap => {
+    callback(snap.docs.map(d => d.data()));
+  });
+}
+
+function listenFollowing(uid, callback) {
+  return onSnapshot(collection(db, "users", uid, "following"), snap => {
+    callback(snap.docs.map(d => d.data()));
+  });
+}
+
+// ── DM Chat ───────────────────────────────────────────────────
+function getDmId(uid1, uid2) {
+  return [uid1, uid2].sort().join('_');
+}
+
+async function sendDM(toUid, text) {
+  const user = auth.currentUser;
+  if (!user || !text.trim()) return;
+  const dmId = getDmId(user.uid, toUid);
+  await addDoc(collection(db, "dms", dmId, "messages"), {
+    text: text.trim(),
+    uid: user.uid,
+    displayName: user.displayName,
+    photoURL: user.photoURL,
+    createdAt: serverTimestamp(),
+    read: false,
+  });
+  // Posodobi conversation metadata
+  await setDoc(doc(db, "dms", dmId), {
+    participants: [user.uid, toUid],
+    lastMessage: text.trim(),
+    lastMessageAt: serverTimestamp(),
+    lastSenderUid: user.uid,
+  }, { merge: true });
+}
+
+function listenDM(toUid, callback) {
+  const user = auth.currentUser;
+  if (!user) return () => {};
+  const dmId = getDmId(user.uid, toUid);
+  const q = query(collection(db, "dms", dmId, "messages"), orderBy("createdAt", "asc"));
+  return onSnapshot(q, snap => {
+    callback(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+  });
+}
+
+function listenMyDMs(callback) {
+  const user = auth.currentUser;
+  if (!user) return () => {};
+  const q = query(collection(db, "dms"), orderBy("lastMessageAt", "desc"));
+  return onSnapshot(q, snap => {
+    const myDms = snap.docs
+      .filter(d => d.data().participants?.includes(user.uid))
+      .map(d => ({ id: d.id, ...d.data() }));
+    callback(myDms);
+  });
+}
+
+export {
+  db, storage, auth,
+  loginWithGoogle, logout, getCurrentUser, onAuth,
+  objavljiAktivnost, getAktivnosti, listenAktivnosti,
+  sendChatMessage, deleteChatMessage, listenChat, setTyping, listenTyping,
+  joinActivity, leaveActivity, listenActivity, uploadActivityPhoto, listenPhotos,
+  deleteActivity,
+  saveUserProfile, getUserProfile, listenUserProfile,
+  followUser, unfollowUser, isFollowing, listenFollowers, listenFollowing,
+  sendDM, listenDM, listenMyDMs, getDmId
+};

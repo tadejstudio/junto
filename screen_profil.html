@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Junto — Profil</title>
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="apple-touch-icon" href="icon-192.png">
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 body{background:#fff;display:flex;justify-content:center;min-height:100vh;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;}
@@ -152,7 +155,7 @@ body{background:#fff;display:flex;justify-content:center;min-height:100vh;font-f
 </style>
 </head>
 <body>
-<div class="device">
+<div class="device" id="profileContent">
   <div class="status-bar">
     <span class="s-time">9:41</span>
     <div style="font-size:11px;color:#000;display:flex;gap:6px;"><span>●●●</span><span>WiFi</span><span>🔋</span></div>
@@ -197,12 +200,13 @@ body{background:#fff;display:flex;justify-content:center;min-height:100vh;font-f
           </div>
         </div>
       </div>
-      <div class="profile-name">Miha Kovač</div>
-      <div class="profile-bio">🏀 Košarkar · 🚴 Kolesarjenje · Ljubljana<br>Organizator pickup iger vsako sredo 🏟️</div>
+      <div class="profile-name" id="profileName">Nalagam...</div>
+      <div class="profile-bio" id="profileHandle">@...</div>
       <div class="profile-meta">🔥 34 aktivnosti · Skupaj 847 km</div>
       <div class="action-row">
         <button class="btn-follow" id="followBtn" onclick="toggleFollow()">Sledi</button>
-        <button class="btn-msg" onclick="location.href='screen_messages.html'">Sporočilo</button>
+        <button id="followBtn" style="display:none;background:#FF385C;color:#fff;border:none;border-radius:10px;padding:8px 18px;font-size:14px;font-weight:700;cursor:pointer;">Sledi</button>
+        <button class="btn-msg" id="msgBtn" style="display:none;" onclick="">Sporočilo</button>
         <button class="btn-more">
           <svg width="16" height="4" viewBox="0 0 16 4" fill="#000"><circle cx="2" cy="2" r="2"/><circle cx="8" cy="2" r="2"/><circle cx="14" cy="2" r="2"/></svg>
         </button>
@@ -383,265 +387,138 @@ body{background:#fff;display:flex;justify-content:center;min-height:100vh;font-f
 
 <div class="toast" id="toast"></div>
 
-<script>
-var following = false;
-var postLiked = false;
-var postLikeCount = 24;
-var postSaved = false;
-var savedPosts = [];
-var commentsShown = false;
-var currentPostIdx = 0;
+<script type="module">
+import { onAuth, loginWithGoogle, saveUserProfile, listenUserProfile, listenFollowers, listenFollowing, followUser, unfollowUser, isFollowing, listenAktivnosti, sendDM } from './firebase-config.js';
 
-var posts = [
-  {emoji:'🏀', bg:'linear-gradient(135deg,#FFF0E6,#FFD4A8)', location:'BTC igrišče, Ljubljana', caption:'miha.kovac', captionText:'Pickup kosarka danes 🏀🔥 Kdo pride? #kosarka #Ljubljana #junto', date:'15. april 2026', likes:24, comments:[{av:'LK',col:'#7b68ee',name:'luka.kovac',text:'Pridem! 🙌',time:'1 ura'},{av:'PV',col:'#3cb371',name:'petra.vidmar',text:'Naslednjič sem notri 💪',time:'45 min'}]},
-  {emoji:'🚴', bg:'linear-gradient(135deg,#E8F5E9,#C8E6C9)', location:'Rožnik, Ljubljana', caption:'miha.kovac', captionText:'Jutranjo kolesarjenje po Roznik loopу 🚴 ~25km, idealno jutro! #kolesarjenje #roznik', date:'12. april 2026', likes:18, comments:[{av:'JN',col:'#4a90d9',name:'jan.novak',text:'Naslednjič pridem!',time:'2 uri'}]},
-  {emoji:'🏃', bg:'linear-gradient(135deg,#E3F2FD,#BBDEFB)', location:'Park Tivoli, Ljubljana', caption:'miha.kovac', captionText:'5km jutarnji tek po Tivoliju 🏃 Idealen start dneva! #tek #tivoli #jutro', date:'10. april 2026', likes:31, comments:[]},
-  {emoji:'💪', bg:'linear-gradient(135deg,#F3E5F5,#CE93D8)', location:'Fitinn Center, Ljubljana', caption:'miha.kovac', captionText:'Leg day done 🔥💪 #gym #fitinn #legday', date:'8. april 2026', likes:12, comments:[{av:'SK',col:'#c0608a',name:'sara.kos',text:'Beasting! 🔥',time:'3 ure'}]},
-  {emoji:'🏐', bg:'linear-gradient(135deg,#FFF8E1,#FFE082)', location:'Golovec, Ljubljana', caption:'miha.kovac', captionText:'Odbojka na pesku danes 🏐 Super ekipa! #odbojka #golovec', date:'5. april 2026', likes:9, comments:[]},
-  {emoji:'🎾', bg:'linear-gradient(135deg,#FFEBEE,#FFCDD2)', location:'Tenis igrišča Tivoli', caption:'miha.kovac', captionText:'Tenis popoldne 🎾 Kdo za partijo? #tenis #tivoli', date:'3. april 2026', likes:15, comments:[]},
-  {emoji:'🏊', bg:'linear-gradient(135deg,#E0F2F1,#B2DFDB)', location:'Bazen Kodeljevo', caption:'miha.kovac', captionText:'Jutranji plavanje 🏊 1000m done! #plavanje #kodeljevo', date:'1. april 2026', likes:22, comments:[]},
-  {emoji:'⚽', bg:'linear-gradient(135deg,#FFF0E6,#FFD4A8)', location:'Sportni park Siska', caption:'miha.kovac', captionText:'Futsal vecer ⚽ Ekipa je bila top! #futsal #siska', date:'28. mars 2026', likes:28, comments:[]},
-  {emoji:'🤸', bg:'linear-gradient(135deg,#E8EAF6,#C5CAE9)', location:'Studio Ljubljana', caption:'miha.kovac', captionText:'Stretching session 🤸 Recovery day #recovery #stretching', date:'25. mars 2026', likes:7, comments:[]}
-];
+let currentUser = null;
+let viewedUid = null; // uid profila ki ga gledamo (null = moj profil)
+let myFollowingSet = new Set();
 
-function openPost(idx) {
-  currentPostIdx = idx;
-  var p = posts[idx];
-  postLiked = false;
-  postLikeCount = p.likes;
-  commentsShown = false;
-  postSaved = savedPosts.some(function(s) { return s.idx === idx; });
+// Preveri ali gledamo tuj profil
+const urlParams = new URLSearchParams(window.location.search);
+viewedUid = urlParams.get('uid') || null;
 
-  document.getElementById('postImg').style.background = p.bg;
-  document.getElementById('postImg').textContent = p.emoji;
-  document.getElementById('postLocation').textContent = p.location;
-  document.getElementById('postLikes').textContent = p.likes + ' všečkov';
-  document.getElementById('postCaption').innerHTML = '<span>' + p.caption + '</span> ' + p.captionText;
-  document.getElementById('postDate').textContent = p.date.toUpperCase();
-  document.getElementById('commentsLink').textContent = p.comments.length > 0 ? 'Prikaži vse komentarje (' + p.comments.length + ')' : '';
-  document.getElementById('commentsList').innerHTML = '';
+onAuth(async user => {
+  currentUser = user;
+  if (!user) {
+    // Ni prijavljen - pokaži login
+    document.getElementById('profileContent').innerHTML = '<div style="padding:40px;text-align:center;"><div style="font-size:48px;margin-bottom:16px;">👋</div><div style="font-size:18px;font-weight:700;margin-bottom:8px;">Prijavi se v Junto</div><button onclick="loginWithGoogle()" style="background:#FF385C;color:#fff;border:none;border-radius:14px;padding:14px 28px;font-size:16px;font-weight:700;cursor:pointer;">Prijavi se z Google</button></div>';
+    return;
+  }
+  
+  // Shrani user profil ob prijavi
+  await saveUserProfile(user);
+  
+  const profileUid = viewedUid || user.uid;
+  const isOwnProfile = profileUid === user.uid;
+  
+  // Naloži profil
+  loadProfile(profileUid, isOwnProfile, user);
+  
+  // Moji following za mutual check
+  listenFollowing(user.uid, following => {
+    myFollowingSet = new Set(following.map(f => f.uid));
+  });
+});
 
-  var likeIcon = document.querySelector('#likeBtn svg');
-  likeIcon.setAttribute('fill','none');
-  likeIcon.setAttribute('stroke','#000');
-
-  var bmIcon = document.getElementById('bookmarkIcon');
-  bmIcon.setAttribute('fill', postSaved ? '#000' : 'none');
-
-  document.getElementById('postOverlay').classList.add('open');
-}
-
-function closePost() {
-  document.getElementById('postOverlay').classList.remove('open');
-}
-
-function toggleSave() {
-  postSaved = !postSaved;
-  var icon = document.getElementById('bookmarkIcon');
-  if (postSaved) {
-    icon.setAttribute('fill', '#000');
-    // Add to saved
-    var p = posts[currentPostIdx];
-    if (!savedPosts.find(function(s) { return s.idx === currentPostIdx; })) {
-      savedPosts.push({ idx: currentPostIdx, post: p });
+function loadProfile(uid, isOwn, currentUser) {
+  // Poslušaj profil v živo
+  listenUserProfile(uid, profile => {
+    // Avatar
+    const av = document.getElementById('profileAv');
+    if (profile.photoURL && av) {
+      av.style.cssText = 'width:86px;height:86px;border-radius:50%;overflow:hidden;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.15);';
+      av.innerHTML = `<img src="${profile.photoURL}" style="width:100%;height:100%;object-fit:cover;">`;
     }
-    showToast('✓ Shranjeno');
-  } else {
-    icon.setAttribute('fill', 'none');
-    savedPosts = savedPosts.filter(function(s) { return s.idx !== currentPostIdx; });
-    showToast('Odstranjeno iz shranjenih');
-  }
-}
+    // Ime
+    const nameEl = document.getElementById('profileName');
+    if (nameEl) nameEl.textContent = profile.displayName || 'Uporabnik';
+    const handleEl = document.getElementById('profileHandle');
+    if (handleEl) handleEl.textContent = '@' + (profile.displayName||'').toLowerCase().replace(/\s+/g,'.');
+  });
 
-function openPostOptions() {
-  document.getElementById('postOptionsOverlay').classList.add('open');
-}
+  // Sledilci
+  listenFollowers(uid, followers => {
+    const el = document.getElementById('statFollowers');
+    if (el) el.textContent = followers.length;
+    window._profileFollowers = followers;
+  });
 
-function closePostOptions() {
-  document.getElementById('postOptionsOverlay').classList.remove('open');
-}
+  // Sledim
+  listenFollowing(uid, following => {
+    const el = document.getElementById('statFollowing');
+    if (el) el.textContent = following.length;
+    window._profileFollowing = following;
+  });
 
-function openSaved() {
-  var grid = document.getElementById('savedGrid');
-  if (savedPosts.length === 0) {
-    grid.innerHTML = '<div style="padding:40px 16px;text-align:center;color:#8e8e93;font-size:14px;">Ni shranjenih objav.<br><br>Ko shraniš objavo, se prikaže tukaj.</div>';
-  } else {
-    var html = '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1.5px;background:#dbdbdb;">';
-    for (var i = 0; i < savedPosts.length; i++) {
-      var p = savedPosts[i].post;
-      html += '<div style="aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:36px;cursor:pointer;background:' + p.bg + ';" onclick="openPost(' + savedPosts[i].idx + ');closeSaved();">' + p.emoji + '</div>';
+  // Aktivnosti tega userja
+  listenAktivnosti(acts => {
+    const myActs = acts.filter(a => a.organizerId === uid);
+    const el = document.getElementById('statActs');
+    if (el) el.textContent = myActs.length;
+  });
+
+  // Follow gumb (samo za tuj profil)
+  if (!isOwn) {
+    const followBtn = document.getElementById('followBtn');
+    const msgBtn = document.getElementById('msgBtn');
+    if (followBtn) followBtn.style.display = 'inline-flex';
+    if (msgBtn) msgBtn.style.display = 'inline-flex';
+    
+    // Preveri follow status
+    isFollowing(uid).then(following => {
+      updateFollowBtn(following);
+    });
+    
+    if (followBtn) {
+      followBtn.onclick = async () => {
+        const curr = followBtn.dataset.following === '1';
+        if (curr) { await unfollowUser(uid); updateFollowBtn(false); }
+        else { await followUser(uid); updateFollowBtn(true); }
+      };
     }
-    html += '</div>';
-    grid.innerHTML = html;
-  }
-  document.getElementById('savedOverlay').classList.add('open');
-}
-
-function closeSaved() {
-  document.getElementById('savedOverlay').classList.remove('open');
-}
-
-function togglePostLike(el) {
-  postLiked = !postLiked;
-  var icon = el.querySelector('svg');
-  if (postLiked) {
-    icon.setAttribute('fill','red');
-    icon.setAttribute('stroke','red');
-    postLikeCount++;
-  } else {
-    icon.setAttribute('fill','none');
-    icon.setAttribute('stroke','#000');
-    postLikeCount--;
-  }
-  document.getElementById('postLikes').textContent = postLikeCount + ' všečkov';
-}
-
-function toggleComments() {
-  commentsShown = !commentsShown;
-  var p = posts[currentPostIdx];
-  var list = document.getElementById('commentsList');
-  if (commentsShown && p.comments.length > 0) {
-    var html = '';
-    for (var i = 0; i < p.comments.length; i++) {
-      var c = p.comments[i];
-      html += '<div class="comment-row"><div class="comment-row-av" style="background:' + c.col + '">' + c.av + '</div><div class="comment-body"><span class="comment-username">' + c.name + '</span> <span class="comment-text">' + c.text + '</span><div class="comment-time">' + c.time + '</div></div></div>';
+    if (msgBtn) {
+      msgBtn.onclick = () => openDM(uid);
     }
-    list.innerHTML = html;
-    document.getElementById('commentsLink').textContent = 'Skrij komentarje';
-  } else {
-    list.innerHTML = '';
-    document.getElementById('commentsLink').textContent = p.comments.length > 0 ? 'Prikaži vse komentarje (' + p.comments.length + ')' : '';
   }
 }
 
-function focusComment() {
-  document.getElementById('commentInput').focus();
+function updateFollowBtn(isFollowing) {
+  const btn = document.getElementById('followBtn');
+  if (!btn) return;
+  btn.dataset.following = isFollowing ? '1' : '0';
+  btn.textContent = isFollowing ? 'Sledim ✓' : 'Sledi';
+  btn.style.background = isFollowing ? '#f0f0f0' : '#FF385C';
+  btn.style.color = isFollowing ? '#000' : '#fff';
 }
 
-function sendComment() {
-  var input = document.getElementById('commentInput');
-  var text = input.value.trim();
-  if (!text) return;
-  var p = posts[currentPostIdx];
-  p.comments.push({av:'Ti', col:'#FF385C', name:'ti', text:text, time:'Zdaj'});
-  input.value = '';
-  if (commentsShown) toggleComments(); 
-  toggleComments();
-  document.getElementById('commentsLink').textContent = 'Prikaži vse komentarje (' + p.comments.length + ')';
-  showToast('Komentar objavljen!');
+async function openDM(toUid) {
+  sessionStorage.setItem('junto_dm_uid', toUid);
+  location.href = 'screen_messages.html';
 }
 
-function openTab(tab) {
-  document.getElementById('content-grid').style.display = tab === 'grid' ? 'block' : 'none';
-  document.getElementById('content-activities').style.display = tab === 'activities' ? 'block' : 'none';
-  document.getElementById('content-tagged').style.display = tab === 'tagged' ? 'block' : 'none';
-  document.getElementById('tab-grid').className = tab === 'grid' ? 'tab active' : 'tab';
-  document.getElementById('tab-activities').className = tab === 'activities' ? 'tab active' : 'tab';
-  document.getElementById('tab-tagged').className = tab === 'tagged' ? 'tab active' : 'tab';
-}
-
-var followersData = {
-  sledilci: [{av:'LK',col:'#7b68ee',name:'Luka Kovač',tag:'Ljubljana',mutual:true,fol:true},{av:'PV',col:'#3cb371',name:'Petra Vidmar',tag:'Ljubljana',mutual:false,fol:false},{av:'JN',col:'#4a90d9',name:'Jan Novak',tag:'Maribor',mutual:true,fol:true},{av:'AV',col:'#9C27B0',name:'Anja Vidmar',tag:'Ljubljana',mutual:false,fol:false},{av:'TK',col:'#2196F3',name:'Tomaž Kranjc',tag:'Ljubljana',mutual:true,fol:true},{av:'SK',col:'#c0608a',name:'Sara Kos',tag:'Koper',mutual:false,fol:false}],
-  sledim: [{av:'MJ',col:'#FF6B35',name:'Miha Janežič',tag:'Ljubljana',mutual:true,fol:true},{av:'NK',col:'#e0872a',name:'Nina Kovač',tag:'Ljubljana',mutual:false,fol:true},{av:'BK',col:'#1abc9c',name:'Blaž Kranjc',tag:'Celje',mutual:false,fol:true}]
-};
-
-function openFollowers(type) {
-  var data = followersData[type];
+window._openFollowersModal = function(type) {
+  const data = type === 'sledilci' ? (window._profileFollowers||[]) : (window._profileFollowing||[]);
+  const list = document.getElementById('followersList');
   document.getElementById('followersTitle').textContent = type === 'sledilci' ? 'Sledilci' : 'Sledim';
-  var html = '';
-  for (var i = 0; i < data.length; i++) {
-    var f = data[i];
-    var mutualHtml = f.mutual ? ' · <span style="color:#FF385C;font-weight:500;">Vzajemni</span>' : '';
-    html += '<div class="follower-row" onclick="location.href=\'screen_profil.html\'">' +
-      '<div class="f-av" style="background:' + f.col + '">' + f.av + '</div>' +
-      '<div class="f-info"><div class="f-name">' + f.name + '</div><div class="f-tag">' + f.tag + mutualHtml + '</div></div>' +
-      '<button class="f-btn' + (f.fol ? ' following' : '') + '" onclick="event.stopPropagation();this.classList.toggle(\'following\');this.textContent=this.classList.contains(\'following\')?\'Spremljaš\':\'Sledi\'">' + (f.fol ? 'Spremljaš' : 'Sledi') + '</button>' +
-    '</div>';
-  }
-  document.getElementById('followersList').innerHTML = html;
+  list.innerHTML = data.map(u => {
+    const isMutual = myFollowingSet.has(u.uid);
+    return `<div class="follower-row" onclick="location.href='screen_profil.html?uid=${u.uid}'">
+      <div style="width:44px;height:44px;border-radius:50%;background:#FF385C;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#fff;flex-shrink:0;">${(u.displayName||'?')[0].toUpperCase()}</div>
+      <div style="flex:1;">
+        <div style="font-size:14px;font-weight:600;">${u.displayName||'Uporabnik'}</div>
+        ${isMutual ? '<div style="font-size:12px;color:#8e8e93;">Sledi ti nazaj</div>' : ''}
+      </div>
+    </div>`;
+  }).join('') || '<div style="padding:20px;text-align:center;color:#8e8e93;">Ni sledilcev</div>';
   document.getElementById('followersOverlay').classList.add('open');
-}
-
-function toggleFollow() {
-  following = !following;
-  var btn = document.getElementById('followBtn');
-  btn.textContent = following ? 'Spremljaš' : 'Sledi';
-  btn.className = following ? 'btn-follow following' : 'btn-follow';
-}
-
-function closeOverlay(id) {
-  document.getElementById(id).classList.remove('open');
-}
-
-function openShareSheet() {
-  document.getElementById('shareSheetOverlay').classList.add('open');
-}
-
-function closeShareSheet() {
-  document.getElementById('shareSheetOverlay').classList.remove('open');
-}
-
-function addToStory() {
-  closeShareSheet();
-  location.href = 'screen_story.html';
-}
-
-function copyLink() {
-  closeShareSheet();
-  showToast('🔗 Link skopiran!');
-}
-
-function sendShare() {
-  var sel = document.querySelectorAll('.share-friend.sel').length;
-  closeShareSheet();
-  showToast(sel > 0 ? ('✓ Poslano ' + sel + ' oseb' + (sel === 1 ? 'i' : 'am') + '!') : '✓ Poslano!');
-}
-
-function showToast(msg) {
-  var t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(function() { t.classList.remove('show'); }, 2000);
-}
+};
 </script>
-<!-- SAVED OVERLAY -->
-<div class="overlay" id="savedOverlay">
-  <div class="overlay-nav">
-    <div class="overlay-back" onclick="closeSaved()">
-      <svg width="10" height="16" viewBox="0 0 10 18" fill="none" stroke="#007AFF" stroke-width="2.5" stroke-linecap="round"><path d="M9 1L1 9l8 8"/></svg> Nazaj
-    </div>
-    <div class="overlay-title">Shranjeno</div>
-    <div style="width:60px;"></div>
-  </div>
-  <div class="overlay-scroll" id="savedGrid"></div>
-</div>
 
-<!-- POST OPTIONS SHEET -->
-<div class="share-sheet-overlay" id="postOptionsOverlay" onclick="if(event.target===this)closePostOptions()">
-  <div class="share-sheet" style="padding-bottom:34px;">
-    <div class="sheet-handle"></div>
-    <div style="display:flex;flex-direction:column;gap:0;">
-      <div onclick="openShareSheet();closePostOptions();" style="padding:16px;text-align:center;font-size:16px;font-weight:500;cursor:pointer;border-bottom:0.5px solid #f0f0f0;">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2" style="vertical-align:middle;margin-right:8px;"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-        Deli
-      </div>
-      <div onclick="toggleSave();closePostOptions();" style="padding:16px;text-align:center;font-size:16px;font-weight:500;cursor:pointer;border-bottom:0.5px solid #f0f0f0;">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2" style="vertical-align:middle;margin-right:8px;"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
-        Shrani
-      </div>
-      <div onclick="copyLink();closePostOptions();" style="padding:16px;text-align:center;font-size:16px;font-weight:500;cursor:pointer;border-bottom:0.5px solid #f0f0f0;">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2" style="vertical-align:middle;margin-right:8px;"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
-        Kopiraj link
-      </div>
-      <div style="padding:16px;text-align:center;font-size:16px;font-weight:500;cursor:pointer;border-bottom:0.5px solid #f0f0f0;color:#FF3B30;">
-        Prijavi
-      </div>
-      <div onclick="closePostOptions()" style="padding:16px;text-align:center;font-size:16px;font-weight:600;cursor:pointer;color:#007AFF;">
-        Prekliči
-      </div>
-    </div>
-  </div>
-</div>
+<script>
+function openFollowers(type) { window._openFollowersModal && window._openFollowersModal(type); }
+function closeOverlay(id) { document.getElementById(id).classList.remove('open'); }
+</script>
 
 </body>
 </html>

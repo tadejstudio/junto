@@ -264,7 +264,7 @@ body{background:#f2f2f7;display:flex;justify-content:center;min-height:100vh;fon
 </div>
 
 <!-- CHAT VIEW (full screen) -->
-<div class="chat-view" id="chatView">
+<div class="chat-view" id="chatView" style="display:none;flex-direction:column;">
   <div class="chat-nav">
     <div class="chat-back" onclick="closeChat()">
       <svg width="10" height="16" viewBox="0 0 10 18" fill="none" stroke="#007AFF" stroke-width="2.5" stroke-linecap="round"><path d="M9 1L1 9l8 8"/></svg>
@@ -285,211 +285,116 @@ body{background:#f2f2f7;display:flex;justify-content:center;min-height:100vh;fon
   </div>
   <div class="chat-messages" id="chatMessages"></div>
   <div class="chat-input-bar">
-    <input class="chat-input-field" id="chatInput" placeholder="Sporočilo..." onkeydown="if(event.key==='Enter')sendMsg()"/>
+    <input class="chat-input-field" id="chatInput" placeholder="Sporočilo..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMsg();}"/>
     <button class="chat-send-btn" onclick="sendMsg()">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
     </button>
   </div>
 </div>
 
-<script>
-const convData = {
-  miha: {
-    name:'Miha Janežič', col:'#4a90d9', init:'MJ', online:true,
-    msgs:[
-      {mine:false,text:'Hej! Prideš danes na košarko?',time:'9:20'},
-      {mine:true,text:'Ja! Ob kateri uri?',time:'9:22'},
-      {mine:false,text:'Ob 17h pri Tivoliju 🏀',time:'9:25'},
-      {mine:false,text:'Pridem takoj! Parkiram 🏎️',time:'9:31'},
-    ]
-  },
-  luka: {
-    name:'Luka Kovač', col:'#7b68ee', init:'LK', online:true,
-    msgs:[
-      {mine:false,text:'Gremo v sredo spet? 🏀',time:'9:15'},
-      {mine:true,text:'Sem za! Kdo vse pride?',time:'9:16'},
-      {mine:false,text:'Miha, Nik, jaz... iščemo še enega',time:'9:17'},
-    ]
-  },
-  petra: {
-    name:'Petra Vidmar', col:'#3cb371', init:'PV', online:false,
-    msgs:[
-      {mine:false,text:'Se pridružiš jutri na kolesarjenje?',time:'8:40'},
-      {mine:true,text:'Ja, zveni super! Kdaj?',time:'8:43'},
-      {mine:false,text:'Start ob 10:30 pri parkirišču 🌲',time:'8:55'},
-    ]
-  },
-  kosarka: {
-    name:'Pickup Basketball — Tivoli', col:'#FF385C', init:'🏀', online:false,
-    msgs:[
-      {mine:false,text:'Miha J.: Gremo 10min, kdor zamudi pride naslednjič 😅',time:'9:28'},
-      {mine:false,text:'Luka K.: Pridem takoj!',time:'9:31'},
-      {mine:false,text:'Nina K.: Prinesem rezervno žogo 🏀',time:'9:35'},
-    ]
-  },
-  ana: {
-    name:'Ana Novak', col:'#e0872a', init:'AN', online:false,
-    msgs:[
-      {mine:false,text:'Živjo! Si na Junitu?',time:'včeraj 14:20'},
-      {mine:true,text:'Ja sem! Zakaj?',time:'včeraj 14:22'},
-      {mine:false,text:'Videla sem tvojo aktivnost 😊',time:'včeraj 14:25'},
-      {mine:true,text:'Ja, se vidimo! 👋',time:'včeraj 14:26'},
-    ]
-  },
-  gasper: {
-    name:'Gašper Mlakar', col:'#9b59b6', init:'GM', online:false,
-    msgs:[
-      {mine:false,text:'Futsal v sredo? ⚽',time:'pon 18:00'},
-      {mine:true,text:'Sem za! Ob kateri uri?',time:'pon 18:05'},
-    ]
-  },
-  sara: {
-    name:'Sara Kos', col:'#c0608a', init:'SK', online:false,
-    msgs:[
-      {mine:false,text:'Lahkoten 5km jutri 🏃‍♀️',time:'ned 20:00'},
-      {mine:true,text:'Sem notri! Ob 7h?',time:'ned 20:05'},
-      {mine:false,text:'Ja točno!',time:'ned 20:06'},
-    ]
-  },
-  futsal: {
-    name:'Futsal ekipa — Šiška', col:'#e05050', init:'⚽', online:false,
-    msgs:[
-      {mine:false,text:'Gašper: Igrišče rezervirano do 11h',time:'ned 15:15'},
-      {mine:false,text:'Andrej: Super! Pridem s Petrom',time:'ned 15:18'},
-      {mine:true,text:'Odlično, bomo pravi čas',time:'ned 15:20'},
-    ]
+<script type="module">
+import { onAuth, loginWithGoogle, sendDM, listenDM, listenMyDMs, getDmId } from './firebase-config.js';
+
+let currentUser = null;
+let activeDmUid = null;
+let dmUnsub = null;
+
+// Preveri ali odpiramo specifičen DM
+const dmUid = sessionStorage.getItem('junto_dm_uid');
+if (dmUid) {
+  sessionStorage.removeItem('junto_dm_uid');
+  activeDmUid = dmUid;
+}
+
+onAuth(user => {
+  currentUser = user;
+  window._currentUser = user;
+  if (!user) return;
+
+  // Naloži DM liste
+  listenMyDMs(dms => {
+    renderConvList(dms);
+  });
+
+  // Odpri specifičen DM če je bil nastavljen
+  if (activeDmUid) {
+    setTimeout(() => openDMChat(activeDmUid), 500);
   }
+});
+
+function renderConvList(dms) {
+  const list = document.getElementById('convList');
+  if (!list) return;
+  if (!dms.length) {
+    document.getElementById('dmPlaceholder').style.display = 'block';
+    return;
+  }
+  document.getElementById('dmPlaceholder').style.display = 'none';
+  list.innerHTML = dms.map(dm => {
+    const otherUid = dm.participants?.find(p => p !== currentUser?.uid);
+    const isUnread = dm.lastSenderUid !== currentUser?.uid;
+    const time = dm.lastMessageAt ? new Date(dm.lastMessageAt.toMillis()).toLocaleTimeString('sl-SI',{hour:'2-digit',minute:'2-digit'}) : '';
+    return `<div class="conv-item${isUnread?' unread':''}" onclick="openDMChat('${otherUid}')" style="display:flex;align-items:center;padding:12px 16px;gap:12px;cursor:pointer;border-bottom:0.5px solid #f5f5f5;">
+      <div style="width:50px;height:50px;border-radius:50%;background:#FF385C;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:#fff;flex-shrink:0;">?</div>
+      <div style="flex:1;min-width:0;">
+        <div class="conv-name">${otherUid?.substring(0,8) || 'Uporabnik'}</div>
+        <div style="font-size:13px;color:#8e8e93;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${dm.lastMessage||''}</div>
+      </div>
+      <div style="font-size:12px;color:#8e8e93;flex-shrink:0;">${time}</div>
+    </div>`;
+  }).join('');
+}
+
+window.openDMChat = function(toUid) {
+  if (!currentUser) return;
+  activeDmUid = toUid;
+  
+  // Pokaži chat view
+  document.getElementById('convListView').style.display = 'none';
+  document.getElementById('chatView').style.display = 'flex';
+  document.getElementById('chatBackBtn').style.display = 'flex';
+  
+  // Naloži sporočila
+  if (dmUnsub) dmUnsub();
+  dmUnsub = listenDM(toUid, msgs => {
+    const container = document.getElementById('chat-msgs');
+    if (!container) return;
+    const wasAtBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 60;
+    container.innerHTML = msgs.map(msg => {
+      const isMe = msg.uid === currentUser?.uid;
+      const time = msg.createdAt ? new Date(msg.createdAt.toMillis()).toLocaleTimeString('sl-SI',{hour:'2-digit',minute:'2-digit'}) : '';
+      return `<div class="chat-msg" style="${isMe?'flex-direction:row-reverse;':''};display:flex;align-items:flex-end;gap:8px;margin-bottom:8px;">
+        <div style="width:32px;height:32px;border-radius:50%;background:${isMe?'#FF385C':'#8e8e93'};display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0;">${(msg.displayName||'?')[0].toUpperCase()}</div>
+        <div style="max-width:72%;${isMe?'align-items:flex-end;':''}display:flex;flex-direction:column;">
+          <div style="font-size:10px;color:#8e8e93;margin-bottom:2px;${isMe?'text-align:right;':''}">${isMe?'Ti':msg.displayName||'?'} ${time}</div>
+          <div style="padding:10px 14px;border-radius:${isMe?'16px 4px 16px 16px':'4px 16px 16px 16px'};background:${isMe?'#FF385C':'#f2f2f7'};color:${isMe?'#fff':'#000'};font-size:15px;">${msg.text}</div>
+        </div>
+      </div>`;
+    }).join('') || '<div style="padding:20px;text-align:center;color:#8e8e93;font-size:14px;">Začni pogovor 👋</div>';
+    if (wasAtBottom) container.scrollTop = container.scrollHeight;
+  });
 };
 
-let activeChatId = null;
+window._sendDM = async function() {
+  const inp = document.getElementById('chatInput');
+  const text = inp?.value.trim();
+  if (!text || !activeDmUid || !currentUser) return;
+  inp.value = '';
+  await sendDM(activeDmUid, text);
+};
 
-function openChat(id) {
-  const conv = convData[id];
-  activeChatId = id;
-  document.getElementById('chat-nav-av').style.background = conv.col;
-  document.getElementById('chat-nav-av').textContent = conv.init;
-  document.getElementById('chat-nav-name').textContent = conv.name;
-  document.getElementById('chat-nav-status').textContent = conv.online ? 'Aktivno zdaj' : '';
-  document.getElementById('chat-nav-status').style.display = conv.online ? 'block' : 'none';
-  renderMessages(id);
-  document.getElementById('chatView').classList.add('open');
-  document.getElementById('chatInput').focus();
-}
-
-function renderMessages(id) {
-  const msgs = convData[id].msgs;
-  const conv = convData[id];
-  const wrap = document.getElementById('chatMessages');
-  wrap.innerHTML = msgs.map(m => {
-    if (m.mine) {
-      return `<div class="msg-row mine"><div class="bubble mine">${m.text}</div></div>`;
-    } else {
-      return `<div class="msg-row"><div class="msg-av-small" style="background:${conv.col}">${conv.init.length===2?conv.init:conv.init}</div><div class="bubble theirs">${m.text}</div></div>`;
-    }
-  }).join(`<div class="msg-time">${msgs[0]?.time||''}</div>`);
-  setTimeout(()=>wrap.scrollTop=wrap.scrollHeight, 50);
-}
-
-function sendMsg() {
-  const input = document.getElementById('chatInput');
-  const text = input.value.trim();
-  if (!text || !activeChatId) return;
-  convData[activeChatId].msgs.push({ mine:true, text, time:'zdaj' });
-  renderMessages(activeChatId);
-  input.value = '';
-  // Fake reply after 1.5s
-  setTimeout(() => {
-    const replies = ['Super! 👍','Ja, sem za!','Kul 😎','Ok, se vidimo!','🏀🔥','Odlično!'];
-    const conv = convData[activeChatId];
-    conv.msgs.push({ mine:false, text:replies[Math.floor(Math.random()*replies.length)], time:'zdaj' });
-    renderMessages(activeChatId);
-  }, 1500);
-}
-
-function closeChat() {
-  document.getElementById('chatView').classList.remove('open');
-  activeChatId = null;
-}
-
-function filterConvs(q) {
-  document.querySelectorAll('.conv-item').forEach(item => {
-    const name = item.querySelector('.conv-name').textContent.toLowerCase();
-    item.style.display = name.includes(q.toLowerCase()) ? '' : 'none';
-  });
-}
-
-function openRequests() {
-  var o = document.getElementById('requestsOverlay');
-  o.style.display = 'flex';
-}
-function closeRequests() {
-  document.getElementById('requestsOverlay').style.display = 'none';
-}
-function acceptReq(itemId, btnsId) {
-  document.getElementById(btnsId).innerHTML = '<span style="color:#34c759;font-size:14px;font-weight:600;">✓ Sprejet</span>';
-  document.getElementById(itemId).style.opacity = '0.6';
-}
-function declineReq(itemId, btnsId) {
-  document.getElementById(btnsId).innerHTML = '<span style="color:#8e8e93;font-size:14px;">Zavrnjeno</span>';
-  document.getElementById(itemId).style.opacity = '0.4';
-}
-function openNewChat() {
-  var name = prompt('Išči osebo:');
-  if (name) alert('Iskanje: ' + name);
-}
-function startCall(type) {
-  const conv = convData[activeChatId];
-  if (!conv) return;
-  const cs = document.getElementById('callScreen');
-  document.getElementById('call-av').style.background = conv.col;
-  document.getElementById('call-av').textContent = conv.init;
-  document.getElementById('call-name').textContent = conv.name;
-  document.getElementById('call-status').textContent = type === 'video' ? '📹 Video klic...' : '📞 Klicanje...';
-  cs.style.display = 'flex';
-  let sec = 0;
-  setTimeout(() => {
-    const timer = setInterval(() => {
-      sec++;
-      const s = document.getElementById('call-status');
-      if (!s || cs.style.display === 'none') { clearInterval(timer); return; }
-      const m = Math.floor(sec/60), ss = sec % 60;
-      s.textContent = (type==='video'?'📹 ':'📞 ') + `${m}:${ss<10?'0'+ss:ss}`;
-    }, 1000);
-  }, 1500);
-}
-function endCall() {
-  document.getElementById('callScreen').style.display = 'none';
-}
+window._backToList = function() {
+  document.getElementById('convListView').style.display = 'block';
+  document.getElementById('chatView').style.display = 'none';
+  document.getElementById('chatBackBtn').style.display = 'none';
+  if (dmUnsub) { dmUnsub(); dmUnsub = null; }
+  activeDmUid = null;
+};
 </script>
 
-<!-- CALL SCREEN -->
-<div id="callScreen" style="display:none;position:fixed;top:0;left:50%;transform:translateX(-50%);width:390px;height:100vh;background:linear-gradient(180deg,#1a1a2e,#16213e);z-index:900;flex-direction:column;align-items:center;justify-content:space-between;padding:80px 32px 60px;">
-  <div style="text-align:center;">
-    <div id="call-av" style="width:100px;height:100px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:36px;font-weight:700;color:#fff;margin:0 auto 20px;"></div>
-    <div id="call-name" style="color:#fff;font-size:26px;font-weight:700;margin-bottom:8px;"></div>
-    <div id="call-status" style="color:rgba(255,255,255,0.5);font-size:16px;"></div>
-  </div>
-  <div style="display:flex;gap:48px;justify-content:center;align-items:center;">
-    <div style="display:flex;flex-direction:column;align-items:center;gap:10px;">
-      <div style="width:64px;height:64px;background:rgba(255,255,255,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><line x1="1" y1="1" x2="23" y2="23"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"/><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
-      </div>
-      <span style="color:rgba(255,255,255,0.55);font-size:12px;">Brez zvoka</span>
-    </div>
-    <div onclick="endCall()" style="display:flex;flex-direction:column;align-items:center;gap:10px;cursor:pointer;">
-      <div style="width:72px;height:72px;background:#FF3B30;border-radius:50%;display:flex;align-items:center;justify-content:center;">
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="white"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1-9.4 0-17-7.6-17-17 0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1L6.6 10.8z"/></svg>
-      </div>
-      <span style="color:rgba(255,255,255,0.55);font-size:12px;">Konec</span>
-    </div>
-    <div style="display:flex;flex-direction:column;align-items:center;gap:10px;">
-      <div style="width:64px;height:64px;background:rgba(255,255,255,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
-      </div>
-      <span style="color:rgba(255,255,255,0.55);font-size:12px;">Zvočnik</span>
-    </div>
-  </div>
-</div>
-
+<script>
+function sendMsg() { window._sendDM && window._sendDM(); }
+function goBack() { window._backToList ? window._backToList() : history.back(); }
+</script>
 </body>
 </html>
