@@ -188,35 +188,20 @@ async function deleteActivity(activityId) {
   await deleteDoc(doc(db, "aktivnosti", activityId));
 }
 
-export {
-  db, storage, auth,
-  loginWithGoogle, logout, getCurrentUser, onAuth,
-  objavljiAktivnost, getAktivnosti, listenAktivnosti,
-  sendChatMessage, deleteChatMessage, listenChat, setTyping, listenTyping,
-  joinActivity, leaveActivity, listenActivity, uploadActivityPhoto, listenPhotos,
-  deleteActivity
-};
-
 // ── User profili ──────────────────────────────────────────────
 async function saveUserProfile(user) {
   await setDoc(doc(db, "users", user.uid), {
     uid: user.uid,
     displayName: user.displayName,
-    photoURL: user.photoURL,
-    email: user.email,
+    photoURL: user.photoURL || null,
+    email: user.email || null,
     updatedAt: serverTimestamp(),
   }, { merge: true });
 }
 
-async function getUserProfile(uid) {
-  const snap = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js')
-    .then(m => m.getDoc(doc(db, "users", uid)));
-  return snap.exists() ? snap.data() : null;
-}
-
 function listenUserProfile(uid, callback) {
   return onSnapshot(doc(db, "users", uid), snap => {
-    if (snap.exists()) callback(snap.data());
+    if (snap.exists()) callback({ id: snap.id, ...snap.data() });
   });
 }
 
@@ -224,11 +209,15 @@ function listenUserProfile(uid, callback) {
 async function followUser(targetUid) {
   const user = auth.currentUser;
   if (!user || user.uid === targetUid) return;
-  const batch = [
-    setDoc(doc(db, "users", user.uid, "following", targetUid), { uid: targetUid, displayName: '', createdAt: serverTimestamp() }),
-    setDoc(doc(db, "users", targetUid, "followers", user.uid), { uid: user.uid, displayName: user.displayName, photoURL: user.photoURL, createdAt: serverTimestamp() })
-  ];
-  await Promise.all(batch);
+  await Promise.all([
+    setDoc(doc(db, "users", user.uid, "following", targetUid), {
+      uid: targetUid, displayName: '', createdAt: serverTimestamp()
+    }),
+    setDoc(doc(db, "users", targetUid, "followers", user.uid), {
+      uid: user.uid, displayName: user.displayName,
+      photoURL: user.photoURL || null, createdAt: serverTimestamp()
+    })
+  ]);
 }
 
 async function unfollowUser(targetUid) {
@@ -240,23 +229,27 @@ async function unfollowUser(targetUid) {
   ]);
 }
 
-async function isFollowing(targetUid) {
+async function checkIsFollowing(targetUid) {
   const user = auth.currentUser;
   if (!user) return false;
-  const { getDoc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
-  const snap = await getDoc(doc(db, "users", user.uid, "following", targetUid));
-  return snap.exists();
+  // Preveri če dokument obstaja
+  return new Promise(resolve => {
+    const unsub = onSnapshot(doc(db, "users", user.uid, "following", targetUid), snap => {
+      unsub();
+      resolve(snap.exists());
+    });
+  });
 }
 
 function listenFollowers(uid, callback) {
   return onSnapshot(collection(db, "users", uid, "followers"), snap => {
-    callback(snap.docs.map(d => d.data()));
+    callback(snap.docs.map(d => ({ id: d.id, ...d.data() })));
   });
 }
 
 function listenFollowing(uid, callback) {
   return onSnapshot(collection(db, "users", uid, "following"), snap => {
-    callback(snap.docs.map(d => d.data()));
+    callback(snap.docs.map(d => ({ id: d.id, ...d.data() })));
   });
 }
 
@@ -270,14 +263,10 @@ async function sendDM(toUid, text) {
   if (!user || !text.trim()) return;
   const dmId = getDmId(user.uid, toUid);
   await addDoc(collection(db, "dms", dmId, "messages"), {
-    text: text.trim(),
-    uid: user.uid,
-    displayName: user.displayName,
-    photoURL: user.photoURL,
+    text: text.trim(), uid: user.uid,
+    displayName: user.displayName, photoURL: user.photoURL || null,
     createdAt: serverTimestamp(),
-    read: false,
   });
-  // Posodobi conversation metadata
   await setDoc(doc(db, "dms", dmId), {
     participants: [user.uid, toUid],
     lastMessage: text.trim(),
@@ -301,10 +290,9 @@ function listenMyDMs(callback) {
   if (!user) return () => {};
   const q = query(collection(db, "dms"), orderBy("lastMessageAt", "desc"));
   return onSnapshot(q, snap => {
-    const myDms = snap.docs
+    callback(snap.docs
       .filter(d => d.data().participants?.includes(user.uid))
-      .map(d => ({ id: d.id, ...d.data() }));
-    callback(myDms);
+      .map(d => ({ id: d.id, ...d.data() })));
   });
 }
 
@@ -315,7 +303,7 @@ export {
   sendChatMessage, deleteChatMessage, listenChat, setTyping, listenTyping,
   joinActivity, leaveActivity, listenActivity, uploadActivityPhoto, listenPhotos,
   deleteActivity,
-  saveUserProfile, getUserProfile, listenUserProfile,
-  followUser, unfollowUser, isFollowing, listenFollowers, listenFollowing,
+  saveUserProfile, listenUserProfile,
+  followUser, unfollowUser, checkIsFollowing, listenFollowers, listenFollowing,
   sendDM, listenDM, listenMyDMs, getDmId
 };

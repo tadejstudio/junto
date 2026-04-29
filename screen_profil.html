@@ -4,9 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Junto — Profil</title>
-<link rel="manifest" href="manifest.json">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<link rel="apple-touch-icon" href="icon-192.png">
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 body{background:#fff;display:flex;justify-content:center;min-height:100vh;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;}
@@ -155,7 +152,7 @@ body{background:#fff;display:flex;justify-content:center;min-height:100vh;font-f
 </style>
 </head>
 <body>
-<div class="device" id="profileContent">
+<div class="device">
   <div class="status-bar">
     <span class="s-time">9:41</span>
     <div style="font-size:11px;color:#000;display:flex;gap:6px;"><span>●●●</span><span>WiFi</span><span>🔋</span></div>
@@ -201,12 +198,11 @@ body{background:#fff;display:flex;justify-content:center;min-height:100vh;font-f
         </div>
       </div>
       <div class="profile-name" id="profileName">Nalagam...</div>
-      <div class="profile-bio" id="profileHandle">@...</div>
+      <div class="profile-bio">🏀 Košarkar · 🚴 Kolesarjenje · Ljubljana<br>Organizator pickup iger vsako sredo 🏟️</div>
       <div class="profile-meta">🔥 34 aktivnosti · Skupaj 847 km</div>
       <div class="action-row">
         <button class="btn-follow" id="followBtn" onclick="toggleFollow()">Sledi</button>
-        <button id="followBtn" style="display:none;background:#FF385C;color:#fff;border:none;border-radius:10px;padding:8px 18px;font-size:14px;font-weight:700;cursor:pointer;">Sledi</button>
-        <button class="btn-msg" id="msgBtn" style="display:none;" onclick="">Sporočilo</button>
+        <button id="followBtn" style="display:none;background:#FF385C;color:#fff;border:none;border-radius:10px;padding:8px 16px;font-size:14px;font-weight:700;cursor:pointer;margin-right:8px;">Sledi</button><button class="btn-msg" id="msgBtn" style="display:none;" onclick="openDMFromProfile()">Sporočilo</button>
         <button class="btn-more">
           <svg width="16" height="4" viewBox="0 0 16 4" fill="#000"><circle cx="2" cy="2" r="2"/><circle cx="8" cy="2" r="2"/><circle cx="14" cy="2" r="2"/></svg>
         </button>
@@ -388,137 +384,114 @@ body{background:#fff;display:flex;justify-content:center;min-height:100vh;font-f
 <div class="toast" id="toast"></div>
 
 <script type="module">
-import { onAuth, loginWithGoogle, saveUserProfile, listenUserProfile, listenFollowers, listenFollowing, followUser, unfollowUser, isFollowing, listenAktivnosti, sendDM } from './firebase-config.js';
+import { onAuth, loginWithGoogle, saveUserProfile, listenUserProfile, listenFollowers, listenFollowing, followUser, unfollowUser, checkIsFollowing, listenAktivnosti, sendDM } from './firebase-config.js';
 
 let currentUser = null;
-let viewedUid = null; // uid profila ki ga gledamo (null = moj profil)
-let myFollowingSet = new Set();
+let viewedUid = null;
+window._profileFollowers = [];
+window._profileFollowing = [];
 
-// Preveri ali gledamo tuj profil
 const urlParams = new URLSearchParams(window.location.search);
 viewedUid = urlParams.get('uid') || null;
 
 onAuth(async user => {
   currentUser = user;
-  if (!user) {
-    // Ni prijavljen - pokaži login
-    document.getElementById('profileContent').innerHTML = '<div style="padding:40px;text-align:center;"><div style="font-size:48px;margin-bottom:16px;">👋</div><div style="font-size:18px;font-weight:700;margin-bottom:8px;">Prijavi se v Junto</div><button onclick="loginWithGoogle()" style="background:#FF385C;color:#fff;border:none;border-radius:14px;padding:14px 28px;font-size:16px;font-weight:700;cursor:pointer;">Prijavi se z Google</button></div>';
-    return;
-  }
-  
-  // Shrani user profil ob prijavi
+  window._currentUser = user;
+  if (!user) return;
   await saveUserProfile(user);
-  
+
   const profileUid = viewedUid || user.uid;
-  const isOwnProfile = profileUid === user.uid;
-  
-  // Naloži profil
-  loadProfile(profileUid, isOwnProfile, user);
-  
-  // Moji following za mutual check
-  listenFollowing(user.uid, following => {
-    myFollowingSet = new Set(following.map(f => f.uid));
-  });
-});
+  const isOwn = profileUid === user.uid;
 
-function loadProfile(uid, isOwn, currentUser) {
-  // Poslušaj profil v živo
-  listenUserProfile(uid, profile => {
-    // Avatar
+  // Profil podatki
+  listenUserProfile(profileUid, profile => {
     const av = document.getElementById('profileAv');
-    if (profile.photoURL && av) {
-      av.style.cssText = 'width:86px;height:86px;border-radius:50%;overflow:hidden;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.15);';
-      av.innerHTML = `<img src="${profile.photoURL}" style="width:100%;height:100%;object-fit:cover;">`;
+    if (av) {
+      if (profile.photoURL) {
+        av.innerHTML = `<img src="${profile.photoURL}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+        av.style.overflow = 'hidden';
+      } else {
+        av.textContent = (profile.displayName||'?')[0].toUpperCase();
+      }
     }
-    // Ime
-    const nameEl = document.getElementById('profileName');
-    if (nameEl) nameEl.textContent = profile.displayName || 'Uporabnik';
-    const handleEl = document.getElementById('profileHandle');
-    if (handleEl) handleEl.textContent = '@' + (profile.displayName||'').toLowerCase().replace(/\s+/g,'.');
+    const nm = document.getElementById('profileName');
+    if (nm) nm.textContent = profile.displayName || 'Uporabnik';
   });
 
-  // Sledilci
-  listenFollowers(uid, followers => {
+  // Sledilci/sledim
+  listenFollowers(profileUid, f => {
+    window._profileFollowers = f;
     const el = document.getElementById('statFollowers');
-    if (el) el.textContent = followers.length;
-    window._profileFollowers = followers;
+    if (el) el.textContent = f.length;
   });
-
-  // Sledim
-  listenFollowing(uid, following => {
+  listenFollowing(profileUid, f => {
+    window._profileFollowing = f;
     const el = document.getElementById('statFollowing');
-    if (el) el.textContent = following.length;
-    window._profileFollowing = following;
+    if (el) el.textContent = f.length;
   });
 
-  // Aktivnosti tega userja
+  // Aktivnosti
   listenAktivnosti(acts => {
-    const myActs = acts.filter(a => a.organizerId === uid);
     const el = document.getElementById('statActs');
-    if (el) el.textContent = myActs.length;
+    if (el) el.textContent = acts.filter(a => a.organizerId === profileUid).length;
   });
 
-  // Follow gumb (samo za tuj profil)
+  // Follow/msg gumbi samo za tuj profil
   if (!isOwn) {
-    const followBtn = document.getElementById('followBtn');
-    const msgBtn = document.getElementById('msgBtn');
-    if (followBtn) followBtn.style.display = 'inline-flex';
-    if (msgBtn) msgBtn.style.display = 'inline-flex';
-    
-    // Preveri follow status
-    isFollowing(uid).then(following => {
+    const fb = document.getElementById('followBtn');
+    const mb = document.getElementById('msgBtn');
+    if (fb) fb.style.display = 'inline-block';
+    if (mb) mb.style.display = 'inline-block';
+
+    // Follow status
+    checkIsFollowing(profileUid).then(following => {
       updateFollowBtn(following);
     });
-    
-    if (followBtn) {
-      followBtn.onclick = async () => {
-        const curr = followBtn.dataset.following === '1';
-        if (curr) { await unfollowUser(uid); updateFollowBtn(false); }
-        else { await followUser(uid); updateFollowBtn(true); }
-      };
-    }
-    if (msgBtn) {
-      msgBtn.onclick = () => openDM(uid);
-    }
-  }
-}
 
-function updateFollowBtn(isFollowing) {
+    if (fb) fb.onclick = async () => {
+      const isF = fb.dataset.following === '1';
+      if (isF) { await unfollowUser(profileUid); updateFollowBtn(false); }
+      else { await followUser(profileUid); updateFollowBtn(true); }
+    };
+  }
+
+  // DM
+  window._dmUid = profileUid;
+});
+
+function updateFollowBtn(f) {
   const btn = document.getElementById('followBtn');
   if (!btn) return;
-  btn.dataset.following = isFollowing ? '1' : '0';
-  btn.textContent = isFollowing ? 'Sledim ✓' : 'Sledi';
-  btn.style.background = isFollowing ? '#f0f0f0' : '#FF385C';
-  btn.style.color = isFollowing ? '#000' : '#fff';
+  btn.dataset.following = f ? '1' : '0';
+  btn.textContent = f ? 'Sledim ✓' : 'Sledi';
+  btn.style.background = f ? '#f0f0f0' : '#FF385C';
+  btn.style.color = f ? '#000' : '#fff';
 }
 
-async function openDM(toUid) {
-  sessionStorage.setItem('junto_dm_uid', toUid);
-  location.href = 'screen_messages.html';
-}
+window.openDMFromProfile = function() {
+  if (window._dmUid) {
+    sessionStorage.setItem('junto_dm_uid', window._dmUid);
+    location.href = 'screen_messages.html';
+  }
+};
 
-window._openFollowersModal = function(type) {
-  const data = type === 'sledilci' ? (window._profileFollowers||[]) : (window._profileFollowing||[]);
+window._openFollowModal = function(type) {
+  const data = type === 'sledilci' ? window._profileFollowers : window._profileFollowing;
   const list = document.getElementById('followersList');
-  document.getElementById('followersTitle').textContent = type === 'sledilci' ? 'Sledilci' : 'Sledim';
-  list.innerHTML = data.map(u => {
-    const isMutual = myFollowingSet.has(u.uid);
-    return `<div class="follower-row" onclick="location.href='screen_profil.html?uid=${u.uid}'">
-      <div style="width:44px;height:44px;border-radius:50%;background:#FF385C;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#fff;flex-shrink:0;">${(u.displayName||'?')[0].toUpperCase()}</div>
-      <div style="flex:1;">
-        <div style="font-size:14px;font-weight:600;">${u.displayName||'Uporabnik'}</div>
-        ${isMutual ? '<div style="font-size:12px;color:#8e8e93;">Sledi ti nazaj</div>' : ''}
-      </div>
-    </div>`;
-  }).join('') || '<div style="padding:20px;text-align:center;color:#8e8e93;">Ni sledilcev</div>';
+  const title = document.getElementById('followersTitle');
+  if (title) title.textContent = type === 'sledilci' ? 'Sledilci' : 'Sledim';
+  if (list) list.innerHTML = data.map(u =>
+    `<div class="follower-row" onclick="location.href='screen_profil.html?uid=${u.uid}'">
+      <div style="width:44px;height:44px;border-radius:50%;background:#FF6B35;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#fff;">${(u.displayName||'?')[0].toUpperCase()}</div>
+      <div style="flex:1;padding-left:12px;"><div style="font-size:14px;font-weight:600;">${u.displayName||'Uporabnik'}</div></div>
+    </div>`
+  ).join('') || '<div style="padding:20px;text-align:center;color:#8e8e93;">Ni podatkov</div>';
   document.getElementById('followersOverlay').classList.add('open');
 };
 </script>
-
 <script>
-function openFollowers(type) { window._openFollowersModal && window._openFollowersModal(type); }
+function openFollowers(type) { window._openFollowModal && window._openFollowModal(type); }
 function closeOverlay(id) { document.getElementById(id).classList.remove('open'); }
 </script>
-
 </body>
 </html>

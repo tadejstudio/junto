@@ -293,13 +293,13 @@ body{background:#f2f2f7;display:flex;justify-content:center;min-height:100vh;fon
 </div>
 
 <script type="module">
-import { onAuth, loginWithGoogle, sendDM, listenDM, listenMyDMs, getDmId } from './firebase-config.js';
+import { onAuth, sendDM, listenDM, listenMyDMs, listenUserProfile } from './firebase-config.js';
 
 let currentUser = null;
 let activeDmUid = null;
 let dmUnsub = null;
 
-// Preveri ali odpiramo specifičen DM
+// Preveri DM redirect
 const dmUid = sessionStorage.getItem('junto_dm_uid');
 if (dmUid) {
   sessionStorage.removeItem('junto_dm_uid');
@@ -312,70 +312,73 @@ onAuth(user => {
   if (!user) return;
 
   // Naloži DM liste
-  listenMyDMs(dms => {
-    renderConvList(dms);
-  });
+  listenMyDMs(dms => renderDMList(dms));
 
-  // Odpri specifičen DM če je bil nastavljen
-  if (activeDmUid) {
-    setTimeout(() => openDMChat(activeDmUid), 500);
-  }
+  // Odpri DM če je bil redirect
+  if (activeDmUid) setTimeout(() => window._openDMChat(activeDmUid), 800);
 });
 
-function renderConvList(dms) {
-  const list = document.getElementById('convList');
-  if (!list) return;
-  if (!dms.length) {
-    document.getElementById('dmPlaceholder').style.display = 'block';
-    return;
-  }
-  document.getElementById('dmPlaceholder').style.display = 'none';
-  list.innerHTML = dms.map(dm => {
-    const otherUid = dm.participants?.find(p => p !== currentUser?.uid);
-    const isUnread = dm.lastSenderUid !== currentUser?.uid;
+function renderDMList(dms) {
+  const fbList = document.getElementById('fbDmList');
+  if (!fbList) return;
+  if (!dms.length) { fbList.innerHTML = ''; return; }
+  fbList.innerHTML = dms.map(dm => {
+    const otherUid = dm.participants?.find(p => p !== currentUser?.uid) || '';
     const time = dm.lastMessageAt ? new Date(dm.lastMessageAt.toMillis()).toLocaleTimeString('sl-SI',{hour:'2-digit',minute:'2-digit'}) : '';
-    return `<div class="conv-item${isUnread?' unread':''}" onclick="openDMChat('${otherUid}')" style="display:flex;align-items:center;padding:12px 16px;gap:12px;cursor:pointer;border-bottom:0.5px solid #f5f5f5;">
-      <div style="width:50px;height:50px;border-radius:50%;background:#FF385C;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:#fff;flex-shrink:0;">?</div>
+    return `<div class="conv-item" onclick="window._openDMChat('${otherUid}')" style="display:flex;align-items:center;padding:12px 16px;gap:12px;cursor:pointer;border-bottom:0.5px solid #f5f5f5;">
+      <div style="width:50px;height:50px;border-radius:50%;background:#FF6B35;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:#fff;flex-shrink:0;" id="dm-av-${otherUid}">?</div>
       <div style="flex:1;min-width:0;">
-        <div class="conv-name">${otherUid?.substring(0,8) || 'Uporabnik'}</div>
-        <div style="font-size:13px;color:#8e8e93;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${dm.lastMessage||''}</div>
+        <div class="conv-name" id="dm-name-${otherUid}">Nalagam...</div>
+        <div class="conv-preview">${dm.lastMessage||''}</div>
       </div>
-      <div style="font-size:12px;color:#8e8e93;flex-shrink:0;">${time}</div>
+      <div class="conv-time">${time}</div>
     </div>`;
   }).join('');
+  // Naloži imena
+  dms.forEach(dm => {
+    const otherUid = dm.participants?.find(p => p !== currentUser?.uid);
+    if (!otherUid) return;
+    listenUserProfile(otherUid, profile => {
+      const nameEl = document.getElementById('dm-name-'+otherUid);
+      const avEl = document.getElementById('dm-av-'+otherUid);
+      if (nameEl) nameEl.textContent = profile.displayName || 'Uporabnik';
+      if (avEl && profile.photoURL) {
+        avEl.innerHTML = `<img src="${profile.photoURL}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+      } else if (avEl) {
+        avEl.textContent = (profile.displayName||'?')[0].toUpperCase();
+      }
+    });
+  });
 }
 
-window.openDMChat = function(toUid) {
-  if (!currentUser) return;
+window._openDMChat = function(toUid) {
+  if (!currentUser || !toUid) return;
   activeDmUid = toUid;
-  
-  // Pokaži chat view
-  document.getElementById('convListView').style.display = 'none';
+  document.getElementById('convView').style.display = 'none';
   document.getElementById('chatView').style.display = 'flex';
-  document.getElementById('chatBackBtn').style.display = 'flex';
-  
-  // Naloži sporočila
+  document.getElementById('chatBackBtn').style.display = 'block';
+
   if (dmUnsub) dmUnsub();
   dmUnsub = listenDM(toUid, msgs => {
-    const container = document.getElementById('chat-msgs');
-    if (!container) return;
-    const wasAtBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 60;
-    container.innerHTML = msgs.map(msg => {
+    const c = document.getElementById('chat-msgs');
+    if (!c) return;
+    const atBottom = c.scrollHeight - c.scrollTop <= c.clientHeight + 60;
+    c.innerHTML = msgs.map(msg => {
       const isMe = msg.uid === currentUser?.uid;
       const time = msg.createdAt ? new Date(msg.createdAt.toMillis()).toLocaleTimeString('sl-SI',{hour:'2-digit',minute:'2-digit'}) : '';
-      return `<div class="chat-msg" style="${isMe?'flex-direction:row-reverse;':''};display:flex;align-items:flex-end;gap:8px;margin-bottom:8px;">
+      return `<div style="display:flex;${isMe?'flex-direction:row-reverse;':''}align-items:flex-end;gap:8px;margin-bottom:10px;">
         <div style="width:32px;height:32px;border-radius:50%;background:${isMe?'#FF385C':'#8e8e93'};display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0;">${(msg.displayName||'?')[0].toUpperCase()}</div>
-        <div style="max-width:72%;${isMe?'align-items:flex-end;':''}display:flex;flex-direction:column;">
-          <div style="font-size:10px;color:#8e8e93;margin-bottom:2px;${isMe?'text-align:right;':''}">${isMe?'Ti':msg.displayName||'?'} ${time}</div>
+        <div style="max-width:72%;display:flex;flex-direction:column;${isMe?'align-items:flex-end;':''}">
+          <div style="font-size:10px;color:#8e8e93;margin-bottom:2px;">${isMe?'Ti':msg.displayName||'?'} ${time}</div>
           <div style="padding:10px 14px;border-radius:${isMe?'16px 4px 16px 16px':'4px 16px 16px 16px'};background:${isMe?'#FF385C':'#f2f2f7'};color:${isMe?'#fff':'#000'};font-size:15px;">${msg.text}</div>
         </div>
       </div>`;
-    }).join('') || '<div style="padding:20px;text-align:center;color:#8e8e93;font-size:14px;">Začni pogovor 👋</div>';
-    if (wasAtBottom) container.scrollTop = container.scrollHeight;
+    }).join('') || '<div style="padding:30px;text-align:center;color:#8e8e93;">Začni pogovor 👋</div>';
+    if (atBottom) c.scrollTop = c.scrollHeight;
   });
 };
 
-window._sendDM = async function() {
+window._sendDMMsg = async function() {
   const inp = document.getElementById('chatInput');
   const text = inp?.value.trim();
   if (!text || !activeDmUid || !currentUser) return;
@@ -383,8 +386,8 @@ window._sendDM = async function() {
   await sendDM(activeDmUid, text);
 };
 
-window._backToList = function() {
-  document.getElementById('convListView').style.display = 'block';
+window._backToConvList = function() {
+  document.getElementById('convView').style.display = 'block';
   document.getElementById('chatView').style.display = 'none';
   document.getElementById('chatBackBtn').style.display = 'none';
   if (dmUnsub) { dmUnsub(); dmUnsub = null; }
@@ -393,8 +396,29 @@ window._backToList = function() {
 </script>
 
 <script>
-function sendMsg() { window._sendDM && window._sendDM(); }
-function goBack() { window._backToList ? window._backToList() : history.back(); }
+// Obstoječe funkcije + Firebase wrapping
+function sendMsg() {
+  if (window._sendDMMsg && document.getElementById('chatView')?.style.display !== 'none') {
+    window._sendDMMsg();
+  } else {
+    // Stara lokalna logika za group chate
+    const input = document.getElementById('chatInput');
+    if (!input || !input.value.trim()) return;
+    const msgs = document.getElementById('chat-msgs');
+    const div = document.createElement('div');
+    div.style.cssText = 'display:flex;flex-direction:row-reverse;align-items:flex-end;gap:8px;margin-bottom:10px;';
+    div.innerHTML = `<div style="width:32px;height:32px;border-radius:50%;background:#FF385C;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;">Ti</div>
+      <div style="max-width:72%;"><div style="padding:10px 14px;border-radius:16px 4px 16px 16px;background:#FF385C;color:#fff;font-size:15px;">${input.value}</div></div>`;
+    msgs.appendChild(div);
+    msgs.scrollTop = msgs.scrollHeight;
+    input.value = '';
+  }
+}
+
+function goBackFromChat() {
+  if (window._backToConvList) window._backToConvList();
+  else history.back();
+}
 </script>
 </body>
 </html>
